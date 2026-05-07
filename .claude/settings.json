@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/serge/workspace -maxdepth 3 -name \"app.json\" 2>/dev/null | xargs grep -l \"expo\" 2>/dev/null && echo \"---\" && find /Users/serge/workspace -maxdepth 3 -name \"package.json\" ! -path \"*/node_modules/*\" | xargs grep -l '\"expo\"' 2>/dev/null)",
+      "Read(//Users/serge/workspace/**)"
+    ]
+  }
+}
