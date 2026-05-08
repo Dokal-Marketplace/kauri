@@ -1065,6 +1065,228 @@ a { color: inherit; text-decoration: none; }
 
 textarea.input { font-family: inherit; resize: vertical; min-height: 64px; }
 
+/* === Réconciliation === */
+.recon-page { }
+
+.rec-status {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; font-size: 11.5px; font-weight: 550;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-inset); color: var(--ink-2);
+  white-space: nowrap;
+}
+.rec-status-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in oklab, currentColor 22%, transparent);
+}
+.rec-status.open       { background: var(--info-soft);  color: var(--info);  border-color: transparent; }
+.rec-status.variance   { background: var(--neg-soft);   color: var(--neg);   border-color: transparent; }
+.rec-status.resolved   { background: oklch(0.95 0.05 80); color: oklch(0.5 0.11 80); border-color: transparent; }
+.rec-status.signed     { background: var(--pos-soft);   color: var(--pos);   border-color: transparent; }
+
+.recon-banner {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 16px; margin-bottom: 14px;
+  background: linear-gradient(90deg, var(--brand-softer), var(--surface));
+  border: 1px solid var(--brand-soft);
+  border-left: 3px solid var(--brand);
+  border-radius: var(--r-md);
+}
+.recon-banner-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--brand); color: white;
+  display: grid; place-items: center; flex-shrink: 0;
+}
+
+/* Meta strip (4 stats above detail) */
+.recon-meta {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+  background: var(--border-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md); overflow: hidden;
+  margin-bottom: 14px;
+}
+.recon-meta > div { background: var(--surface); padding: 10px 14px; }
+.recon-meta-l { font-size: 10.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.recon-meta-v { font-size: 13.5px; font-weight: 600; margin-top: 4px; }
+
+/* Detail two-column layout */
+.recon-detail { display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; }
+@media (max-width: 1180px) { .recon-detail { grid-template-columns: 1fr; } }
+
+.recon-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px 5px 6px; border-radius: var(--r-sm);
+  font-size: 12.5px; color: var(--ink-2); font-weight: 550;
+  background: transparent; border: 1px solid transparent;
+  margin-bottom: 6px;
+}
+.recon-back:hover { background: var(--surface-inset); color: var(--ink); }
+
+/* Denomination counter table */
+.denom-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.denom-table thead th {
+  text-align: left; padding: 8px 10px;
+  font-size: 10.5px; color: var(--ink-3);
+  text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+}
+.denom-table tbody td {
+  padding: 8px 10px; border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+.denom-table tbody tr:hover { background: var(--surface-inset); }
+.denom-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 4px 10px 4px 4px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  font-variant-numeric: tabular-nums; font-weight: 600; font-size: 12.5px;
+}
+.denom-swatch {
+  width: 22px; height: 16px; border-radius: 3px;
+  box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.08);
+}
+.denom-kind { font-size: 10.5px; color: var(--ink-3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+.denom-step {
+  display: inline-flex; align-items: center;
+  border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+  background: var(--surface); overflow: hidden;
+}
+.denom-step button {
+  width: 26px; height: 26px;
+  background: transparent; border: none;
+  color: var(--ink-2); font-size: 14px; line-height: 1;
+}
+.denom-step button:hover:not(:disabled) { background: var(--surface-inset); color: var(--ink); }
+.denom-step button:disabled { color: var(--ink-4); cursor: not-allowed; }
+.denom-step input {
+  width: 44px; height: 26px; text-align: center;
+  border: none; border-left: 1px solid var(--border-subtle); border-right: 1px solid var(--border-subtle);
+  font-variant-numeric: tabular-nums; font-weight: 600; font-size: 13px;
+  background: var(--surface); color: var(--ink);
+  padding: 0; outline: none;
+}
+.denom-sub { font-variant-numeric: tabular-nums; font-weight: 550; }
+
+/* Ledger lines (OM, Moov, banque) */
+.ledger-line {
+  display: grid; grid-template-columns: 28px 1fr auto auto auto;
+  gap: 12px; align-items: center;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ledger-line:last-child { border-bottom: none; }
+.ledger-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: grid; place-items: center; color: white;
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.2);
+}
+.ledger-name { font-weight: 600; font-size: 13.5px; }
+.ledger-sub { font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
+.ledger-expected { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; min-width: 90px; text-align: right; }
+.ledger-input {
+  width: 130px; padding: 7px 10px;
+  border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--ink);
+  font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 600;
+  text-align: right; outline: none;
+}
+.ledger-input:focus { border-color: var(--ink-3); }
+.ledger-delta { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; min-width: 80px; text-align: right; }
+
+/* Variance summary card */
+.variance-hero {
+  padding: 18px 18px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.variance-big {
+  font-family: var(--font-display);
+  font-size: 32px; font-weight: 600; letter-spacing: -0.022em;
+  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
+}
+.variance-pos { color: var(--pos); }
+.variance-neg { color: var(--neg); }
+.variance-zero { color: var(--ink-2); }
+
+.variance-rows { display: flex; flex-direction: column; padding: 4px 0; }
+.variance-row {
+  display: grid; grid-template-columns: 1fr auto auto auto;
+  gap: 14px; align-items: center;
+  padding: 9px 18px; font-size: 13px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.variance-row:last-child { border-bottom: none; }
+.variance-row .v-label { font-weight: 550; }
+.variance-row .v-num { font-variant-numeric: tabular-nums; min-width: 90px; text-align: right; }
+.variance-row .v-num.muted { color: var(--ink-3); }
+.variance-row .v-delta { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 80px; text-align: right; }
+
+/* Right-column cards */
+.recon-side-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); margin-bottom: 14px;
+}
+
+/* Flagged transaction */
+.recon-flag {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.recon-flag:last-child { border-bottom: none; }
+.recon-flag-icon {
+  width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+  background: var(--neg-soft); color: var(--neg);
+  display: grid; place-items: center;
+}
+.recon-flag-body { flex: 1; min-width: 0; }
+.recon-flag-id { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+.recon-flag-label { font-weight: 550; font-size: 13px; }
+.recon-flag-meta { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+
+/* Closure steps */
+.recon-step {
+  display: grid; grid-template-columns: 24px 1fr;
+  gap: 10px; padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12.5px;
+}
+.recon-step:last-child { border-bottom: none; }
+.recon-step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--surface-inset); color: var(--ink-3);
+  font-weight: 600; font-size: 11px;
+  display: grid; place-items: center;
+  font-variant-numeric: tabular-nums;
+}
+.recon-step.done .recon-step-num { background: var(--pos); color: white; }
+.recon-step.active .recon-step-num { background: var(--ink); color: white; }
+.recon-step-label { font-weight: 550; color: var(--ink-2); }
+.recon-step.done .recon-step-label, .recon-step.active .recon-step-label { color: var(--ink); }
+.recon-step-meta { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+
+/* Notes + footer */
+.recon-notes {
+  width: 100%; min-height: 80px;
+  padding: 8px 11px;
+  border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--ink);
+  font-size: 13px; font-family: inherit; outline: none; resize: vertical;
+}
+.recon-notes:focus { border-color: var(--ink-3); }
+.recon-foot {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+  border-radius: 0 0 var(--r-md) var(--r-md);
+}
+
 /* hue tweak */
 .app[data-hue="indigo"] { --brand: oklch(0.55 0.16 270); --brand-ink: oklch(0.4 0.16 270); --brand-soft: oklch(0.94 0.04 270); --brand-softer: oklch(0.97 0.02 270); }
 .app[data-hue="teal"]   { --brand: oklch(0.6 0.11 190);  --brand-ink: oklch(0.4 0.1 190);  --brand-soft: oklch(0.94 0.04 190); --brand-softer: oklch(0.97 0.02 190); }

@@ -8,15 +8,17 @@ import AgentsPage from './pages/AgentsPage'
 import ObjectifsPage from './pages/ObjectifsPage'
 import SettingsPage from './pages/SettingsPage'
 import ProductsPage from './pages/ProductsPage'
+import ReconciliationPage from './pages/ReconciliationPage'
 
 const PAGES = {
-  dashboard: DashboardPage,
-  clients:   ClientsPage,
-  tx:        TransactionsPage,
-  agents:    AgentsPage,
-  objectifs: ObjectifsPage,
-  produits:  ProductsPage,
-  settings:  SettingsPage,
+  dashboard:      DashboardPage,
+  clients:        ClientsPage,
+  tx:             TransactionsPage,
+  agents:         AgentsPage,
+  objectifs:      ObjectifsPage,
+  produits:       ProductsPage,
+  reconciliation: ReconciliationPage,
+  settings:       SettingsPage,
 }
 
 export default function App() {

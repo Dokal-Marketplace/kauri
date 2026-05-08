@@ -75,9 +75,10 @@ export function Sidebar({ active, setActive }) {
     { group: "Principal", entries: [
       { id: "dashboard", label: "Tableau de bord", icon: <I.Grid /> },
       { id: "clients",   label: "Clients",         icon: <I.Users />, badge: "142" },
-      { id: "tx",        label: "Transactions",    icon: <I.Receipt />, badge: "12" },
-      { id: "objectifs", label: "Objectifs",       icon: <I.Pin /> },
-      { id: "produits",  label: "Produits",        icon: <I.Wallet /> },
+      { id: "tx",             label: "Transactions",    icon: <I.Receipt />, badge: "12" },
+      { id: "objectifs",      label: "Objectifs",       icon: <I.Pin /> },
+      { id: "produits",       label: "Produits",        icon: <I.Wallet /> },
+      { id: "reconciliation", label: "Réconciliation",  icon: <I.Coin />,  badge: "1" },
     ]},
     { group: "Rapports", entries: [
       { id: "analyses", label: "Analyses",  icon: <I.Chart /> },

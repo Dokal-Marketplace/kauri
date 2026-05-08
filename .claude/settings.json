@@ -6,7 +6,12 @@
       "Bash(gh issue create --repo SergeWilfried/kauri --title '[Security] Hardcoded Novu credentials and static subscriberId in Inbox.jsx' --label security,bug --body ' *)",
       "Read(//usr/local/bin/**)",
       "Read(//usr/local/**)",
-      "Bash(export PATH=\"$PATH:/opt/homebrew/bin:/usr/local/bin\")"
+      "Bash(export PATH=\"$PATH:/opt/homebrew/bin:/usr/local/bin\")",
+      "Read(//Users/serge/**)",
+      "Bash(npx vite *)"
+    ],
+    "additionalDirectories": [
+      "/Users/serge/Downloads/TontiPro"
     ]
   }
 }

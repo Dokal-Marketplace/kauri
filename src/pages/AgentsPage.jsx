@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { I } from '../icons'
-import { fmt, PageHeader, SearchInput } from '../components'
+import { fmt, PageHeader } from '../components'
 import Novu from '../components/Inbox'
 
 const AGENTS = [
