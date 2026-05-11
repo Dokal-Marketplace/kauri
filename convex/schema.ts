@@ -73,7 +73,7 @@ export default defineSchema({
     reversedBy: v.optional(v.id("users")), // Supervisor ID
     timestamp: v.number()
   })
-    .index("by_agent_date", ["agentId", "_creationTime"])
+    .index("by_agent_date", ["agentId"])
     .index("by_branch", ["branchId"]),
 
   // 6. DISBURSEMENTS (Maker-Checker Workflow)

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react'
 import { Sidebar } from './components'
 import AppCommandPalette from './components/CommandPalette'
 import DashboardPage from './pages/DashboardPage'
@@ -26,12 +27,22 @@ export default function App() {
   const Page = PAGES[active] ?? DashboardPage
 
   return (
-    <div className="app">
-      <Sidebar active={active} setActive={setActive} />
-      <main className="main">
-        <Page />
-      </main>
-      <AppCommandPalette setActive={setActive} />
-    </div>
+    <>
+      <SignedIn>
+        <div className="app">
+          <Sidebar active={active} setActive={setActive} />
+          <main className="main">
+            <Page />
+          </main>
+          <AppCommandPalette setActive={setActive} />
+        </div>
+      </SignedIn>
+
+      <SignedOut>
+        <div className="auth-gate">
+          <SignIn routing="hash" />
+        </div>
+      </SignedOut>
+    </>
   )
 }

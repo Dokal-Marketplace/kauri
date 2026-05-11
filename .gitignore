@@ -1,2 +1,8 @@
+# gitignore file for the Kauri project
+/node_modules
+/dist
+/build
 
+# Environment variables files
+.env
 .env.local

@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.61.3",
     "@djpanda/convex-authz": "^2.3.1",
     "@novu/react": "^3.16.0",
     "convex": "^1.37.0",
