@@ -11,7 +11,14 @@ export const settleDailyCash = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
-    await authz.require(ctx, identity.subject, "reconciliation:liquidate");
+
+    const verifier = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
+      .unique();
+    if (!verifier) throw new Error("User not found");
+
+    await authz.withTenant(verifier.branchId).require(ctx, identity.subject, "reconciliation:liquidate");
 
     const today = new Date().toISOString().split('T')[0];
 
@@ -28,13 +35,6 @@ export const settleDailyCash = mutation({
 
     // 3. Determine status
     const status = variance === 0 ? "settled" : "discrepancy";
-
-    // 4. Create the reconciliation record
-    const verifier = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
-      .unique();
-    if (!verifier) throw new Error("User not found");
 
     if (!transactions[0]) throw new Error("No transactions found for agent today");
 

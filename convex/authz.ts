@@ -67,10 +67,11 @@ const roles = defineRoles(permissions, {
   },
 });
 
-// Step 3: Create the client
-// Using the branchId as the tenantId ensures data isolation
-export const authz = new Authz(components.authz, { 
-  permissions, 
-  roles, 
-  tenantId: "branch-ouaga-01" 
+// Step 3: Create the base client.
+// tenantId MUST be overridden per-request via authz.withTenant(user.branchId).
+// Never call authz.require / authz.can directly — always go through withTenant first.
+export const authz = new Authz(components.authz, {
+  permissions,
+  roles,
+  tenantId: "__unscoped__",
 });

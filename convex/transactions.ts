@@ -13,13 +13,14 @@ export const collectCash = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
-    await authz.require(ctx, identity.subject, "transactions:collect");
 
     const agent = await ctx.db
       .query("users")
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
       .unique();
     if (!agent) throw new Error("Agent not found");
+
+    await authz.withTenant(agent.branchId).require(ctx, identity.subject, "transactions:collect");
 
     const device = await ctx.db
       .query("devices")
@@ -47,12 +48,14 @@ export const reverseTransaction = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
-    await authz.require(ctx, identity.subject, "transactions:reverse");
 
     const supervisor = await ctx.db
       .query("users")
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
       .unique();
+    if (!supervisor) throw new Error("User not found");
+
+    await authz.withTenant(supervisor.branchId).require(ctx, identity.subject, "transactions:reverse");
 
     const tx = await ctx.db.get(args.transactionId);
     if (!tx) throw new Error("Transaction not found");
@@ -72,7 +75,7 @@ export const reverseTransaction = mutation({
     return await ctx.db.patch(args.transactionId, {
       status: "reversed",
       reversalReason: args.reason,
-      reversedBy: supervisor?._id,
+      reversedBy: supervisor._id,
     });
   },
 });
