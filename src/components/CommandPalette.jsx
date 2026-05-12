@@ -1,13 +1,15 @@
 import "react-cmdk/dist/cmdk.css"
 import CommandPalette, { filterItems, getItemIndex, useHandleOpenCommandPalette } from "react-cmdk"
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 
 let _setOpen = null
 export function openCommandPalette() { _setOpen?.(true) }
 
-export default function AppCommandPalette({ setActive }) {
+export default function AppCommandPalette() {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
+  const navigate = useNavigate()
 
   useEffect(() => { _setOpen = setOpen; return () => { _setOpen = null } }, [])
   useHandleOpenCommandPalette(setOpen)
@@ -18,12 +20,12 @@ export default function AppCommandPalette({ setActive }) {
         heading: "Navigation",
         id: "nav",
         items: [
-          { id: "dashboard", children: "Tableau de bord",  icon: "HomeIcon",              onClick: () => setActive("dashboard") },
-          { id: "clients",   children: "Clients",          icon: "UsersIcon",             onClick: () => setActive("clients") },
-          { id: "tx",        children: "Transactions",     icon: "CreditCardIcon",        onClick: () => setActive("tx") },
-          { id: "objectifs", children: "Objectifs",        icon: "FlagIcon",              onClick: () => setActive("objectifs") },
-          { id: "agents",    children: "Agents & TPE",     icon: "DevicePhoneMobileIcon", onClick: () => setActive("agents") },
-          { id: "settings",  children: "Paramètres",       icon: "CogIcon",               onClick: () => setActive("settings") },
+          { id: "dashboard", children: "Tableau de bord",  icon: "HomeIcon",              onClick: () => navigate("/") },
+          { id: "clients",   children: "Clients",          icon: "UsersIcon",             onClick: () => navigate("/clients") },
+          { id: "tx",        children: "Transactions",     icon: "CreditCardIcon",        onClick: () => navigate("/tx") },
+          { id: "objectifs", children: "Objectifs",        icon: "FlagIcon",              onClick: () => navigate("/objectifs") },
+          { id: "agents",    children: "Agents & TPE",     icon: "DevicePhoneMobileIcon", onClick: () => navigate("/agents") },
+          { id: "settings",  children: "Paramètres",       icon: "CogIcon",               onClick: () => navigate("/settings") },
         ],
       },
     ],

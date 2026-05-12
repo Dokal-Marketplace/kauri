@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { NavLink } from 'react-router-dom'
 import { openCommandPalette } from './components/CommandPalette'
 import { I } from './icons'
 
@@ -70,24 +71,24 @@ export function Sparkline({ data, color = "var(--brand)" }) {
   )
 }
 
-export function Sidebar({ active, setActive }) {
+export function Sidebar() {
   const items = [
     { group: "Principal", entries: [
-      { id: "dashboard", label: "Tableau de bord", icon: <I.Grid /> },
-      { id: "clients",   label: "Clients",         icon: <I.Users />, badge: "142" },
-      { id: "tx",             label: "Transactions",    icon: <I.Receipt />, badge: "12" },
-      { id: "objectifs",      label: "Objectifs",       icon: <I.Pin /> },
-      { id: "produits",       label: "Produits",        icon: <I.Wallet /> },
-      { id: "reconciliation", label: "Réconciliation",  icon: <I.Coin />,  badge: "1" },
+      { path: "/",              end: true,  label: "Tableau de bord", icon: <I.Grid /> },
+      { path: "/clients",                   label: "Clients",         icon: <I.Users />, badge: "142" },
+      { path: "/tx",                        label: "Transactions",    icon: <I.Receipt />, badge: "12" },
+      { path: "/objectifs",                 label: "Objectifs",       icon: <I.Pin /> },
+      { path: "/produits",                  label: "Produits",        icon: <I.Wallet /> },
+      { path: "/reconciliation",            label: "Réconciliation",  icon: <I.Coin />, badge: "1" },
     ]},
     { group: "Rapports", entries: [
-      { id: "analyses", label: "Analyses",  icon: <I.Chart /> },
-      { id: "export",   label: "Export CSV", icon: <I.Export /> },
+      { label: "Analyses",   icon: <I.Chart /> },
+      { label: "Export CSV", icon: <I.Export /> },
     ]},
     { group: "Admin", entries: [
-      { id: "agents",      label: "Agents",      icon: <I.Users /> },
-      { id: "permissions", label: "Permissions", icon: <I.Shield /> },
-      { id: "settings",    label: "Paramètres",  icon: <I.Settings /> },
+      { path: "/agents",   label: "Agents",      icon: <I.Users /> },
+      { label: "Permissions", icon: <I.Shield /> },
+      { path: "/settings", label: "Paramètres",  icon: <I.Settings /> },
     ]},
   ]
   return (
@@ -102,12 +103,15 @@ export function Sidebar({ active, setActive }) {
       {items.map(group => (
         <div className="nav-group" key={group.group}>
           <div className="nav-label">{group.group}</div>
-          {group.entries.map(it => (
-            <div key={it.id}
-                 className={"nav-item" + (active === it.id ? " active" : "")}
-                 onClick={() => setActive(it.id)}>
+          {group.entries.map(it => it.path ? (
+            <NavLink key={it.path} to={it.path} end={it.end}
+                     className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}>
               {it.icon}<span>{it.label}</span>
               {it.badge && <span className="nav-badge">{it.badge}</span>}
+            </NavLink>
+          ) : (
+            <div key={it.label} className="nav-item disabled">
+              {it.icon}<span>{it.label}</span>
             </div>
           ))}
         </div>
