@@ -2,7 +2,7 @@
 export default {
   providers: [
     {
-      domain: "https://whole-lark-91.clerk.accounts.dev", // ← à remplacer à l'étape 6
+      domain: process.env.CLERK_ISSUER_DOMAIN,
       applicationID: "convex",
     },
   ],
