@@ -1,11 +1,11 @@
 import { Inbox } from '@novu/react';
 
-function Novu() {
+function Novu(tenantId) {
   return (
     <Inbox
-      applicationIdentifier="mLtXHnJfZNRB"
-      subscriberId="69fa4317aca4539eeabcdc44"
-      socketUrl="wss://socket.novu.co"
+    applicationIdentifier={import.meta.env.VITE_NOVU_APP_ID}
+    subscriberId={tenantId}
+    socketUrl="wss://socket.novu.co"
       appearance={{
         variables: {
           colorPrimary: "#DD2450",
