@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react'
 import { I } from '../icons'
-import { fmt, KPI, PageHeader, SearchInput } from '../components'
-import { CLIENTS, CLIENT_KPIS, CLIENT_TX } from '../data'
+import { fmt, KPI, PageHeader } from '../components'
 import Novu from '../components/Inbox'
 
 function ClientDrawer({ client, onClose }) {

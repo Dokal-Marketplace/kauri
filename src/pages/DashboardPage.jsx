@@ -3,7 +3,6 @@ import {
   Topbar, KPI, ClientsCard, TransactionsCard,
   VolumeChart, QuickActionsCard,
 } from '../components'
-import { KPIS, CLIENTS, TRANSACTIONS, VOLUME } from '../data'
 import Novu from '../components/Inbox'
 
 export default function DashboardPage() {

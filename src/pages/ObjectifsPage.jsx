@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react'
 import { I } from '../icons'
-import { fmt, KPI, PageHeader, SearchInput } from '../components'
-import { CLIENTS } from '../data'
+import { fmt, KPI, PageHeader } from '../components'
 import Novu from '../components/Inbox'
 
 const OBJ_STATUSES = {
