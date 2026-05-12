@@ -1,10 +1,15 @@
 import { Inbox } from '@novu/react';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 function Novu() {
+  const { isLoaded, isSignedIn, clerkUser } = useCurrentUser()
+
+  if (!isLoaded || !isSignedIn || !clerkUser) return null
+
   return (
     <Inbox
       applicationIdentifier="mLtXHnJfZNRB"
-      subscriberId="69fa4317aca4539eeabcdc44"
+      subscriberId={clerkUser.id}
       socketUrl="wss://socket.novu.co"
       appearance={{
         variables: {
