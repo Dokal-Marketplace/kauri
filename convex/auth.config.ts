@@ -2,7 +2,7 @@
 export default {
   providers: [
     {
-      domain: process.env.CLERK_ISSUER_DOMAIN,
+      domain: process.env.VITE_CLERK_ISSUER_DOMAIN,
       applicationID: "convex",
     },
   ],
