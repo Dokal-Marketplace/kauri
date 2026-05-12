@@ -6,3 +6,5 @@
 # Environment variables files
 .env
 .env.local
+node_modules/.bin/convex
+node_modules/.bin/vite

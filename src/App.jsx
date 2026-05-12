@@ -1,40 +1,30 @@
-import { useState } from 'react'
+import { lazy, Suspense } from 'react'
+import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom'
 import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react'
 import { Sidebar } from './components'
 import AppCommandPalette from './components/CommandPalette'
-import DashboardPage from './pages/DashboardPage'
-import ClientsPage from './pages/ClientsPage'
-import TransactionsPage from './pages/TransactionsPage'
-import AgentsPage from './pages/AgentsPage'
-import ObjectifsPage from './pages/ObjectifsPage'
-import SettingsPage from './pages/SettingsPage'
-import ProductsPage from './pages/ProductsPage'
-import ReconciliationPage from './pages/ReconciliationPage'
 
-const PAGES = {
-  dashboard:      DashboardPage,
-  clients:        ClientsPage,
-  tx:             TransactionsPage,
-  agents:         AgentsPage,
-  objectifs:      ObjectifsPage,
-  produits:       ProductsPage,
-  reconciliation: ReconciliationPage,
-  settings:       SettingsPage,
-}
+const DashboardPage      = lazy(() => import('./pages/DashboardPage'))
+const ClientsPage        = lazy(() => import('./pages/ClientsPage'))
+const TransactionsPage   = lazy(() => import('./pages/TransactionsPage'))
+const AgentsPage         = lazy(() => import('./pages/AgentsPage'))
+const ObjectifsPage      = lazy(() => import('./pages/ObjectifsPage'))
+const ProductsPage       = lazy(() => import('./pages/ProductsPage'))
+const ReconciliationPage = lazy(() => import('./pages/ReconciliationPage'))
+const SettingsPage       = lazy(() => import('./pages/SettingsPage'))
 
-export default function App() {
-  const [active, setActive] = useState('dashboard')
-  const Page = PAGES[active] ?? DashboardPage
-
+function Layout() {
   return (
     <>
       <SignedIn>
         <div className="app">
-          <Sidebar active={active} setActive={setActive} />
+          <Sidebar />
           <main className="main">
-            <Page />
+            <Suspense fallback={null}>
+              <Outlet />
+            </Suspense>
           </main>
-          <AppCommandPalette setActive={setActive} />
+          <AppCommandPalette />
         </div>
       </SignedIn>
 
@@ -45,4 +35,25 @@ export default function App() {
       </SignedOut>
     </>
   )
+}
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Layout />,
+    children: [
+      { index: true,             element: <DashboardPage /> },
+      { path: 'clients',         element: <ClientsPage /> },
+      { path: 'tx',              element: <TransactionsPage /> },
+      { path: 'agents',          element: <AgentsPage /> },
+      { path: 'objectifs',       element: <ObjectifsPage /> },
+      { path: 'produits',        element: <ProductsPage /> },
+      { path: 'reconciliation',  element: <ReconciliationPage /> },
+      { path: 'settings',        element: <SettingsPage /> },
+    ],
+  },
+])
+
+export default function App() {
+  return <RouterProvider router={router} />
 }
