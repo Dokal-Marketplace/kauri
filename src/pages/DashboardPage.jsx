@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import {
   Topbar, KPI, ClientsCard, TransactionsCard,
-  VolumeChart, GoalsCard, ActivityCard, QuickActionsCard,
+  VolumeChart, QuickActionsCard,
 } from '../components'
-import { KPIS, CLIENTS, TRANSACTIONS, VOLUME, GOALS, FEED } from '../data'
+import { KPIS, CLIENTS, TRANSACTIONS, VOLUME } from '../data'
 import Novu from '../components/Inbox'
 
 export default function DashboardPage() {
