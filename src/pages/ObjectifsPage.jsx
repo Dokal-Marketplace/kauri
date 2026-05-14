@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { I } from '../icons'
 import { fmt, KPI, PageHeader } from '../components'
 import Novu from '../components/Inbox'
+const CLIENTS = []
 
 const OBJ_STATUSES = {
   atteint:   { label: "Atteint",       tagClass: "actif",   dot: "var(--pos)" },
