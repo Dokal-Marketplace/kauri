@@ -141,7 +141,7 @@ export default function ClientsPage() {
     else setSelected(new Set(filtered.map(c => c.id)))
   }
 
-  const [commandPaletteActive, setCommandPaletteActive] = useState(false)
+  
 
   return (
     <div className="clients-page">
