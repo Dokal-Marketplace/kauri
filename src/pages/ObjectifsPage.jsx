@@ -29,18 +29,6 @@ function buildObjectifs() {
       pct, daysLeft: days, deadline, created: c.joined, status,
     }
   })
-  base.push({
-    id: 30, client: "Adèle Sawadogo", initials: "AS", phone: "+226 70 99 11 22",
-    agent: "K. Djibril", village: "Bobo-Dioulasso", product: "Plan+",
-    category: "Mariage", target: 300000, current: 312000, monthly: 28000,
-    pct: 104, daysLeft: 0, deadline: "Atteint le 28 avr.", created: "2024-05-01", status: "atteint",
-  })
-  base.push({
-    id: 31, client: "Yacouba Compaoré", initials: "YC", phone: "+226 76 12 89 04",
-    agent: "A. Ouédraogo", village: "Hounde", product: "Carnet",
-    category: "Logement", target: 500000, current: 95000, monthly: 0,
-    pct: 19, daysLeft: 220, deadline: "12 déc. 2026", created: "2025-09-12", status: "enpause",
-  })
   return base
 }
 
