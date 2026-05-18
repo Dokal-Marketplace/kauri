@@ -8,11 +8,7 @@ const CLIENT_TX = {}
 
 function ClientDrawer({ client, onClose }) {
   if (!client) return null
-  const history = CLIENT_TX[client.id] || [
-    { type: "in",  label: "Dépôt",   amount: 10000, time: "il y a 3 j" },
-    { type: "out", label: "Retrait", amount: 5000,  time: "il y a 8 j" },
-    { type: "in",  label: "Dépôt",   amount: 15000, time: "il y a 14 j" },
-  ]
+  const history = CLIENT_TX[client.id] || []
   const pct = Math.min(100, Math.round((client.balance / client.goal) * 100))
   return (
     <>
