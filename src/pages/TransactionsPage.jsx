@@ -126,7 +126,9 @@ export default function TransactionsPage() {
     if (channel !== "tous" && t.channel !== channel)    return false
     if (agent   !== "tous" && t.agent   !== agent)      return false
     if (period === "24h" && !t.time.startsWith("Aujourd'hui")) return false
-    if (period === "7j"  && t.time.startsWith("29 avr") === false && !t.time.startsWith("Aujourd'hui") && !t.time.startsWith("Hier") && !t.time.startsWith("28 avr")) return false
+    if (period === "7j"  && !["29 avr", "Aujourd'hui", "Hier", "28 avr"].some(d => t.time.startsWith(d))) return false
+    // TODO: Implement "30j" period filter with real dates from Convex
+    // "Tout" shows all transactions (default behavior)
     if (q) {
       const blob = (t.client + " " + t.id + " " + t.reference + " " + t.tpe).toLowerCase()
       if (!blob.includes(q.toLowerCase())) return false
