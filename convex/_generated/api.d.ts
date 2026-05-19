@@ -13,6 +13,7 @@ import type * as disbursements from "../disbursements.js";
 import type * as reconciliation from "../reconciliation.js";
 import type * as seed from "../seed.js";
 import type * as transactions from "../transactions.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   reconciliation: typeof reconciliation;
   seed: typeof seed;
   transactions: typeof transactions;
+  users: typeof users;
 }>;
 
 /**

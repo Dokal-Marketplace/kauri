@@ -3,6 +3,8 @@ import { I } from '../icons'
 import { fmt, KPI, PageHeader } from '../components'
 import Novu from '../components/Inbox'
 
+const PAGE_SIZE = 10
+
 function ClientDrawer({ client, onClose }) {
   if (!client) return null
   const history = CLIENT_TX[client.id] || []
@@ -90,6 +92,7 @@ export default function ClientsPage() {
   const [selected, setSelected] = useState(new Set())
   const [openClient, setOpenClient] = useState(null)
   const [online, setOnline] = useState(true)
+  const [page, setPage] = useState(1)
 
   const agents = useMemo(() => ["tous", ...Array.from(new Set(CLIENTS.map(c => c.agent)))], [])
 
@@ -107,6 +110,12 @@ export default function ClientsPage() {
     })
     return r
   }, [q, seg, agent, sortBy, sortDir])
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  // Reset page when filters change
+  useMemo(() => { setPage(1) }, [q, seg, agent, sortBy, sortDir])
 
   const toggleSort = (col) => {
     if (sortBy === col) setSortDir(d => d === "asc" ? "desc" : "asc")
@@ -135,13 +144,11 @@ export default function ClientsPage() {
     n.has(id) ? n.delete(id) : n.add(id)
     setSelected(n)
   }
-  const allOn = filtered.length > 0 && filtered.every(c => selected.has(c.id))
+  const allOn = paginated.length > 0 && paginated.every(c => selected.has(c.id))
   const toggleAll = () => {
     if (allOn) setSelected(new Set())
-    else setSelected(new Set(filtered.map(c => c.id)))
+    else setSelected(new Set(paginated.map(c => c.id)))
   }
-
-  const [commandPaletteActive, setCommandPaletteActive] = useState(false)
 
   return (
     <div className="clients-page">
@@ -150,7 +157,7 @@ export default function ClientsPage() {
         title="Clients"
         sub={`${CLIENTS.length} fiches · ${counts.actif} actives · ${counts.attente} en attente KYC`}
       >
-          <button className={"status-pill" + (online ? "" : " offline")} onClick={() => setOnline(!online)}>
+        <button className={"status-pill" + (online ? "" : " offline")} onClick={() => setOnline(!online)}>
           <span className="status-dot"></span>{online ? "En ligne · synchronisé" : "Hors ligne · 4 en file"}
         </button>
         <Novu />
@@ -220,7 +227,7 @@ export default function ClientsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(c => (
+                {paginated.map(c => (
                   <tr key={c.id} onClick={() => setOpenClient(c)} className={selected.has(c.id) ? "selected" : ""}>
                     <td onClick={e => e.stopPropagation()}>
                       <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} />
@@ -260,19 +267,23 @@ export default function ClientsPage() {
               </div>
             )}
             <div className="table-foot">
-              <span>Affichage de {filtered.length} sur {CLIENTS.length} clients</span>
-              <div className="pager">
-                <button className="btn ghost sm" disabled>‹ Précédent</button>
-                <span className="page-num on">1</span>
-                <span className="page-num">2</span>
-                <span className="page-num">3</span>
-                <button className="btn ghost sm">Suivant ›</button>
-              </div>
+              <span>
+                Affichage de {Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(page * PAGE_SIZE, filtered.length)} sur {filtered.length} clients
+              </span>
+              {totalPages > 1 && (
+                <div className="pager">
+                  <button className="btn ghost sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>‹ Précédent</button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                    <span key={p} className={"page-num " + (p === page ? "on" : "")} onClick={() => setPage(p)} style={{ cursor: "pointer" }}>{p}</span>
+                  ))}
+                  <button className="btn ghost sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Suivant ›</button>
+                </div>
+              )}
             </div>
           </div>
         ) : (
           <div className="card-grid">
-            {filtered.map(c => (
+            {paginated.map(c => (
               <div key={c.id} className="client-card" onClick={() => setOpenClient(c)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div className="avatar lg">{c.initials}</div>
