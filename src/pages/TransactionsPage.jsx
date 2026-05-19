@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { I } from '../icons'
 import Novu from '../components/Inbox'
 import { fmt, PageHeader, SearchInput } from '../components'
@@ -123,7 +123,6 @@ export default function TransactionsPage() {
   const channels = useMemo(() => ["tous", ...Array.from(new Set(TX_FULL.map(t => t.channel)))], [])
 
   const filtered = useMemo(() => {
-    setPage(1)
     return TX_FULL.filter(t => {
       if (seg === "in"      && t.type !== "in")           return false
       if (seg === "out"     && t.type !== "out")          return false
@@ -136,6 +135,10 @@ export default function TransactionsPage() {
       }
       return true
     })
+  }, [q, seg, channel, agent])
+
+  useEffect(() => {
+    setPage(1)
   }, [q, seg, channel, agent])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)

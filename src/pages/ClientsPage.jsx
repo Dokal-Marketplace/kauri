@@ -1,7 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { I } from '../icons'
 import { fmt, KPI, PageHeader } from '../components'
 import Novu from '../components/Inbox'
+
+const CLIENTS = []
+const CLIENT_KPIS = []
+const CLIENT_TX = {}
 
 const PAGE_SIZE = 10
 
@@ -115,7 +119,9 @@ export default function ClientsPage() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   // Reset page when filters change
-  useMemo(() => { setPage(1) }, [q, seg, agent, sortBy, sortDir])
+  useEffect(() => {
+    setPage(1)
+  }, [q, seg, agent, sortBy, sortDir])
 
   const toggleSort = (col) => {
     if (sortBy === col) setSortDir(d => d === "asc" ? "desc" : "asc")
@@ -146,8 +152,12 @@ export default function ClientsPage() {
   }
   const allOn = paginated.length > 0 && paginated.every(c => selected.has(c.id))
   const toggleAll = () => {
-    if (allOn) setSelected(new Set())
-    else setSelected(new Set(paginated.map(c => c.id)))
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (allOn) paginated.forEach(c => next.delete(c.id))
+      else paginated.forEach(c => next.add(c.id))
+      return next
+    })
   }
 
   return (
