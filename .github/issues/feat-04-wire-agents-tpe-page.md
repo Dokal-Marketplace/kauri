@@ -1,5 +1,5 @@
 ---
-title: "[Feature] Wire AgentsPage to real Convex user and device data"
+title: '[Feature] Wire AgentsPage to real Convex user and device data'
 labels: feature, convex, frontend
 priority: high
 ---
@@ -24,16 +24,18 @@ export const listByBranch = query({
     if (!identity) throw new Error('Unauthenticated')
     const users = await ctx.db
       .query('users')
-      .withIndex('by_branch', q => q.eq('branchId', args.branchId))
+      .withIndex('by_branch', (q) => q.eq('branchId', args.branchId))
       .collect()
     // Join each user with their assigned device
-    return Promise.all(users.map(async u => {
-      const device = await ctx.db
-        .query('devices')
-        .filter(q => q.eq(q.field('assignedTo'), u._id))
-        .first()
-      return { ...u, device }
-    }))
+    return Promise.all(
+      users.map(async (u) => {
+        const device = await ctx.db
+          .query('devices')
+          .filter((q) => q.eq(q.field('assignedTo'), u._id))
+          .first()
+        return { ...u, device }
+      })
+    )
   },
 })
 
@@ -45,7 +47,7 @@ export const bindDevice = mutation({
     await authz.require(ctx, identity.subject, 'devices:bind')
     const device = await ctx.db
       .query('devices')
-      .withIndex('by_serial', q => q.eq('serialNumber', args.serialNumber))
+      .withIndex('by_serial', (q) => q.eq('serialNumber', args.serialNumber))
       .unique()
     if (!device) throw new Error('Device not found')
     return ctx.db.patch(device._id, { assignedTo: args.userId })

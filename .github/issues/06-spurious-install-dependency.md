@@ -1,5 +1,5 @@
 ---
-title: "[Chore] Spurious `install` package in production dependencies"
+title: '[Chore] Spurious `install` package in production dependencies'
 labels: chore, dependencies
 priority: medium
 ---

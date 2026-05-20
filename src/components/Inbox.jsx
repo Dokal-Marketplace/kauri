@@ -1,5 +1,5 @@
-import { Inbox } from '@novu/react';
-import { useCurrentUser } from '../hooks/useCurrentUser';
+import { Inbox } from '@novu/react'
+import { useCurrentUser } from '../hooks/useCurrentUser'
 
 function Novu() {
   const { isLoaded, isSignedIn, clerkUser } = useCurrentUser()
@@ -13,12 +13,12 @@ function Novu() {
       socketUrl="wss://socket.novu.co"
       appearance={{
         variables: {
-          colorPrimary: "#DD2450",
-          colorForeground: "#0E121B"
-        }
+          colorPrimary: '#DD2450',
+          colorForeground: '#0E121B',
+        },
       }}
     />
-  );
+  )
 }
 
 export default Novu

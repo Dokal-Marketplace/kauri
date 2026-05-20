@@ -1,5 +1,5 @@
 ---
-title: "[Code Quality] Dead state variables in ClientsPage and TransactionsPage"
+title: '[Code Quality] Dead state variables in ClientsPage and TransactionsPage'
 labels: code-quality, cleanup
 priority: low
 ---
@@ -21,7 +21,7 @@ Neither `commandPaletteActive` nor `setCommandPaletteActive` is referenced anywh
 
 ```jsx
 // src/pages/TransactionsPage.jsx:115
-const [period, setPeriod] = useState("7j")
+const [period, setPeriod] = useState('7j')
 ```
 
 The period segmenter is rendered in the UI (lines 183–186) and `setPeriod` is wired up, but `period` is never included in the `filtered` memo's dependency array or logic — so the 24h/7j/30j/Tout buttons change state that has no effect on the displayed data.

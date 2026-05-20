@@ -1,5 +1,5 @@
 ---
-title: "[Feature] Add products table to Convex schema and wire ProductsPage"
+title: '[Feature] Add products table to Convex schema and wire ProductsPage'
 labels: feature, convex, frontend
 priority: medium
 ---
@@ -73,7 +73,7 @@ Note: add `products: { manage: true }` to `convex/authz.ts` permissions, and ass
 
 ```jsx
 const products = useQuery(api.products.list, { organizationId }) ?? []
-const upsert   = useMutation(api.products.upsert)
+const upsert = useMutation(api.products.upsert)
 
 // Replace onSave to call the mutation:
 const onSave = async (p) => {

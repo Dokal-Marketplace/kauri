@@ -9,10 +9,10 @@
       "Bash(export PATH=\"$PATH:/opt/homebrew/bin:/usr/local/bin\")",
       "Read(//Users/serge/**)",
       "Bash(npx vite *)",
-      "Bash(pnpm build *)"
+      "Bash(pnpm build *)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm lint *)"
     ],
-    "additionalDirectories": [
-      "/Users/serge/Downloads/TontiPro"
-    ]
+    "additionalDirectories": ["/Users/serge/Downloads/TontiPro"]
   }
 }

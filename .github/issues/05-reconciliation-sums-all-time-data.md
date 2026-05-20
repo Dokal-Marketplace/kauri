@@ -11,10 +11,10 @@ The `settleDailyCash` mutation in `convex/reconciliation.ts` fetches all `comple
 ```ts
 // convex/reconciliation.ts:21-24
 const transactions = await ctx.db
-  .query("transactions")
-  .withIndex("by_agent_date", q => q.eq("agentId", args.agentId))
-  .filter(q => q.eq(q.field("status"), "completed"))
-  .collect();
+  .query('transactions')
+  .withIndex('by_agent_date', (q) => q.eq('agentId', args.agentId))
+  .filter((q) => q.eq(q.field('status'), 'completed'))
+  .collect()
 // Note in code: "In production, you'd use a more robust time-range check"
 ```
 
@@ -29,19 +29,19 @@ The comment acknowledges this is incomplete, but the code is being used as-is.
 Filter transactions to the current date by comparing `timestamp` against the start-of-day epoch:
 
 ```ts
-const today = new Date().toISOString().split("T")[0]; // "2026-05-07"
-const startOfDay = new Date(today + "T00:00:00Z").getTime();
-const endOfDay   = new Date(today + "T23:59:59Z").getTime();
+const today = new Date().toISOString().split('T')[0] // "2026-05-07"
+const startOfDay = new Date(today + 'T00:00:00Z').getTime()
+const endOfDay = new Date(today + 'T23:59:59Z').getTime()
 
 const transactions = await ctx.db
-  .query("transactions")
-  .withIndex("by_agent_date", q => q.eq("agentId", args.agentId))
-  .filter(q =>
+  .query('transactions')
+  .withIndex('by_agent_date', (q) => q.eq('agentId', args.agentId))
+  .filter((q) =>
     q.and(
-      q.eq(q.field("status"), "completed"),
-      q.gte(q.field("timestamp"), startOfDay),
-      q.lte(q.field("timestamp"), endOfDay)
+      q.eq(q.field('status'), 'completed'),
+      q.gte(q.field('timestamp'), startOfDay),
+      q.lte(q.field('timestamp'), endOfDay)
     )
   )
-  .collect();
+  .collect()
 ```

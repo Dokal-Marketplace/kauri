@@ -1,5 +1,5 @@
 ---
-title: "[Feature] Wire ClientsPage to real Convex customer data"
+title: '[Feature] Wire ClientsPage to real Convex customer data'
 labels: feature, convex, frontend
 priority: high
 ---
@@ -30,8 +30,8 @@ export const listByBranch = query({
     if (!identity) throw new Error('Unauthenticated')
     return ctx.db
       .query('customers')
-      .withIndex('by_status', q => q.eq('status', 'verified'))
-      .filter(q => q.eq(q.field('branchId'), args.branchId))
+      .withIndex('by_status', (q) => q.eq('status', 'verified'))
+      .filter((q) => q.eq(q.field('branchId'), args.branchId))
       .collect()
   },
 })
@@ -48,7 +48,7 @@ export const createProspect = mutation({
     await authz.require(ctx, identity.subject, 'customers:create_prospect')
     const agent = await ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!agent) throw new Error('Agent not found')
     return ctx.db.insert('customers', {

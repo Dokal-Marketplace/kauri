@@ -1,5 +1,5 @@
 ---
-title: "[Code Quality] Module-level mutable singleton in CommandPalette.jsx"
+title: '[Code Quality] Module-level mutable singleton in CommandPalette.jsx'
 labels: code-quality
 priority: low
 ---
@@ -11,13 +11,20 @@ priority: low
 ```js
 // src/components/CommandPalette.jsx:5-6
 let _setOpen = null
-export function openCommandPalette() { _setOpen?.(true) }
+export function openCommandPalette() {
+  _setOpen?.(true)
+}
 ```
 
 An effect syncs it on mount/unmount:
 
 ```js
-useEffect(() => { _setOpen = setOpen; return () => { _setOpen = null } }, [])
+useEffect(() => {
+  _setOpen = setOpen
+  return () => {
+    _setOpen = null
+  }
+}, [])
 ```
 
 ## Impact

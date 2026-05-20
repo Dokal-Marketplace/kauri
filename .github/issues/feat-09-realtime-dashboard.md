@@ -1,5 +1,5 @@
 ---
-title: "[Feature] Wire DashboardPage KPIs and charts to live Convex aggregates"
+title: '[Feature] Wire DashboardPage KPIs and charts to live Convex aggregates'
 labels: feature, convex, frontend
 priority: medium
 ---
@@ -25,24 +25,29 @@ export const branchSummary = query({
     const startOfMonth = today.slice(0, 7) + '-01'
 
     const [customers, transactions, goals] = await Promise.all([
-      ctx.db.query('customers')
+      ctx.db
+        .query('customers')
         .withIndex('by_status')
-        .filter(q => q.eq(q.field('branchId'), args.branchId))
+        .filter((q) => q.eq(q.field('branchId'), args.branchId))
         .collect(),
-      ctx.db.query('transactions')
-        .withIndex('by_branch', q => q.eq('branchId', args.branchId))
+      ctx.db
+        .query('transactions')
+        .withIndex('by_branch', (q) => q.eq('branchId', args.branchId))
         .order('desc')
         .take(100),
-      ctx.db.query('savingsGoals')
-        .withIndex('by_branch_status', q => q.eq('branchId', args.branchId))
+      ctx.db
+        .query('savingsGoals')
+        .withIndex('by_branch_status', (q) => q.eq('branchId', args.branchId))
         .collect(),
     ])
 
-    const activeClients     = customers.filter(c => c.status === 'verified').length
-    const monthlyTx         = transactions.filter(t => t.timestamp >= new Date(startOfMonth).getTime())
-    const totalSavings      = monthlyTx.filter(t => t.status === 'completed').reduce((s, t) => s + t.amount, 0)
-    const recentTx          = transactions.slice(0, 6)
-    const topGoals          = goals.sort((a, b) => b.pct - a.pct).slice(0, 4)
+    const activeClients = customers.filter((c) => c.status === 'verified').length
+    const monthlyTx = transactions.filter((t) => t.timestamp >= new Date(startOfMonth).getTime())
+    const totalSavings = monthlyTx
+      .filter((t) => t.status === 'completed')
+      .reduce((s, t) => s + t.amount, 0)
+    const recentTx = transactions.slice(0, 6)
+    const topGoals = goals.sort((a, b) => b.pct - a.pct).slice(0, 4)
 
     return { activeClients, totalSavings, recentTx, topGoals, monthlyTx }
   },

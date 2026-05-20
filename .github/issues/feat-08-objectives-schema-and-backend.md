@@ -1,5 +1,5 @@
 ---
-title: "[Feature] Add savings goals table to Convex schema and wire ObjectifsPage"
+title: '[Feature] Add savings goals table to Convex schema and wire ObjectifsPage'
 labels: feature, convex, frontend
 priority: medium
 ---
@@ -46,32 +46,31 @@ export const listByBranch = query({
     if (!identity) throw new Error('Unauthenticated')
     const goals = await ctx.db
       .query('savingsGoals')
-      .withIndex('by_branch_status', q => q.eq('branchId', args.branchId))
+      .withIndex('by_branch_status', (q) => q.eq('branchId', args.branchId))
       .collect()
     // Enrich each goal with current balance from transactions
-    return Promise.all(goals.map(async g => {
-      const txs = await ctx.db
-        .query('transactions')
-        .filter(q =>
-          q.and(
-            q.eq(q.field('customerId'), g.customerId),
-            q.eq(q.field('status'), 'completed')
+    return Promise.all(
+      goals.map(async (g) => {
+        const txs = await ctx.db
+          .query('transactions')
+          .filter((q) =>
+            q.and(q.eq(q.field('customerId'), g.customerId), q.eq(q.field('status'), 'completed'))
           )
-        )
-        .collect()
-      const current = txs.reduce((s, t) => s + t.amount, 0)
-      return { ...g, currentAmount: current, pct: Math.round((current / g.targetAmount) * 100) }
-    }))
+          .collect()
+        const current = txs.reduce((s, t) => s + t.amount, 0)
+        return { ...g, currentAmount: current, pct: Math.round((current / g.targetAmount) * 100) }
+      })
+    )
   },
 })
 
 export const create = mutation({
   args: {
-    customerId:   v.id('customers'),
-    category:     v.string(),
-    productCode:  v.string(),
+    customerId: v.id('customers'),
+    category: v.string(),
+    productCode: v.string(),
     targetAmount: v.number(),
-    deadline:     v.string(),
+    deadline: v.string(),
   },
   handler: async (ctx, args) => {
     // accessible to field_agent and above
@@ -79,14 +78,14 @@ export const create = mutation({
     if (!identity) throw new Error('Unauthenticated')
     const agent = await ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!agent) throw new Error('Agent not found')
     return ctx.db.insert('savingsGoals', {
       ...args,
       branchId: agent.branchId,
-      agentId:  agent._id,
-      status:   'encours',
+      agentId: agent._id,
+      status: 'encours',
       createdAt: Date.now(),
     })
   },
@@ -109,6 +108,7 @@ Connect to the `create` mutation with a form that captures category, target amou
 ### 5. Update goal status automatically
 
 Add a scheduled function (Convex cron) that runs daily and updates goal `status` based on progress vs. deadline:
+
 - `pct >= 100` → `atteint`
 - `daysLeft < 21 && pct < 80` → `enretard`
 - otherwise → `encours`

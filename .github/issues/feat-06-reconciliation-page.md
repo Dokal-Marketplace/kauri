@@ -1,5 +1,5 @@
 ---
-title: "[Feature] Build daily cash reconciliation page wired to settleDailyCash"
+title: '[Feature] Build daily cash reconciliation page wired to settleDailyCash'
 labels: feature, convex, frontend
 priority: high
 ---
@@ -21,7 +21,7 @@ export const listByBranch = query({
     await authz.require(ctx, identity.subject, 'reconciliation:liquidate')
     let q = ctx.db
       .query('reconciliations')
-      .withIndex('by_branch_status', r => r.eq('branchId', args.branchId))
+      .withIndex('by_branch_status', (r) => r.eq('branchId', args.branchId))
     return q.order('desc').collect()
   },
 })
@@ -33,11 +33,11 @@ export const getAgentDailySummary = query({
     if (!identity) throw new Error('Unauthenticated')
     // Returns the transactions for this agent on this date for pre-check display
     const startOfDay = new Date(args.date + 'T00:00:00Z').getTime()
-    const endOfDay   = new Date(args.date + 'T23:59:59Z').getTime()
+    const endOfDay = new Date(args.date + 'T23:59:59Z').getTime()
     return ctx.db
       .query('transactions')
-      .withIndex('by_agent_date', q => q.eq('agentId', args.agentId))
-      .filter(q =>
+      .withIndex('by_agent_date', (q) => q.eq('agentId', args.agentId))
+      .filter((q) =>
         q.and(
           q.eq(q.field('status'), 'completed'),
           q.gte(q.field('timestamp'), startOfDay),
@@ -52,6 +52,7 @@ export const getAgentDailySummary = query({
 ### 2. Create `src/pages/ReconciliationPage.jsx`
 
 Key UI elements:
+
 - **Agent selector** — dropdown of agents for the branch.
 - **Pre-check panel** — shows the system-expected total (from `getAgentDailySummary`) before physical cash is entered.
 - **Physical cash input** — the accountant types the actual amount handed over.

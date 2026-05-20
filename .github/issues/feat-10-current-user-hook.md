@@ -1,5 +1,5 @@
 ---
-title: "[Feature] Add useCurrentUser hook to expose authenticated user context across the app"
+title: '[Feature] Add useCurrentUser hook to expose authenticated user context across the app'
 labels: feature, convex, frontend
 priority: high
 ---
@@ -22,7 +22,7 @@ export const me = query({
     if (!identity) return null
     return ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
   },
 })

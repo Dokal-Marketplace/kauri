@@ -1,5 +1,5 @@
 ---
-title: "[Chore] Documentation prose accidentally committed inside reconciliation.ts"
+title: '[Chore] Documentation prose accidentally committed inside reconciliation.ts'
 labels: chore, cleanup
 priority: low
 ---

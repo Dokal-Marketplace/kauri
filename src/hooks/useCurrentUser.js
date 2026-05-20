@@ -18,10 +18,7 @@ import { api } from '../../convex/_generated/api'
  */
 export function useCurrentUser() {
   const { isLoaded: clerkLoaded, isSignedIn, user: clerkUser } = useUser()
-  const convexUser = useQuery(
-    api.users.currentUser,
-    clerkLoaded && isSignedIn ? {} : 'skip',
-  )
+  const convexUser = useQuery(api.users.currentUser, clerkLoaded && isSignedIn ? {} : 'skip')
 
   const isLoaded = clerkLoaded && convexUser !== undefined
 

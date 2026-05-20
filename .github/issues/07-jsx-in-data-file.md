@@ -1,5 +1,5 @@
 ---
-title: "[Code Quality] JSX elements inside data.jsx couple view logic to data layer"
+title: '[Code Quality] JSX elements inside data.jsx couple view logic to data layer'
 labels: code-quality, refactor
 priority: medium
 ---
@@ -31,18 +31,32 @@ Store plain strings in the data and let the rendering component apply markup:
 ```js
 // data.js — plain strings
 const FEED = [
-  { dot: "brand", actor: "Awa Konaté",     action: "a effectué un dépôt de", amount: "15 000 FCFA", time: "Aujourd'hui · 10:22" },
-  { dot: "muted", actor: "Ibrahim Traoré", action: "a retiré",               amount: "30 000 FCFA", time: "Aujourd'hui · 09:05" },
+  {
+    dot: 'brand',
+    actor: 'Awa Konaté',
+    action: 'a effectué un dépôt de',
+    amount: '15 000 FCFA',
+    time: "Aujourd'hui · 10:22",
+  },
+  {
+    dot: 'muted',
+    actor: 'Ibrahim Traoré',
+    action: 'a retiré',
+    amount: '30 000 FCFA',
+    time: "Aujourd'hui · 09:05",
+  },
 ]
 ```
 
 ```jsx
 // ActivityCard — markup stays in the component
-{feed.map((f, i) => (
-  <div key={i} className="feed-text">
-    <strong>{f.actor}</strong> {f.action} <strong>{f.amount}</strong>
-  </div>
-))}
+{
+  feed.map((f, i) => (
+    <div key={i} className="feed-text">
+      <strong>{f.actor}</strong> {f.action} <strong>{f.amount}</strong>
+    </div>
+  ))
+}
 ```
 
 Rename `data.jsx` → `data.js` once JSX is removed.

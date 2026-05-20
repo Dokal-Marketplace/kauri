@@ -1,5 +1,5 @@
 ---
-title: "[Architecture] No router — pages are not URL-addressable"
+title: '[Architecture] No router — pages are not URL-addressable'
 labels: architecture, enhancement
 priority: low
 ---
@@ -35,15 +35,19 @@ Introduce a client-side router. For a Vite + React app, [React Router v7](https:
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 const router = createBrowserRouter([
-  { path: "/",            element: <Layout />, children: [
-    { index: true,        element: <DashboardPage /> },
-    { path: "clients",    element: <ClientsPage /> },
-    { path: "tx",         element: <TransactionsPage /> },
-    { path: "agents",     element: <AgentsPage /> },
-    { path: "objectifs",  element: <ObjectifsPage /> },
-    { path: "produits",   element: <ProductsPage /> },
-    { path: "settings",   element: <SettingsPage /> },
-  ]},
+  {
+    path: '/',
+    element: <Layout />,
+    children: [
+      { index: true, element: <DashboardPage /> },
+      { path: 'clients', element: <ClientsPage /> },
+      { path: 'tx', element: <TransactionsPage /> },
+      { path: 'agents', element: <AgentsPage /> },
+      { path: 'objectifs', element: <ObjectifsPage /> },
+      { path: 'produits', element: <ProductsPage /> },
+      { path: 'settings', element: <SettingsPage /> },
+    ],
+  },
 ])
 ```
 

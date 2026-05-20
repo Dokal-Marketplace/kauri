@@ -3,7 +3,7 @@ import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
 import Novu from '../components/Inbox'
-import { fmt, PageHeader, SearchInput } from '../components'
+import { fmt, PageHeader } from '../components'
 import { useCurrentBranch } from '../hooks/useCurrentBranch'
 
 const PAGE_SIZE = 10

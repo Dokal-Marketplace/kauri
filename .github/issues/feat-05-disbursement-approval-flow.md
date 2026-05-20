@@ -1,5 +1,5 @@
 ---
-title: "[Feature] Build disbursement approval UI wired to Convex maker-checker flow"
+title: '[Feature] Build disbursement approval UI wired to Convex maker-checker flow'
 labels: feature, convex, frontend
 priority: high
 ---
@@ -27,7 +27,7 @@ export const requestDisbursement = mutation({
     await authz.require(ctx, identity.subject, 'disbursements:request')
     const agent = await ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!agent) throw new Error('Agent not found')
     return ctx.db.insert('disbursements', {
@@ -49,8 +49,8 @@ export const listPending = query({
     if (!identity) throw new Error('Unauthenticated')
     return ctx.db
       .query('disbursements')
-      .withIndex('by_status', q => q.eq('status', 'pending'))
-      .filter(q => q.eq(q.field('branchId'), args.branchId))
+      .withIndex('by_status', (q) => q.eq('status', 'pending'))
+      .filter((q) => q.eq(q.field('branchId'), args.branchId))
       .collect()
   },
 })
@@ -69,6 +69,7 @@ export const rejectDisbursement = mutation({
 ### 2. Add a DisbursementsPage
 
 Create `src/pages/DisbursementsPage.jsx` with:
+
 - A KPI row: pending count, total pending amount, approved today, rejected today.
 - A table of pending disbursements with Approuver / Rejeter action buttons.
 - The approve button calls `approveDisbursement`; self-approval is blocked backend-side and should surface a clear error message in the UI.

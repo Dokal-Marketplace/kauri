@@ -1,5 +1,5 @@
 ---
-title: "[Security] listByAgent and listByBranch queries lack authorization scoping"
+title: '[Security] listByAgent and listByBranch queries lack authorization scoping'
 labels: security, bug
 priority: critical
 ---
@@ -11,15 +11,16 @@ Both queries in `convex/transactions.ts` only verify that the caller is authenti
 ```ts
 // convex/transactions.ts:81-88
 export const listByAgent = query({
-  args: { agentId: v.id("users") },
+  args: { agentId: v.id('users') },
   handler: async (ctx, args) => {
-    if (!(await ctx.auth.getUserIdentity())) throw new Error("Unauthenticated");
+    if (!(await ctx.auth.getUserIdentity())) throw new Error('Unauthenticated')
     // No check: is the caller allowed to view this agentId's transactions?
-    return ctx.db.query("transactions")
-      .withIndex("by_agent_date", q => q.eq("agentId", args.agentId))
-      .collect();
+    return ctx.db
+      .query('transactions')
+      .withIndex('by_agent_date', (q) => q.eq('agentId', args.agentId))
+      .collect()
   },
-});
+})
 ```
 
 The same issue exists in `listByBranch` (line 92).
@@ -31,6 +32,7 @@ Any authenticated user (including a `field_agent`) can query the full transactio
 ## Suggested Fix
 
 Enforce that:
+
 - A `field_agent` can only query their own `agentId`.
 - A `supervisor` or `accountant` can query within their own `branchId`.
 

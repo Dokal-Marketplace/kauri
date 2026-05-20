@@ -4,14 +4,14 @@ import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react'
 import { Sidebar } from './components'
 import AppCommandPalette from './components/CommandPalette'
 
-const DashboardPage      = lazy(() => import('./pages/DashboardPage'))
-const ClientsPage        = lazy(() => import('./pages/ClientsPage'))
-const TransactionsPage   = lazy(() => import('./pages/TransactionsPage'))
-const AgentsPage         = lazy(() => import('./pages/AgentsPage'))
-const ObjectifsPage      = lazy(() => import('./pages/ObjectifsPage'))
-const ProductsPage       = lazy(() => import('./pages/ProductsPage'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const ClientsPage = lazy(() => import('./pages/ClientsPage'))
+const TransactionsPage = lazy(() => import('./pages/TransactionsPage'))
+const AgentsPage = lazy(() => import('./pages/AgentsPage'))
+const ObjectifsPage = lazy(() => import('./pages/ObjectifsPage'))
+const ProductsPage = lazy(() => import('./pages/ProductsPage'))
 const ReconciliationPage = lazy(() => import('./pages/ReconciliationPage'))
-const SettingsPage       = lazy(() => import('./pages/SettingsPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
 function Layout() {
   return (
@@ -42,14 +42,14 @@ const router = createBrowserRouter([
     path: '/',
     element: <Layout />,
     children: [
-      { index: true,             element: <DashboardPage /> },
-      { path: 'clients',         element: <ClientsPage /> },
-      { path: 'tx',              element: <TransactionsPage /> },
-      { path: 'agents',          element: <AgentsPage /> },
-      { path: 'objectifs',       element: <ObjectifsPage /> },
-      { path: 'produits',        element: <ProductsPage /> },
-      { path: 'reconciliation',  element: <ReconciliationPage /> },
-      { path: 'settings',        element: <SettingsPage /> },
+      { index: true, element: <DashboardPage /> },
+      { path: 'clients', element: <ClientsPage /> },
+      { path: 'tx', element: <TransactionsPage /> },
+      { path: 'agents', element: <AgentsPage /> },
+      { path: 'objectifs', element: <ObjectifsPage /> },
+      { path: 'produits', element: <ProductsPage /> },
+      { path: 'reconciliation', element: <ReconciliationPage /> },
+      { path: 'settings', element: <SettingsPage /> },
     ],
   },
 ])
