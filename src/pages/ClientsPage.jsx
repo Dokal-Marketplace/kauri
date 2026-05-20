@@ -2,6 +2,9 @@ import { useState, useMemo, useEffect } from 'react'
 import { I } from '../icons'
 import { fmt, KPI, PageHeader } from '../components'
 import Novu from '../components/Inbox'
+const CLIENTS = []
+const CLIENT_KPIS = []
+const CLIENT_TX = {}
 
 const CLIENTS = []
 const CLIENT_KPIS = []
@@ -159,6 +162,8 @@ export default function ClientsPage() {
       return next
     })
   }
+
+  
 
   return (
     <div className="clients-page">
