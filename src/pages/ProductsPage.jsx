@@ -114,12 +114,12 @@ function blankProduct() {
 export default function ProductsPage() {
   const { orgId } = useCurrentUser()
   const rawProducts = useQuery(api.products.list, orgId ? { organizationId: orgId } : 'skip')
+  const canManage = useQuery(api.products.canManageProducts) ?? false
   const upsert = useMutation(api.products.upsert)
 
   const products = rawProducts?.map(fromConvex) ?? []
   const isLoading = rawProducts === undefined
 
-  const [q, setQ] = useState('')
   const [seg, setSeg] = useState('tous')
   const [fam, setFam] = useState('toutes')
   const [view, setView] = useState('cards')
@@ -129,15 +129,9 @@ export default function ProductsPage() {
     return products.filter((p) => {
       if (seg !== 'tous' && p.status !== seg) return false
       if (fam !== 'toutes' && p.family !== fam) return false
-      if (
-        q &&
-        !p.name.toLowerCase().includes(q.toLowerCase()) &&
-        !p.code.toLowerCase().includes(q.toLowerCase())
-      )
-        return false
       return true
     })
-  }, [products, q, seg, fam])
+  }, [products, seg, fam])
 
   const counts = {
     tous: products.length,
@@ -214,13 +208,15 @@ export default function ProductsPage() {
           <I.Export size={14} />
           Exporter
         </button>
-        <button
-          className="btn brand"
-          onClick={() => setEditor({ mode: 'create', product: blankProduct() })}
-        >
-          <I.Plus size={14} stroke="white" />
-          Nouveau produit
-        </button>
+        {canManage && (
+          <button
+            className="btn brand"
+            onClick={() => setEditor({ mode: 'create', product: blankProduct() })}
+          >
+            <I.Plus size={14} stroke="white" />
+            Nouveau produit
+          </button>
+        )}
       </div>
       <section className="kpi-row">
         {kpis.map((k) => (
@@ -305,6 +301,7 @@ export default function ProductsPage() {
               <ProductCard
                 key={p.id}
                 p={p}
+                canManage={canManage}
                 onEdit={() => setEditor({ mode: 'edit', product: p })}
                 onDuplicate={() => onDuplicate(p)}
               />
@@ -344,7 +341,7 @@ export default function ProductsPage() {
                   const sm = STATUS_META[p.status]
                   const Ic = I[f.icon]
                   return (
-                    <tr key={p.id} onClick={() => setEditor({ mode: 'edit', product: p })}>
+                    <tr key={p.id} onClick={() => canManage && setEditor({ mode: 'edit', product: p })}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span className="prod-glyph" style={{ background: f.color }}>
@@ -391,18 +388,20 @@ export default function ProductsPage() {
                       <td>
                         <span className={'tag ' + sm.class}>{sm.label}</span>
                       </td>
-                      <td>
-                        <button
-                          className="btn ghost sm"
-                          style={{ padding: 4 }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setEditor({ mode: 'edit', product: p })
-                          }}
-                        >
-                          <I.Arrow size={12} />
-                        </button>
-                      </td>
+                      {canManage && (
+                        <td>
+                          <button
+                            className="btn ghost sm"
+                            style={{ padding: 4 }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditor({ mode: 'edit', product: p })
+                            }}
+                          >
+                            <I.Arrow size={12} />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   )
                 })}
@@ -424,7 +423,7 @@ export default function ProductsPage() {
   )
 }
 
-function ProductCard({ p, onEdit, onDuplicate }) {
+function ProductCard({ p, canManage, onEdit, onDuplicate }) {
   const f = familyMeta(p.family)
   const sm = STATUS_META[p.status]
   const Ic = I[f.icon]
@@ -435,7 +434,7 @@ function ProductCard({ p, onEdit, onDuplicate }) {
         ? `${p.durationMin} mois`
         : `${p.durationMin}–${p.durationMax} mois`
   return (
-    <div className="prod-card" onClick={onEdit}>
+    <div className="prod-card" onClick={canManage ? onEdit : undefined}>
       <div className="prod-card-top">
         <span className="prod-glyph lg" style={{ background: f.color }}>
           <Ic size={18} stroke="white" />
@@ -480,27 +479,29 @@ function ProductCard({ p, onEdit, onDuplicate }) {
           <I.Users size={12} /> <strong>{p.clients}</strong> clients ·{' '}
           <strong>{fmt(p.encours)}</strong> FCFA
         </div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button
-            className="btn ghost sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              onDuplicate()
-            }}
-            title="Dupliquer"
-          >
-            <I.Folder size={12} />
-          </button>
-          <button
-            className="btn sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              onEdit()
-            }}
-          >
-            Modifier
-          </button>
-        </div>
+        {canManage && (
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button
+              className="btn ghost sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                onDuplicate()
+              }}
+              title="Dupliquer"
+            >
+              <I.Folder size={12} />
+            </button>
+            <button
+              className="btn sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdit()
+              }}
+            >
+              Modifier
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
