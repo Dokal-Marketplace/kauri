@@ -125,12 +125,16 @@ export default function TransactionsPage() {
     if (seg === "pending" && t.status !== "en attente") return false
     if (channel !== "tous" && t.channel !== channel)    return false
     if (agent   !== "tous" && t.agent   !== agent)      return false
+    if (period === "24h" && !t.time.startsWith("Aujourd'hui")) return false
+    if (period === "7j"  && !["29 avr", "Aujourd'hui", "Hier", "28 avr"].some(d => t.time.startsWith(d))) return false
+    // TODO: Implement "30j" period filter with real dates from Convex
+    // "Tout" shows all transactions (default behavior)
     if (q) {
       const blob = (t.client + " " + t.id + " " + t.reference + " " + t.tpe).toLowerCase()
       if (!blob.includes(q.toLowerCase())) return false
     }
     return true
-  }), [q, seg, channel, agent])
+  }), [q, seg, channel, agent, period])
 
   const totalIn  = filtered.filter(t => t.type === "in"  && t.status === "validée").reduce((s, t) => s + t.amount, 0)
   const totalOut = filtered.filter(t => t.type === "out" && t.status === "validée").reduce((s, t) => s + t.amount, 0)
