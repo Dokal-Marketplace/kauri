@@ -1,7 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { I } from '../icons'
 import Novu from '../components/Inbox'
 import { fmt, PageHeader, SearchInput } from '../components'
+
+const PAGE_SIZE = 10
 
 const TX_FULL = [
   { id: "TX-2026-0421", type: "in",  client: "Awa Konaté",           clientInit: "AK", label: "Dépôt",      amount: 15000, time: "Aujourd'hui, 10:22", agent: "K. Djibril",   tpe: "TPE-014", channel: "TPE",    status: "validée",    reference: "DEP-A14-0421" },
@@ -115,26 +117,33 @@ export default function TransactionsPage() {
   const [period, setPeriod] = useState("7j")
   const [selected, setSelected] = useState(null)
   const [online, setOnline] = useState(true)
+  const [page, setPage] = useState(1)
 
   const agents   = useMemo(() => ["tous", ...Array.from(new Set(TX_FULL.map(t => t.agent)))], [])
   const channels = useMemo(() => ["tous", ...Array.from(new Set(TX_FULL.map(t => t.channel)))], [])
 
-  const filtered = useMemo(() => TX_FULL.filter(t => {
-    if (seg === "in"      && t.type !== "in")           return false
-    if (seg === "out"     && t.type !== "out")          return false
-    if (seg === "pending" && t.status !== "en attente") return false
-    if (channel !== "tous" && t.channel !== channel)    return false
-    if (agent   !== "tous" && t.agent   !== agent)      return false
-    if (period === "24h" && !t.time.startsWith("Aujourd'hui")) return false
-    if (period === "7j"  && !["29 avr", "Aujourd'hui", "Hier", "28 avr"].some(d => t.time.startsWith(d))) return false
-    // TODO: Implement "30j" period filter with real dates from Convex
-    // "Tout" shows all transactions (default behavior)
-    if (q) {
-      const blob = (t.client + " " + t.id + " " + t.reference + " " + t.tpe).toLowerCase()
-      if (!blob.includes(q.toLowerCase())) return false
-    }
-    return true
-  }), [q, seg, channel, agent, period])
+  const filtered = useMemo(() => {
+    return TX_FULL.filter(t => {
+      if (seg === "in"      && t.type !== "in")           return false
+      if (seg === "out"     && t.type !== "out")          return false
+      if (seg === "pending" && t.status !== "en attente") return false
+      if (channel !== "tous" && t.channel !== channel)    return false
+      if (agent   !== "tous" && t.agent   !== agent)      return false
+      if (q) {
+        const blob = (t.client + " " + t.id + " " + t.reference + " " + t.tpe).toLowerCase()
+        if (!blob.includes(q.toLowerCase())) return false
+      }
+      return true
+    })
+  }, [q, seg, channel, agent])
+
+  useEffect(() => {
+    setPage(1)
+  }, [q, seg, channel, agent])
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
 
   const totalIn  = filtered.filter(t => t.type === "in"  && t.status === "validée").reduce((s, t) => s + t.amount, 0)
   const totalOut = filtered.filter(t => t.type === "out" && t.status === "validée").reduce((s, t) => s + t.amount, 0)
@@ -158,7 +167,6 @@ export default function TransactionsPage() {
           <span className="status-dot"></span>{online ? "En ligne · synchronisé" : "Hors ligne · 4 en file"}
         </button>
         <Novu />
- 
       </PageHeader>
 
       <section className="kpi-row">
@@ -181,7 +189,7 @@ export default function TransactionsPage() {
           </div>
         ))}
       </section>
-      
+
       <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <div className="seg">
           {["24h","7j","30j","Tout"].map(p => (
@@ -189,7 +197,8 @@ export default function TransactionsPage() {
           ))}
         </div>
         <button className="btn"><I.Export size={14}/>Exporter CSV</button>
-        </div>
+      </div>
+
       <div className="card">
         <div className="filter-bar">
           <div className="seg-tabs">
@@ -245,7 +254,7 @@ export default function TransactionsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(t => {
+              {paginated.map(t => {
                 const st = STATUS_STYLE[t.status]
                 return (
                   <tr key={t.id} onClick={() => setSelected(t)} className={selected && selected.id === t.id ? "selected" : ""}>
@@ -291,13 +300,18 @@ export default function TransactionsPage() {
             </div>
           )}
           <div className="table-foot">
-            <span>{filtered.length} sur {TX_FULL.length} mouvements</span>
-            <div className="pager">
-              <button className="btn ghost sm" disabled>‹ Précédent</button>
-              <span className="page-num on">1</span>
-              <span className="page-num">2</span>
-              <button className="btn ghost sm">Suivant ›</button>
-            </div>
+            <span>
+              {Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(page * PAGE_SIZE, filtered.length)} sur {filtered.length} mouvements
+            </span>
+            {totalPages > 1 && (
+              <div className="pager">
+                <button className="btn ghost sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>‹ Précédent</button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <span key={p} className={"page-num " + (p === page ? "on" : "")} onClick={() => setPage(p)} style={{ cursor: "pointer" }}>{p}</span>
+                ))}
+                <button className="btn ghost sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Suivant ›</button>
+              </div>
+            )}
           </div>
         </div>
       </div>
