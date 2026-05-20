@@ -20,21 +20,27 @@ export const settleDailyCash = mutation({
 
     await authz.withTenant(verifier.branchId).require(ctx, identity.subject, "reconciliation:liquidate");
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+    const startOfDay = new Date(today + "T00:00:00Z").getTime();
+    const endOfDay   = new Date(today + "T23:59:59Z").getTime();
 
-    // Note: In production, you'd use a more robust time-range check
     const transactions = await ctx.db
       .query("transactions")
       .withIndex("by_agent_date", (q) => q.eq("agentId", args.agentId))
-      .filter((q) => q.eq(q.field("status"), "completed"))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("status"), "completed"),
+          q.gte(q.field("timestamp"), startOfDay),
+          q.lte(q.field("timestamp"), endOfDay)
+        )
+      )
       .collect();
+
+    if (!transactions[0]) throw new Error("No transactions found for agent today");
 
     const systemExpected = transactions.reduce((sum, tx) => sum + tx.amount, 0);
     const variance = args.physicalAmount - systemExpected;
-
     const status = variance === 0 ? "settled" : "discrepancy";
-
-    if (!transactions[0]) throw new Error("No transactions found for agent today");
 
     const reconciliationId = await ctx.db.insert("reconciliations", {
       agentId: args.agentId,
