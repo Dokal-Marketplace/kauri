@@ -2,6 +2,25 @@ import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
 import { authz } from "./authz"
 
+
+export const canManageProducts = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return false
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!user) return false
+
+    return authz
+      .withTenant(user.branchId)
+      .can(ctx, identity.subject, 'products:manage')
+  },
+})
+
 export const list = query({
   args: { organizationId: v.id('organizations') },
   handler: async (ctx, args) => {
