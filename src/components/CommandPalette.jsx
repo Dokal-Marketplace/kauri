@@ -1,17 +1,16 @@
 import "react-cmdk/dist/cmdk.css"
 import CommandPalette, { filterItems, getItemIndex, useHandleOpenCommandPalette } from "react-cmdk"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-let _setOpen = null
-export function openCommandPalette() { _setOpen?.(true) }
+
 
 export default function AppCommandPalette() {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
   const navigate = useNavigate()
 
-  useEffect(() => { _setOpen = setOpen; return () => { _setOpen = null } }, [])
+
   useHandleOpenCommandPalette(setOpen)
 
   const filteredItems = filterItems(
