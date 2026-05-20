@@ -1,23 +1,10 @@
 import { useState, useMemo } from 'react'
+import { useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
+import { useCurrentUser } from '../hooks/useCurrentUser'
 import { I } from '../icons'
 import { fmt, PageHeader } from '../components'
 import Novu from '../components/Inbox'
-
-const AGENTS = [
-  { id: 1, initials: "KD", name: "Konaté Djibril",    role: "Administrateur", branch: "Bobo-Dioulasso", clients: 58, collected: 1840000, target: 2000000, status: "en ligne",   last: "il y a 2 min",  phone: "+226 70 00 11 22", txMonth: 142, device: { id: "TPE-014", model: "PAX A920", battery: 86, signal: 4, sync: "à jour",       queued: 0,  lastSync: "il y a 1 min", area: "Centre-ville" } },
-  { id: 2, initials: "AO", name: "Aïssata Ouédraogo", role: "Agent terrain",  branch: "Banfora",        clients: 42, collected: 1120000, target: 1400000, status: "en ligne",   last: "il y a 5 min",  phone: "+226 76 11 22 33", txMonth: 98,  device: { id: "TPE-021", model: "PAX A920", battery: 62, signal: 3, sync: "à jour",       queued: 0,  lastSync: "il y a 4 min", area: "Marché Banfora" } },
-  { id: 3, initials: "MS", name: "Moustapha Sanou",   role: "Agent terrain",  branch: "Hounde",         clients: 31, collected: 720000,  target: 1000000, status: "hors ligne", last: "il y a 1 h",    phone: "+226 78 22 33 44", txMonth: 64,  device: { id: "TPE-009", model: "Sunmi P2",  battery: 24, signal: 0, sync: "en file",      queued: 12, lastSync: "il y a 1 h",   area: "Hounde Sud" } },
-  { id: 4, initials: "FB", name: "Fatim Barry",       role: "Caissière",      branch: "Bobo-Dioulasso", clients: 0,  collected: 980000,  target: 1200000, status: "en ligne",   last: "il y a 12 min", phone: "+226 71 33 44 55", txMonth: 187, device: { id: "TPE-002", model: "PAX S920",  battery: 95, signal: 5, sync: "à jour",       queued: 0,  lastSync: "il y a 2 min", area: "Agence Bobo" } },
-  { id: 5, initials: "OZ", name: "Oumar Zida",        role: "Agent terrain",  branch: "Banfora",        clients: 27, collected: 540000,  target: 800000,  status: "congé",      last: "hier",          phone: "+226 65 44 55 66", txMonth: 41,  device: { id: "TPE-018", model: "Sunmi P2",  battery: 0,  signal: 0, sync: "hors service", queued: 0,  lastSync: "hier",          area: "—" } },
-  { id: 6, initials: "BK", name: "Bintou Kaboré",     role: "Superviseure",   branch: "Bobo-Dioulasso", clients: 0,  collected: 0,       target: 0,       status: "en ligne",   last: "il y a 8 min",  phone: "+226 70 55 66 77", txMonth: 0,   device: { id: "TPE-001", model: "PAX A920", battery: 71, signal: 4, sync: "à jour",       queued: 0,  lastSync: "il y a 3 min", area: "Agence Bobo" } },
-]
-
-const AGENT_KPIS = [
-  { label: "TPE en service",    value: "4",         unit: "/6 actifs", note: "1 hors-ligne · 1 batt. faible", icon: "users",   delta: "+1",  dir: "up" },
-  { label: "Collecte du mois",  value: "5 200 000", unit: "FCFA",      note: "81% de l'objectif",             icon: "wallet",  delta: "81%", dir: "up" },
-  { label: "Tx en file (sync)", value: "12",        unit: "",          note: "TPE-009 · Hounde",              icon: "cloud",   delta: "−4",  dir: "up" },
-  { label: "Tx / agent · moy.", value: "88",        unit: "",          note: "ce mois",                       icon: "receipt", delta: "+6",  dir: "up" },
-]
 
 const ROLE_TAGS = {
   "Administrateur": { bg: "oklch(0.94 0.04 50)",  fg: "var(--brand-ink)" },
@@ -30,6 +17,54 @@ const STATUS_DOT = {
   "en ligne":   "var(--pos)",
   "hors ligne": "oklch(0.7 0.02 70)",
   "congé":      "var(--warn)",
+}
+
+function formatLastSync(ts) {
+  if (!ts) return "jamais"
+  const mins = Math.floor((Date.now() - ts) / 60000)
+  if (mins < 1) return "à l'instant"
+  if (mins < 60) return `il y a ${mins} min`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `il y a ${hrs} h`
+  return "hier"
+}
+
+function mapAgent(u, branchName) {
+  const words = u.fullName.trim().split(/\s+/)
+  const initials = words.length >= 2
+    ? (words[0][0] + words[words.length - 1][0]).toUpperCase()
+    : u.fullName.slice(0, 2).toUpperCase()
+
+  const d = u.device
+  const device = d ? {
+    id: d.serialNumber,
+    model: d.model,
+    battery: d.batteryPct ?? 0,
+    signal: d.signalLevel ?? 0,
+    sync: d.status !== 'active' ? 'hors service' : (d.queuedCount ?? 0) > 0 ? 'en file' : 'à jour',
+    queued: d.queuedCount ?? 0,
+    lastSync: formatLastSync(d.lastSync),
+    area: branchName || '—',
+  } : {
+    id: '—', model: '—', battery: 0, signal: 0,
+    sync: 'hors service', queued: 0, lastSync: '—', area: '—',
+  }
+
+  return {
+    id: u._id,
+    initials,
+    name: u.fullName,
+    phone: u.phoneNumber,
+    role: 'Agent terrain',
+    branch: branchName || '—',
+    status: u.status === 'active' ? 'en ligne' : 'hors ligne',
+    last: formatLastSync(d?.lastSync),
+    collected: 0,
+    target: 0,
+    clients: 0,
+    txMonth: 0,
+    device,
+  }
 }
 
 function SignalBars({ level = 0 }) {
@@ -76,25 +111,51 @@ export default function AgentsPage() {
   const [role, setRole] = useState("tous")
   const [online, setOnline] = useState(true)
 
-  const branches = useMemo(() => ["toutes", ...Array.from(new Set(AGENTS.map(a => a.branch)))], [])
-  const roles    = useMemo(() => ["tous",   ...Array.from(new Set(AGENTS.map(a => a.role)))],   [])
+  const { tenantId, convexUser, isLoaded } = useCurrentUser()
+  const branchName = convexUser?.branch?.name ?? null
+
+  const rawAgents = useQuery(
+    api.agents.listByBranch,
+    isLoaded && tenantId ? { branchId: tenantId } : 'skip',
+  )
+
+  const AGENTS = useMemo(
+    () => (rawAgents ?? []).map(u => mapAgent(u, branchName)),
+    [rawAgents, branchName],
+  )
+
+  const activeDevices = AGENTS.filter(a => a.device.sync !== 'hors service').length
+  const queuedTotal   = AGENTS.reduce((s, a) => s + a.device.queued, 0)
+  const queuedAgent   = AGENTS.find(a => a.device.queued > 0)
+
+  const AGENT_KPIS = [
+    { label: "TPE en service",    value: String(activeDevices), unit: `/${AGENTS.length} actifs`, note: "Appareils avec sync active",          icon: "users",   delta: `${activeDevices}`,  dir: "up" },
+    { label: "Collecte du mois",  value: "—",                  unit: "FCFA",                     note: "Données transactions requises",       icon: "wallet",  delta: "—",                 dir: "up" },
+    { label: "Tx en file (sync)", value: String(queuedTotal),  unit: "",                         note: queuedAgent ? `${queuedAgent.device.id} · ${queuedAgent.branch}` : "Aucune", icon: "cloud", delta: "—", dir: "up" },
+    { label: "Tx / agent · moy.", value: "—",                  unit: "",                         note: "Données transactions requises",       icon: "receipt", delta: "—",                 dir: "up" },
+  ]
+
+  const branches = useMemo(() => ["toutes", ...Array.from(new Set(AGENTS.map(a => a.branch)))], [AGENTS])
+  const roles    = useMemo(() => ["tous",   ...Array.from(new Set(AGENTS.map(a => a.role)))],   [AGENTS])
 
   const filtered = useMemo(() => AGENTS.filter(a => {
     if (branch !== "toutes" && a.branch !== branch) return false
     if (role   !== "tous"   && a.role   !== role)   return false
     if (q && !a.name.toLowerCase().includes(q.toLowerCase()) && !a.phone.includes(q) && !a.device.id.toLowerCase().includes(q.toLowerCase())) return false
     return true
-  }), [q, branch, role])
+  }), [q, branch, role, AGENTS])
+
+  const isLoadingAgents = rawAgents === undefined
 
   return (
     <div className="agents-page">
       <PageHeader
         crumbs={["Admin", "Agents & TPE"]}
         title="Agents & terminaux"
-        sub={`${AGENTS.length} agents · 6 TPE déployés · 3 agences couvertes`}
+        sub={isLoadingAgents ? "Chargement…" : `${AGENTS.length} agents · ${activeDevices} TPE déployés · ${branchName ?? '—'}`}
       >
         <button className={"status-pill" + (online ? "" : " offline")} onClick={() => setOnline(!online)}>
-          <span className="status-dot"></span>{online ? "En ligne · synchronisé" : "Hors ligne · 4 en file"}
+          <span className="status-dot"></span>{online ? "En ligne · synchronisé" : "Hors ligne · " + queuedTotal + " en file"}
         </button>
         <Novu />
       </PageHeader>
@@ -142,79 +203,91 @@ export default function AgentsPage() {
         </div>
 
         <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Agent</th>
-                <th>Rôle</th>
-                <th>Zone / Agence</th>
-                <th>TPE</th>
-                <th>Batt.</th>
-                <th>Réseau</th>
-                <th>Sync</th>
-                <th style={{ textAlign: "right" }}>Collecte mois</th>
-                <th>Statut</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(a => {
-                const tag = ROLE_TAGS[a.role] || ROLE_TAGS["Agent terrain"]
-                const pct = a.target > 0 ? Math.round((a.collected / a.target) * 100) : 0
-                return (
-                  <tr key={a.id}>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div className="avatar sm" style={{ position: "relative" }}>
-                          {a.initials}
-                          <span style={{ position: "absolute", right: -1, bottom: -1, width: 8, height: 8, borderRadius: "50%", background: STATUS_DOT[a.status], border: "1.5px solid var(--surface)" }}/>
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 550 }}>{a.name}</div>
-                          <div className="cell-sub">{a.phone}</div>
-                        </div>
-                      </div>
+          {isLoadingAgents ? (
+            <div style={{ padding: 40, textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
+              Chargement des agents…
+            </div>
+          ) : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Agent</th>
+                  <th>Rôle</th>
+                  <th>Zone / Agence</th>
+                  <th>TPE</th>
+                  <th>Batt.</th>
+                  <th>Réseau</th>
+                  <th>Sync</th>
+                  <th style={{ textAlign: "right" }}>Collecte mois</th>
+                  <th>Statut</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} style={{ padding: 40, textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
+                      Aucun agent ne correspond aux filtres.
                     </td>
-                    <td><span className="chip" style={{ background: tag.bg, color: tag.fg, borderColor: "transparent" }}>{a.role}</span></td>
-                    <td>
-                      <div>{a.branch}</div>
-                      <div className="cell-sub">{a.device.area}</div>
-                    </td>
-                    <td>
-                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 550 }}>{a.device.id}</div>
-                      <div className="cell-sub">{a.device.model}</div>
-                    </td>
-                    <td><Battery pct={a.device.battery}/></td>
-                    <td><SignalBars level={a.device.signal}/></td>
-                    <td>
-                      <SyncTag d={a.device}/>
-                      <div className="cell-sub" style={{ marginTop: 2 }}>{a.device.lastSync}</div>
-                    </td>
-                    <td style={{ textAlign: "right", minWidth: 130 }}>
-                      <div style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                        {a.collected ? fmt(a.collected) : "—"}
-                      </div>
-                      {a.target > 0 && (
-                        <>
-                          <div className="goal-bar" style={{ marginTop: 4 }}>
-                            <div className="goal-fill" style={{ width: Math.min(100, pct) + "%" }}/>
-                          </div>
-                          <div className="cell-sub" style={{ marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{pct}% obj.</div>
-                        </>
-                      )}
-                    </td>
-                    <td>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: STATUS_DOT[a.status] }}/>
-                        {a.status}
-                      </span>
-                    </td>
-                    <td><button className="btn ghost sm" style={{ padding: 4 }}><I.More size={14}/></button></td>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                ) : filtered.map(a => {
+                  const tag = ROLE_TAGS[a.role] || ROLE_TAGS["Agent terrain"]
+                  const pct = a.target > 0 ? Math.round((a.collected / a.target) * 100) : 0
+                  return (
+                    <tr key={a.id}>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div className="avatar sm" style={{ position: "relative" }}>
+                            {a.initials}
+                            <span style={{ position: "absolute", right: -1, bottom: -1, width: 8, height: 8, borderRadius: "50%", background: STATUS_DOT[a.status] ?? STATUS_DOT["hors ligne"], border: "1.5px solid var(--surface)" }}/>
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 550 }}>{a.name}</div>
+                            <div className="cell-sub">{a.phone}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span className="chip" style={{ background: tag.bg, color: tag.fg, borderColor: "transparent" }}>{a.role}</span></td>
+                      <td>
+                        <div>{a.branch}</div>
+                        <div className="cell-sub">{a.device.area}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 550 }}>{a.device.id}</div>
+                        <div className="cell-sub">{a.device.model}</div>
+                      </td>
+                      <td><Battery pct={a.device.battery}/></td>
+                      <td><SignalBars level={a.device.signal}/></td>
+                      <td>
+                        <SyncTag d={a.device}/>
+                        <div className="cell-sub" style={{ marginTop: 2 }}>{a.device.lastSync}</div>
+                      </td>
+                      <td style={{ textAlign: "right", minWidth: 130 }}>
+                        <div style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                          {a.collected ? fmt(a.collected) : "—"}
+                        </div>
+                        {a.target > 0 && (
+                          <>
+                            <div className="goal-bar" style={{ marginTop: 4 }}>
+                              <div className="goal-fill" style={{ width: Math.min(100, pct) + "%" }}/>
+                            </div>
+                            <div className="cell-sub" style={{ marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{pct}% obj.</div>
+                          </>
+                        )}
+                      </td>
+                      <td>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: STATUS_DOT[a.status] ?? STATUS_DOT["hors ligne"] }}/>
+                          {a.status}
+                        </span>
+                      </td>
+                      <td><button className="btn ghost sm" style={{ padding: 4 }}><I.More size={14}/></button></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
@@ -225,8 +298,10 @@ export default function AgentsPage() {
             <span className="card-sub" style={{ marginLeft: "auto" }}>Sur le terrain</span>
           </div>
           <div style={{ padding: "4px 14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-            {[...AGENTS].filter(a => a.collected).sort((a,b) => b.collected - a.collected).slice(0,4).map((a, i) => {
-              const pct = Math.round((a.collected / a.target) * 100)
+            {AGENTS.filter(a => a.collected > 0).sort((a,b) => b.collected - a.collected).slice(0,4).length === 0 ? (
+              <div style={{ padding: "12px 0", color: "var(--ink-3)", fontSize: 13 }}>Aucune collecte enregistrée ce mois.</div>
+            ) : AGENTS.filter(a => a.collected > 0).sort((a,b) => b.collected - a.collected).slice(0,4).map((a, i) => {
+              const pct = a.target > 0 ? Math.round((a.collected / a.target) * 100) : 0
               return (
                 <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ width: 18, fontWeight: 600, color: "var(--ink-3)", fontVariantNumeric: "tabular-nums", fontSize: 12 }}>{i+1}</div>
@@ -289,21 +364,36 @@ export default function AgentsPage() {
           <span className="card-sub" style={{ marginLeft: "auto" }}>Tirée des TPE</span>
         </div>
         <div className="feed">
-          {[
-            { who: "Aïssata Ouédraogo", act: "a inscrit",                                  amount: "Boukary Sawadogo (KYC)",      time: "il y a 32 min · TPE-021", dot: "brand" },
-            { who: "TPE-009",            act: "synchronisé après 1 h hors-ligne · ",        amount: "12 transactions envoyées",   time: "il y a 5 min",            dot: "info"  },
-            { who: "Fatim Barry",        act: "a effectué",                                 amount: "12 dépôts en agence",        time: "il y a 1 h · TPE-002",    dot: "muted" },
-            { who: "TPE-018",            act: "batterie épuisée — appareil hors service",   amount: "",                           time: "hier · 18:20",            dot: "muted" },
-            { who: "Bintou Kaboré",      act: "a modifié les permissions de",               amount: "Aïssata Ouédraogo",          time: "hier · 14:02",            dot: "info"  },
-          ].map((f, i) => (
+          {AGENTS.filter(a => a.device.queued > 0).map((a, i) => (
             <div className="feed-item" key={i}>
-              <div className={"feed-dot " + (f.dot === "muted" ? "muted" : f.dot === "info" ? "info" : "")}/>
+              <div className="feed-dot info"/>
               <div>
-                <div className="feed-text"><strong>{f.who}</strong> {f.act} {f.amount && <strong>{f.amount}</strong>}</div>
-                <div className="feed-time">{f.time}</div>
+                <div className="feed-text"><strong>{a.device.id}</strong> a {a.device.queued} transaction(s) en file d'attente</div>
+                <div className="feed-time">Dernière sync · {a.device.lastSync}</div>
               </div>
             </div>
           ))}
+          {AGENTS.filter(a => a.device.sync === 'hors service').map((a, i) => (
+            <div className="feed-item" key={"off-" + i}>
+              <div className="feed-dot muted"/>
+              <div>
+                <div className="feed-text"><strong>{a.device.id}</strong> hors service — {a.name}</div>
+                <div className="feed-time">Dernière sync · {a.device.lastSync}</div>
+              </div>
+            </div>
+          ))}
+          {AGENTS.filter(a => a.device.queued === 0 && a.device.sync !== 'hors service').length === AGENTS.length && AGENTS.length > 0 && (
+            <div className="feed-item">
+              <div className="feed-dot"/>
+              <div>
+                <div className="feed-text">Tous les TPE sont synchronisés</div>
+                <div className="feed-time">Aucune activité en attente</div>
+              </div>
+            </div>
+          )}
+          {AGENTS.length === 0 && !isLoadingAgents && (
+            <div style={{ padding: "12px 0", color: "var(--ink-3)", fontSize: 13 }}>Aucun agent dans cette agence.</div>
+          )}
         </div>
       </div>
     </div>

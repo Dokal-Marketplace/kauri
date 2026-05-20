@@ -30,11 +30,11 @@ export default defineSchema({
     email: v.string(),
     phoneNumber: v.string(),
     tokenIdentifier: v.string(), // Clerk/Auth0 ID
-    branchId: v.id('branches'),
-    status: v.union(v.literal('active'), v.literal('suspended')),
+    branchId: v.id("branches"),
+    status: v.union(v.literal("active"), v.literal("suspended")),
   })
-    .index('by_token', ['tokenIdentifier'])
-    .index('by_branch', ['branchId']),
+    .index("by_token", ["tokenIdentifier"])
+    .index("by_branch", ["branchId"]),
 
   // 3. KYC & CUSTOMERS
   customers: defineTable({
@@ -56,10 +56,10 @@ export default defineSchema({
     assignedTo: v.optional(v.id('users')),
     status: v.union(v.literal('active'), v.literal('maintenance'), v.literal('lost')),
     lastSync: v.number(),
-    batteryPct: v.optional(v.number()),
-    signalLevel: v.optional(v.number()), // 0–5
+    batteryPct:  v.optional(v.number()),
+    signalLevel: v.optional(v.number()),   // 0–5
     queuedCount: v.optional(v.number()),
-  }).index('by_serial', ['serialNumber']),
+  }).index("by_serial", ["serialNumber"]),
 
   // 5. CASH COLLECTIONS (Transactions)
   transactions: defineTable({
@@ -108,6 +108,9 @@ export default defineSchema({
     status: v.union(v.literal('pending'), v.literal('settled'), v.literal('discrepancy')),
     notes: v.optional(v.string()),
   })
+    .index("by_agent_date", ["agentId", "date"])
+    .index("by_branch_status", ["branchId", "status"]),
+});
     .index('by_agent_date', ['agentId', 'date'])
     .index('by_branch_status', ['branchId', 'status']),
   products: defineTable({
