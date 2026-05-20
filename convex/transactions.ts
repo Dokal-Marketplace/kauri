@@ -83,7 +83,21 @@ export const reverseTransaction = mutation({
 export const listByAgent = query({
   args: { agentId: v.id("users") },
   handler: async (ctx, args) => {
-    if (!(await ctx.auth.getUserIdentity())) throw new Error("Unauthenticated");
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+ 
+    const caller = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
+      .unique();
+    if (!caller) throw new Error("User not found");
+ 
+    // Un field_agent ne peut voir que ses propres transactions
+    // Un supervisor/accountant peut voir celles de n'importe quel agent (via transactions:audit)
+    if (caller._id !== args.agentId) {
+      await authz.withTenant(caller.branchId).require(ctx, identity.subject, "transactions:audit");
+    }
+ 
     return ctx.db
       .query("transactions")
       .withIndex("by_agent_date", (q) => q.eq("agentId", args.agentId))
@@ -95,7 +109,21 @@ export const listByAgent = query({
 export const listByBranch = query({
   args: { branchId: v.id("branches") },
   handler: async (ctx, args) => {
-    if (!(await ctx.auth.getUserIdentity())) throw new Error("Unauthenticated");
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+ 
+    const caller = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
+      .unique();
+    if (!caller) throw new Error("User not found");
+ 
+    // Seuls les utilisateurs de la même branche avec le droit d'audit peuvent lister par branche
+    if (caller.branchId !== args.branchId) {
+      throw new Error("Access denied: cannot view transactions from another branch");
+    }
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, "transactions:audit");
+ 
     return ctx.db
       .query("transactions")
       .withIndex("by_branch", (q) => q.eq("branchId", args.branchId))
