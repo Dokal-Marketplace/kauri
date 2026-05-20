@@ -32,7 +32,9 @@ export default defineSchema({
     tokenIdentifier: v.string(), // Clerk/Auth0 ID
     branchId: v.id("branches"),
     status: v.union(v.literal("active"), v.literal("suspended")),
-  }).index("by_token", ["tokenIdentifier"]),
+  })
+    .index("by_token", ["tokenIdentifier"])
+    .index("by_branch", ["branchId"]),
 
   // 3. KYC & CUSTOMERS
   customers: defineTable({
@@ -58,6 +60,9 @@ export default defineSchema({
     assignedTo: v.optional(v.id("users")),
     status: v.union(v.literal("active"), v.literal("maintenance"), v.literal("lost")),
     lastSync: v.number(),
+    batteryPct:  v.optional(v.number()),
+    signalLevel: v.optional(v.number()),   // 0–5
+    queuedCount: v.optional(v.number()),
   }).index("by_serial", ["serialNumber"]),
 
   // 5. CASH COLLECTIONS (Transactions)
