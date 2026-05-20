@@ -96,6 +96,11 @@ export const listByAgent = query({
     // Un supervisor/accountant peut voir celles de n'importe quel agent (via transactions:audit)
     if (caller._id !== args.agentId) {
       await authz.withTenant(caller.branchId).require(ctx, identity.subject, "transactions:audit");
+
+      const targetAgent = await ctx.db.get(args.agentId);
+      if (!targetAgent || targetAgent.branchId !== caller.branchId) {
+        throw new Error("Access denied: cannot view transactions from another branch");
+      }
     }
  
     return ctx.db

@@ -22,7 +22,7 @@ export const settleDailyCash = mutation({
 
     const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
     const startOfDay = new Date(today + "T00:00:00Z").getTime();
-    const endOfDay   = new Date(today + "T23:59:59Z").getTime();
+    const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1; // = 23:59:59.999Z, couvre toute la journée
 
     const transactions = await ctx.db
       .query("transactions")
