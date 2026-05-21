@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import { NavLink } from 'react-router-dom'
-import { openCommandPalette } from './components/CommandPalette'
 import { I } from './icons'
 
 export function fmt(n) {
@@ -17,7 +16,8 @@ export function SearchInput({ placeholder, value, onChange, width = 240 }) {
 }
 
 // crumbs: string[] — segments after "Kauri", e.g. ["Admin", "Agents & TPE"]
-export function PageHeader({ crumbs = [], title, children }) {
+// onSearch: optional callback to open the command palette imperatively
+export function PageHeader({ crumbs = [], title, children, onSearch }) {
   const allCrumbs = title ? [...crumbs, title] : crumbs
   const [safemode, setSafeMode] = useState(true)
   return (
@@ -32,7 +32,7 @@ export function PageHeader({ crumbs = [], title, children }) {
         ))}
       </div>
       <div className="topbar-center">
-        <button className="cmd-trigger" onClick={openCommandPalette}>
+        <button className="cmd-trigger" onClick={onSearch}>
           <I.Search /><span>Rechercher…</span><kbd>⌘K</kbd>
         </button>
       </div>
@@ -128,12 +128,13 @@ export function Sidebar() {
   )
 }
 
-export function Topbar({ online, setOnline, inbox }) {
+// onSearch: optional callback to open the command palette imperatively
+export function Topbar({ online, setOnline, inbox, onSearch }) {
   return (
     <div className="topbar">
       <div className="crumbs"><strong>Kauri</strong> &nbsp;/&nbsp; Tableau de bord</div>
       <div className="topbar-center">
-        <button className="cmd-trigger" onClick={openCommandPalette}>
+        <button className="cmd-trigger" onClick={onSearch}>
           <I.Search /><span>Rechercher…</span><kbd>⌘K</kbd>
         </button>
       </div>
@@ -371,7 +372,6 @@ export function QuickActionsCard() {
               width: 28, height: 28, borderRadius: 7, background: "var(--brand-softer)",
               display: "grid", placeItems: "center", color: "var(--brand-ink)"
             }}>
-              {/* clone icon with size=14 */}
               {a.label === "Dépôt rapide"   && <I.Plus size={14} />}
               {a.label === "Retrait"         && <I.ArrowUp size={14} />}
               {a.label === "Inscrire client" && <I.Users size={14} />}

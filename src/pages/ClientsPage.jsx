@@ -6,10 +6,6 @@ const CLIENTS = []
 const CLIENT_KPIS = []
 const CLIENT_TX = {}
 
-const CLIENTS = []
-const CLIENT_KPIS = []
-const CLIENT_TX = {}
-
 const PAGE_SIZE = 10
 
 function ClientDrawer({ client, onClose }) {

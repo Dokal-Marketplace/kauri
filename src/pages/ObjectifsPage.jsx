@@ -4,8 +4,6 @@ import { fmt, KPI, PageHeader } from '../components'
 import Novu from '../components/Inbox'
 const CLIENTS = []
 
-const CLIENTS = []
-
 const OBJ_STATUSES = {
   atteint:   { label: "Atteint",       tagClass: "actif",   dot: "var(--pos)" },
   enavance:  { label: "En avance",     tagClass: "actif",   dot: "var(--pos)" },
