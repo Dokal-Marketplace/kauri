@@ -1,40 +1,42 @@
 ## 3. The Reconciliation Workflow
 
-A clean end-of-day (EOD) process usually follows these three steps to minimize "mysterious" cash losses.
+A clean EOD process usually follows these three steps to minimize "mysterious" cash losses:
 
 ### Step A: The Agent's Pre-Check (TPE Side)
-Before heading to the branch, the agent runs a **Daily Summary** on the TPE.
 
-Example:
-- TPE shows: **Total Collected: 450,000 CFA**
-- Agent counts physical cash:
-  - If it is **450,000 CFA**, proceed.
-  - If it is **445,000 CFA**, a discrepancy exists before handover.
+Before heading to the branch, the agent runs a "Daily Summary" on the TPE.
+
+The TPE displays: "Total Collected: 450,000 CFA". The agent counts their physical cash:
+- If it's **450,000 CFA**, they proceed.
+- If it's **445,000 CFA**, they know they have a problem before talking to the accountant.
 
 ### Step B: The Physical Handover
-At the branch, the accountant uses the `settleDailyCash` mutation.
 
-Cases:
-1. **Variance = 0**: Perfect; close the session.
-2. **Variance < 0 (Shortfall)**: Agent is short; flag discrepancy. This may trigger HR process or commission deduction.
-3. **Variance > 0 (Overage)**: Rare; may indicate missed transaction entry or incorrect change.
+At the branch, the Accountant uses the `settleDailyCash` mutation.
 
-### Step C: Locking Transactions After Settlement
-Once reconciliation is settled, transactions for that date should become read-only.
+- **Case 1: $Variance = 0$** — Perfect. The session is closed.
+- **Case 2: $Variance < 0$ (Shortfall)** — The agent is "short." The system flags a discrepancy. This usually triggers an internal HR process or a deduction from the agent's next commission.
+- **Case 3: $Variance > 0$ (Overage)** — Rare, but usually indicates an agent forgot to record a transaction or gave a customer the wrong change.
 
-Implementation tip in `reverseTransaction`:
-- If a reconciliation record exists for the same agent/date and status is `settled`, block reversal.
+### Step C: Locking the Transactions
 
-This prevents post-settlement reversals/collusion after cash has been accounted for.
+Once a reconciliation is settled, your `transactions` table should ideally become "read-only" for that date.
+
+**Implementation Tip:** In your `reverseTransaction` mutation, add a check:
+> If a reconciliation record exists for this agent on this date and is `settled`, block the reversal.
+
+This prevents agents and supervisors from colluding to reverse transactions after the cash has already been accounted for.
+
+---
 
 ## 4. Why Use Math for Variances?
 
-Use a simple formula to avoid manual calculation errors:
+Using a simple formula ensures the Accountant doesn't have to do mental math (where errors happen):
 
-$$
-\text{Variance} = V_{\text{physical}} - \sum V_{\text{system}}
-$$
+$$Variance = V_{physical} - \sum V_{system}$$
 
-Store `Variance` as a signed integer so monthly reports can identify repeated shortfalls (training or fraud risk indicators).
+By storing the $Variance$ as a signed integer, you can run a monthly report to see which agents are consistently "short" — a leading indicator of either poor training or potential fraud.
 
-Consider generating a PDF or thermal receipt as proof that the agent successfully dropped cash.
+---
+
+> Are you planning to generate a PDF or thermal receipt for the agent to keep as proof that they "dropped" the cash successfully?
