@@ -40,11 +40,11 @@ export function NewProspectModal({ isOpen, onClose, onSubmit, isLoading }) {
 
   return (
     <>
-      <div className="modal-scrim" onClick={onClose} />
+      <div className="modal-scrim" onClick={isLoading ? undefined : onClose} />
       <div className="modal">
         <div className="modal-head">
           <h2>Nouveau prospect</h2>
-          <button className="btn ghost sm" onClick={onClose} style={{ padding: 6 }}>✕</button>
+          <button className="btn ghost sm" onClick={onClose} disabled={isLoading} style={{ padding: 6 }}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-body">

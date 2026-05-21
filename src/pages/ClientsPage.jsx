@@ -107,13 +107,13 @@ export default function ClientsPage() {
   
   // Convex hooks
   const clients = useQuery(
-    branchId ? api.customers.listByBranch : 'skip',
-    branchId ? { branchId } : 'skip'
+    api.customers.listByBranch,
+    branchId ? {} : 'skip'
   ) ?? []
   
   const createProspectMutation = useMutation(api.customers.createProspect)
   
-  // Local state
+
   const [q, setQ] = useState("")
   const [seg, setSeg] = useState("tous")
   const [sortBy, setSortBy] = useState("balance")
@@ -126,35 +126,7 @@ export default function ClientsPage() {
   const [page, setPage] = useState(1)
   const [showNewProspectModal, setShowNewProspectModal] = useState(false)
   const [isCreatingProspect, setIsCreatingProspect] = useState(false)
-  const [creationError, setCreationError] = useState(null)
 
-  // Loading state
-  if (!branchId) {
-    return (
-      <div className="clients-page">
-        <PageHeader crumbs={["Clients"]} title="Clients" sub="Chargement..." >
-          <Novu />
-        </PageHeader>
-        <div style={{ padding: 40, textAlign: "center", color: "var(--ink-3)" }}>
-          Authentification en cours...
-        </div>
-      </div>
-    )
-  }
-
-  const handleCreateProspect = async (data) => {
-    setIsCreatingProspect(true)
-    setCreationError(null)
-    try {
-      await createProspectMutation(data)
-      setShowNewProspectModal(false)
-    } catch (err) {
-      setCreationError(err.message)
-      throw err
-    } finally {
-      setIsCreatingProspect(false)
-    }
-  }
 
   // Compute data from real clients
   const agents = useMemo(() => {
@@ -173,9 +145,9 @@ export default function ClientsPage() {
       return {
         _id: c._id,
         id: c._id,
-        name: name,
+        name,
         phone: c.phoneNumber || '',
-        initials: initials,
+        initials,
         village: c.village || '—',
         product: c.product || '—',
         balance: c.balance || 0,
@@ -185,7 +157,9 @@ export default function ClientsPage() {
         agent: c.agentName || '—',
         status: c.status || 'prospect',
         joined: c._creationTime || Date.now(),
-        lastTx: new Date(c._creationTime || Date.now()).toLocaleDateString("fr-FR", { month: "short", day: "numeric" }),
+        lastTx: c.lastTransactionAt
+          ? new Date(c.lastTransactionAt).toLocaleDateString("fr-FR", { month: "short", day: "numeric" })
+          : '—',
       }
     })
   }, [clients])
@@ -204,6 +178,35 @@ export default function ClientsPage() {
     })
     return r
   }, [q, seg, agent, sortBy, sortDir, displayClients])
+
+  useEffect(() => { setPage(1) }, [q, seg, agent, sortBy, sortDir])
+
+  const handleCreateProspect = async (data) => {
+    setIsCreatingProspect(true)
+    try {
+      await createProspectMutation(data)
+      setShowNewProspectModal(false)
+    } catch (err) {
+      throw err  // NewProspectModal attrape et affiche l'erreur
+    } finally {
+      setIsCreatingProspect(false)
+    }
+  }
+
+  // Loading state
+  if (!branchId) {
+    return (
+      <div className="clients-page">
+        <PageHeader crumbs={["Clients"]} title="Clients" sub="Chargement..." >
+          <Novu />
+        </PageHeader>
+        <div style={{ padding: 40, textAlign: "center", color: "var(--ink-3)" }}>
+          Authentification en cours...
+        </div>
+      </div>
+    )
+  }
+
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)

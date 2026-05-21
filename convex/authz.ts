@@ -22,6 +22,7 @@ const permissions = definePermissions({
     create_prospect: true, // Field onboarding (Draft mode)
     verify_identity: true, // KYC Approval
     edit_sensitive: true, // Changing phone numbers/bank details
+    view: true, // View customer details (non-sensitive)
   },
   disbursements: {
     request: true, // Agent initiates a loan payout
@@ -41,7 +42,7 @@ const roles = defineRoles(permissions, {
   // Field-based role
   field_agent: {
     includes: ['base_agent'], //
-    customers: ['create_prospect'],
+    customers: ['create_prospect', 'view'], // Can onboard but not verify
     disbursements: ['request'],
   },
 
@@ -50,7 +51,7 @@ const roles = defineRoles(permissions, {
     includes: ['field_agent'], // Inherits collection & registration
     transactions: ['reverse', 'audit'],
     kyc: ['validate'],
-    customers: ['verify_identity', 'edit_sensitive'],
+    customers: ['verify_identity', 'edit_sensitive', 'view'],
     disbursements: ['approve'],
     products: ['manage'],
   },
@@ -61,7 +62,7 @@ const roles = defineRoles(permissions, {
     reconciliation: ['liquidate'],
     // Only the accountant or a system-level role should execute the money move
     disbursements: ['execute'],
-    customers: ['verify_identity'],
+    customers: ['verify_identity', 'view'],
   },
 
   // System management
