@@ -24,6 +24,7 @@ export const settleDailyCash = mutation({
     const startOfDay = new Date(today + "T00:00:00Z").getTime();
     const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1; // = 23:59:59.999Z, couvre toute la journée
 
+
     const transactions = await ctx.db
       .query("transactions")
       .withIndex("by_agent_date", (q) => q.eq("agentId", args.agentId))
@@ -40,6 +41,7 @@ export const settleDailyCash = mutation({
 
     const systemExpected = transactions.reduce((sum, tx) => sum + tx.amount, 0);
     const variance = args.physicalAmount - systemExpected;
+
     const status = variance === 0 ? "settled" : "discrepancy";
 
     const reconciliationId = await ctx.db.insert("reconciliations", {
