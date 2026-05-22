@@ -10,8 +10,9 @@ import { NewProspectModal } from '../components/NewProspectModal'
 const PAGE_SIZE = 10
 
 function ClientDrawer({ client, onClose }) {
+  // Fix 1: pass query fn first, "skip" in args position (second arg) only
   const transactions = useQuery(
-    client ? api.transactions.listByCustomer : 'skip',
+    api.transactions.listByCustomer,
     client ? { customerId: client._id, limit: 10 } : 'skip'
   ) ?? []
 
@@ -112,7 +113,7 @@ export default function ClientsPage() {
   ) ?? []
   
   const createProspectMutation = useMutation(api.customers.createProspect)
-  
+
 
   const [q, setQ] = useState("")
   const [seg, setSeg] = useState("tous")
@@ -179,6 +180,8 @@ export default function ClientsPage() {
     return r
   }, [q, seg, agent, sortBy, sortDir, displayClients])
 
+  // Fix 2: moved above the early return to respect Rules of Hooks —
+  // hooks must be called unconditionally on every render
   useEffect(() => { setPage(1) }, [q, seg, agent, sortBy, sortDir])
 
   const handleCreateProspect = async (data) => {
@@ -193,7 +196,7 @@ export default function ClientsPage() {
     }
   }
 
-  // Loading state
+  // Loading state — early return AFTER all hooks
   if (!branchId) {
     return (
       <div className="clients-page">
@@ -211,10 +214,7 @@ export default function ClientsPage() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  // Reset page when filters change
-  useEffect(() => {
-    setPage(1)
-  }, [q, seg, agent, sortBy, sortDir])
+  
 
   const toggleSort = (col) => {
     if (sortBy === col) setSortDir(d => d === "asc" ? "desc" : "asc")
@@ -253,7 +253,6 @@ export default function ClientsPage() {
     })
   }
 
-  
 
   return (
     <div className="clients-page">

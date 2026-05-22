@@ -1,98 +1,24 @@
 import { useState, useMemo, useEffect } from 'react'
-import { useQuery, useMutation } from 'convex/react'
-import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
 import Novu from '../components/Inbox'
 import { fmt, PageHeader, SearchInput } from '../components'
-import { useCurrentBranch } from '../hooks/useCurrentBranch'
 
 const PAGE_SIZE = 10
 
-// ─── Schema Mapping ──────────────────────────────────────────────────────────
-// Map Convex schema (pending/completed/reversed) to UI schema (en attente/validée/annulée)
-function mapConvexToUI(convexTx) {
-  return {
-    // Convex fields mapped to UI
-    id:         convexTx._id,
-    type:       convexTx.amount > 0 ? 'in' : 'out', // Infer from amount sign
-    client:     convexTx.customerName || '—',
-    clientInit: (convexTx.customerName || '?').charAt(0).toUpperCase(),
-    label:      convexTx.amount > 0 ? 'Dépôt' : 'Retrait', // Simplified
-    amount:     Math.abs(convexTx.amount),
-    time:       new Date(convexTx.timestamp).toLocaleString('fr-FR', {
-      month: 'short',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }),
-    agent:      convexTx.agentName || '—',
-    tpe:        convexTx.tpeId || '—',
-    channel:    convexTx.tpeId ? 'TPE' : 'Agence', // Simplified heuristic
-    status:     convexTx.status === 'pending' ? 'en attente' :
-                convexTx.status === 'completed' ? 'validée' :
-                convexTx.status === 'reversed' ? 'annulée' : 'en attente',
-    reference:  convexTx._id.substring(0, 8), // Use short ID as reference
-    // Keep original Convex fields for mutations
-    _convex: convexTx,
-  }
-}
-
-// ─── Date Range Helpers ──────────────────────────────────────────────────────
-function getDateRangeForPeriod(period) {
-  const now = Date.now()
-  const oneDay = 24 * 60 * 60 * 1000
-  
-  switch (period) {
-    case '24h':
-      return { from: now - oneDay, to: now }
-    case '7j':
-      return { from: now - 7 * oneDay, to: now }
-    case '30j':
-      return { from: now - 30 * oneDay, to: now }
-    case 'Tout':
-    default:
-      return { from: undefined, to: undefined }
-  }
-}
-
-// ─── CSV Export Helper ───────────────────────────────────────────────────────
-function exportToCSV(data, filename = 'transactions.csv') {
-  // Build CSV headers
-  const headers = ['ID', 'Client', 'Type', 'Date', 'Montant', 'Statut', 'Agent', 'Référence']
-  
-  // Build CSV rows
-  const rows = data.map(t => [
-    t.id,
-    t.client,
-    t.type === 'in' ? 'Dépôt' : 'Retrait',
-    t.time,
-    `${t.type === 'in' ? '+' : '−'}${t.amount}`,
-    t.status === 'validée' ? 'Validée' : t.status === 'en attente' ? 'En attente' : 'Annulée',
-    t.agent,
-    t.reference,
-  ])
-  
-  // Combine headers and rows
-  const csv = [
-    headers.join(';'),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(';'))
-  ].join('\n')
-  
-  // Create blob and trigger download
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = filename
-  link.click()
-}
-
-// ─── Demo Data (fallback for development) ────────────────────────────────────
-const TX_FULL_DEMO = [
+const TX_FULL = [
   { id: "TX-2026-0421", type: "in",  client: "Awa Konaté",           clientInit: "AK", label: "Dépôt",      amount: 15000, time: "Aujourd'hui, 10:22", agent: "K. Djibril",   tpe: "TPE-014", channel: "TPE",    status: "validée",    reference: "DEP-A14-0421" },
   { id: "TX-2026-0420", type: "out", client: "Ibrahim Traoré",       clientInit: "IT", label: "Retrait",    amount: 30000, time: "Aujourd'hui, 09:05", agent: "K. Djibril",   tpe: "TPE-014", channel: "Agence", status: "validée",    reference: "RET-A14-0420" },
   { id: "TX-2026-0419", type: "in",  client: "Mariam Sankara",       clientInit: "MS", label: "Dépôt",      amount: 22000, time: "Aujourd'hui, 08:14", agent: "A. Ouédraogo", tpe: "TPE-021", channel: "TPE",    status: "validée",    reference: "DEP-B21-0419" },
   { id: "TX-2026-0418", type: "in",  client: "Rasmata Kaboré",       clientInit: "RK", label: "Cotisation", amount: 5000,  time: "Aujourd'hui, 07:42", agent: "K. Djibril",   tpe: "TPE-014", channel: "TPE",    status: "validée",    reference: "COT-A14-0418" },
   { id: "TX-2026-0417", type: "out", client: "Adama Compaoré",       clientInit: "AC", label: "Retrait",    amount: 12000, time: "Hier, 17:55",        agent: "A. Ouédraogo", tpe: "TPE-021", channel: "TPE",    status: "en attente", reference: "RET-B21-0417" },
+  { id: "TX-2026-0416", type: "in",  client: "Moussa Diallo",        clientInit: "MD", label: "Dépôt",      amount: 50000, time: "Hier, 16:45",        agent: "A. Ouédraogo", tpe: "TPE-021", channel: "Agence", status: "validée",    reference: "DEP-B21-0416" },
+  { id: "TX-2026-0415", type: "in",  client: "Fatoumata Zongo",      clientInit: "FZ", label: "Dépôt",      amount: 12500, time: "Hier, 14:18",        agent: "K. Djibril",   tpe: "TPE-014", channel: "TPE",    status: "validée",    reference: "DEP-A14-0415" },
+  { id: "TX-2026-0414", type: "out", client: "Salimata Ouédraogo",   clientInit: "SO", label: "Retrait",    amount: 8000,  time: "Hier, 11:30",        agent: "A. Ouédraogo", tpe: "TPE-021", channel: "TPE",    status: "validée",    reference: "RET-B21-0414" },
+  { id: "TX-2026-0413", type: "in",  client: "Boukary Sawadogo",     clientInit: "BS", label: "Cotisation", amount: 5000,  time: "29 avr., 17:02",     agent: "K. Djibril",   tpe: "TPE-014", channel: "TPE",    status: "validée",    reference: "COT-A14-0413" },
+  { id: "TX-2026-0412", type: "in",  client: "Aminata Tiendrébéogo", clientInit: "AT", label: "Dépôt",      amount: 35000, time: "29 avr., 15:34",     agent: "K. Djibril",   tpe: "TPE-014", channel: "TPE",    status: "validée",    reference: "DEP-A14-0412" },
+  { id: "TX-2026-0411", type: "out", client: "Drissa Koné",          clientInit: "DK", label: "Retrait",    amount: 20000, time: "29 avr., 12:08",     agent: "A. Ouédraogo", tpe: "TPE-021", channel: "Agence", status: "annulée",    reference: "RET-B21-0411" },
+  { id: "TX-2026-0410", type: "in",  client: "Awa Konaté",           clientInit: "AK", label: "Dépôt",      amount: 8000,  time: "28 avr., 09:14",     agent: "K. Djibril",   tpe: "TPE-014", channel: "TPE",    status: "validée",    reference: "DEP-A14-0410" },
+  { id: "TX-2026-0409", type: "in",  client: "Mariam Sankara",       clientInit: "MS", label: "Dépôt",      amount: 18000, time: "28 avr., 08:50",     agent: "A. Ouédraogo", tpe: "TPE-021", channel: "TPE",    status: "validée",    reference: "DEP-B21-0409" },
 ]
 
 const TX_KPIS = [
@@ -108,25 +34,8 @@ const STATUS_STYLE = {
   "annulée":    { cls: "archive", label: "Annulée"    },
 }
 
-// ─── TxDrawer ────────────────────────────────────────────────────────────────
-function TxDrawer({ tx, onClose, onValidate, onReverse, isActionLoading }) {
-  const [reversalReason, setReversalReason] = useState('')
-  const [showReversalPrompt, setShowReversalPrompt] = useState(false)
+function TxDrawer({ tx, onClose }) {
   const st = STATUS_STYLE[tx.status]
-  
-  const handleReverse = () => {
-    if (!reversalReason.trim()) {
-      alert('Veuillez entrer une raison pour l\'annulation')
-      return
-    }
-    onReverse({
-      transactionId: tx._convex._id,
-      reason: reversalReason,
-    })
-    setReversalReason('')
-    setShowReversalPrompt(false)
-  }
-  
   return (
     <>
       <div className="drawer-scrim" onClick={onClose}/>
@@ -192,107 +101,26 @@ function TxDrawer({ tx, onClose, onValidate, onReverse, isActionLoading }) {
         </div>
         <div className="drawer-foot">
           <button className="btn"><I.Export size={14}/>Reçu PDF</button>
-          {tx.status === "en attente" && (
-            <button
-              className="btn brand"
-              style={{ marginLeft: "auto" }}
-              disabled={isActionLoading}
-              onClick={() => onValidate({ transactionId: tx._convex._id })}
-            >
-              <I.Check size={14} stroke="white"/>
-              {isActionLoading ? 'Validation…' : 'Valider'}
-            </button>
-          )}
-          {tx.status === "validée" && !showReversalPrompt && (
-            <button
-              className="btn"
-              style={{ marginLeft: "auto", color: "var(--neg)" }}
-              disabled={isActionLoading}
-              onClick={() => setShowReversalPrompt(true)}
-            >
-              Annuler
-            </button>
-          )}
+          {tx.status === "en attente" && <button className="btn brand" style={{ marginLeft: "auto" }}><I.Check size={14} stroke="white"/>Valider</button>}
+          {tx.status === "validée" && <button className="btn" style={{ marginLeft: "auto", color: "var(--neg)" }}>Annuler</button>}
         </div>
-        
-        {showReversalPrompt && (
-          <div style={{
-            padding: 16,
-            borderTop: '1px solid var(--border)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-          }}>
-            <label style={{ fontSize: 12, fontWeight: 500 }}>Raison de l'annulation</label>
-            <textarea
-              value={reversalReason}
-              onChange={e => setReversalReason(e.target.value)}
-              placeholder="Ex: Double paiement, erreur TPE..."
-              style={{
-                padding: 8,
-                fontSize: 13,
-                border: '1px solid var(--border)',
-                borderRadius: 6,
-                fontFamily: 'inherit',
-                minHeight: 60,
-                resize: 'none',
-              }}
-            />
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button
-                className="btn ghost"
-                disabled={isActionLoading}
-                onClick={() => { setShowReversalPrompt(false); setReversalReason(''); }}
-              >
-                Annuler
-              </button>
-              <button
-                className="btn"
-                style={{ color: "var(--neg)" }}
-                disabled={isActionLoading}
-                onClick={handleReverse}
-              >
-                {isActionLoading ? 'Annulation…' : "Confirmer l'annulation"}
-              </button>
-            </div>
-          </div>
-        )}
       </aside>
     </>
   )
 }
 
 export default function TransactionsPage() {
-  const branchId = useCurrentBranch()
   const [q, setQ] = useState("")
   const [seg, setSeg] = useState("tous")
   const [channel, setChannel] = useState("tous")
   const [agent, setAgent] = useState("tous")
   const [period, setPeriod] = useState("7j")
   const [selected, setSelected] = useState(null)
+  const [online, setOnline] = useState(true)
   const [page, setPage] = useState(1)
-  // ── Guard against duplicate submissions while a mutation is in flight ──
-  const [isTxActionLoading, setIsTxActionLoading] = useState(false)
-  
-  // Convex queries and mutations
-  const dateRange = getDateRangeForPeriod(period)
-  const convexData = useQuery(
-    api.transactions.listByBranch,
-    branchId ? {
-      from: dateRange.from,
-      to: dateRange.to,
-    } : 'skip'
-  ) ?? []
-  
-  // Map Convex data to UI schema
-  const TX_FULL = useMemo(() => convexData.map(mapConvexToUI), [convexData])
-  
-  // Mutations
-  const validateTransaction = useMutation(api.transactions.validateTransaction)
-  const reverseTransaction = useMutation(api.transactions.reverseTransaction)
 
-  const agents   = useMemo(() => ["tous", ...Array.from(new Set(TX_FULL.map(t => t.agent)))], [TX_FULL])
-  const channels = useMemo(() => ["tous", ...Array.from(new Set(TX_FULL.map(t => t.channel)))], [TX_FULL])
+  const agents   = useMemo(() => ["tous", ...Array.from(new Set(TX_FULL.map(t => t.agent)))], [])
+  const channels = useMemo(() => ["tous", ...Array.from(new Set(TX_FULL.map(t => t.channel)))], [])
 
   const filtered = useMemo(() => {
     return TX_FULL.filter(t => {
@@ -307,14 +135,15 @@ export default function TransactionsPage() {
       }
       return true
     })
-  }, [q, seg, channel, agent, TX_FULL])
+  }, [q, seg, channel, agent])
 
   useEffect(() => {
     setPage(1)
-  }, [q, seg, channel, agent, period])
+  }, [q, seg, channel, agent])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
 
   const totalIn  = filtered.filter(t => t.type === "in"  && t.status === "validée").reduce((s, t) => s + t.amount, 0)
   const totalOut = filtered.filter(t => t.type === "out" && t.status === "validée").reduce((s, t) => s + t.amount, 0)
@@ -334,8 +163,8 @@ export default function TransactionsPage() {
         title="Transactions"
         sub={`${TX_FULL.length} mouvements · 2 TPE actifs · synchronisé il y a 1 min`}
       >
-        <button className={"status-pill"} >
-          <span className="status-dot"></span>En ligne · synchronisé
+        <button className={"status-pill" + (online ? "" : " offline")} onClick={() => setOnline(!online)}>
+          <span className="status-dot"></span>{online ? "En ligne · synchronisé" : "Hors ligne · 4 en file"}
         </button>
         <Novu />
       </PageHeader>
@@ -367,9 +196,7 @@ export default function TransactionsPage() {
             <button key={p} className={period === p ? "on" : ""} onClick={() => setPeriod(p)}>{p}</button>
           ))}
         </div>
-        <button className="btn" onClick={() => exportToCSV(filtered, `transactions-${new Date().toISOString().split('T')[0]}.csv`)}>
-          <I.Export size={14}/>Exporter CSV
-        </button>
+        <button className="btn"><I.Export size={14}/>Exporter CSV</button>
       </div>
 
       <div className="card">
@@ -489,37 +316,7 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      {selected && (
-        <TxDrawer
-          tx={selected}
-          onClose={() => setSelected(null)}
-          isActionLoading={isTxActionLoading}
-          onValidate={async (args) => {
-            if (isTxActionLoading) return
-            setIsTxActionLoading(true)
-            try {
-              await validateTransaction(args)
-              setSelected(null)
-            } catch (err) {
-              alert('Erreur lors de la validation: ' + err.message)
-            } finally {
-              setIsTxActionLoading(false)
-            }
-          }}
-          onReverse={async (args) => {
-            if (isTxActionLoading) return
-            setIsTxActionLoading(true)
-            try {
-              await reverseTransaction(args)
-              setSelected(null)
-            } catch (err) {
-              alert('Erreur lors de l\'annulation: ' + err.message)
-            } finally {
-              setIsTxActionLoading(false)
-            }
-          }}
-        />
-      )}
+      {selected && <TxDrawer tx={selected} onClose={() => setSelected(null)}/>}
     </div>
   )
 }

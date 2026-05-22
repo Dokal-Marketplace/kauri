@@ -42,6 +42,7 @@ const roles = defineRoles(permissions, {
   // Field-based role
   field_agent: {
     includes: ['base_agent'], //
+    transactions: ['collect', 'view_ledger'],
     customers: ['create_prospect', 'view'], // Can onboard but not verify
     disbursements: ['request'],
   },
@@ -49,7 +50,7 @@ const roles = defineRoles(permissions, {
   // Manager-level role
   supervisor: {
     includes: ['field_agent'], // Inherits collection & registration
-    transactions: ['reverse', 'audit'],
+    transactions: ['collect', 'view_ledger', 'reverse', 'audit'],
     kyc: ['validate'],
     customers: ['verify_identity', 'edit_sensitive', 'view'],
     disbursements: ['approve'],

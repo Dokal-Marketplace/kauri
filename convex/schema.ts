@@ -70,7 +70,7 @@ export default defineSchema({
     agentId: v.id('users'),
     branchId: v.id('branches'),
     tpeId: v.string(), // Serial of the TPE used
-    status: v.union(v.literal('completed'), v.literal('reversed')),
+    status: v.union(v.literal('pending'), v.literal('completed'), v.literal('reversed')),
     reversalReason: v.optional(v.string()),
     reversedBy: v.optional(v.id('users')), // Supervisor ID
     timestamp: v.number(),
