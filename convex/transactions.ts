@@ -23,9 +23,12 @@ export const listByCustomer = query({
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
 
-    // Résoudre l'agent appelant
     const agent = await resolveAgent(ctx, identity.subject)
 
+    // Fix 1: explicit permission check — branch membership alone is not sufficient
+    await authz
+      .withTenant(agent.branchId)
+      .require(ctx, identity.subject, 'transactions:view_ledger')
 
     // Charger le client et vérifier qu'il appartient à la même branche
     const customer = await ctx.db.get(args.customerId)
@@ -113,6 +116,9 @@ export const collectCash = mutation({
     if (!customer) throw new Error('Customer not found')
     if (customer.branchId !== agent.branchId) throw new Error('Unauthorized')
 
+    // Fix 2: reject non-positive amounts before writing to the ledger
+    if (args.amount <= 0) throw new Error('Amount must be greater than 0')
+
     return ctx.db.insert('transactions', {
       amount:     args.amount,
       currency:   args.currency ?? 'XOF',
@@ -169,18 +175,16 @@ export const reverseTransaction = mutation({
     if (tx.branchId !== agent.branchId) throw new Error('Unauthorized')
     if (tx.status === 'reversed') throw new Error('Already reversed')
 
-    // Vérifier qu'aucune réconciliation settled ne couvre cette transaction
+    // Fix 3: scope reconciliation guard to the transaction's agent + date,
+    // replacing the broken lte+gte exact-equality filter that missed most
+    // settled reconciliations and wasn't scoped to the agent
+    const txDate = new Date(tx.timestamp).toISOString().slice(0, 10)
     const reconciled = await ctx.db
       .query('reconciliations')
-      .withIndex('by_branch_status', (q: any) =>
-        q.eq('branchId', agent.branchId).eq('status', 'settled')
+      .withIndex('by_agent_date', q =>
+        q.eq('agentId', tx.agentId).eq('date', txDate)
       )
-      .filter((q: any) =>
-        q.and(
-          q.lte(q.field('timestamp'), tx.timestamp),
-          q.gte(q.field('timestamp'), tx.timestamp)
-        )
-      )
+      .filter(q => q.eq(q.field('status'), 'settled'))
       .first()
     if (reconciled) throw new Error('Transaction already reconciled — reversal blocked')
 

@@ -63,8 +63,9 @@ export function NewProspectModal({ isOpen, onClose, onSubmit, isLoading }) {
           )}
 
           <div className="form-group">
-            <label className="form-label">Nom complet</label>
+            <label className="form-label" htmlFor="prospect-full-name">Nom complet</label>
             <input
+              id="prospect-full-name"
               type="text"
               className="form-input"
               value={fullName}
@@ -75,8 +76,9 @@ export function NewProspectModal({ isOpen, onClose, onSubmit, isLoading }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Numéro de téléphone</label>
+            <label className="form-label" htmlFor="prospect-phone-number">Numéro de téléphone</label>
             <input
+              id="prospect-phone-number"
               type="tel"
               className="form-input"
               value={phoneNumber}
@@ -87,8 +89,9 @@ export function NewProspectModal({ isOpen, onClose, onSubmit, isLoading }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Numéro d'identité</label>
+            <label className="form-label" htmlFor="prospect-id-number">Numéro d'identité</label>
             <input
+              id="prospect-id-number"
               type="text"
               className="form-input"
               value={idNumber}

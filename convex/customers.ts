@@ -34,10 +34,13 @@ export const listByBranch = query({
 
     const userMap = new Map(branchUsers.map(u => [u._id, u.fullName]))
 
-    return customers.map(c => ({
-      ...c,
-      agentName: userMap.get(c.onboardedBy) ?? '—',
-    }))
+    return customers.map(c => {
+      const { idNumber, metadata, ...safeCustomer } = c
+      return {
+        ...safeCustomer,
+        agentName: userMap.get(c.onboardedBy) ?? '—',
+      }
+    })
   },
 })
 

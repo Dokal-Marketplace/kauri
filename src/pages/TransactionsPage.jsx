@@ -108,7 +108,8 @@ const STATUS_STYLE = {
   "annulée":    { cls: "archive", label: "Annulée"    },
 }
 
-function TxDrawer({ tx, onClose, onValidate, onReverse }) {
+// ─── TxDrawer ────────────────────────────────────────────────────────────────
+function TxDrawer({ tx, onClose, onValidate, onReverse, isActionLoading }) {
   const [reversalReason, setReversalReason] = useState('')
   const [showReversalPrompt, setShowReversalPrompt] = useState(false)
   const st = STATUS_STYLE[tx.status]
@@ -192,12 +193,23 @@ function TxDrawer({ tx, onClose, onValidate, onReverse }) {
         <div className="drawer-foot">
           <button className="btn"><I.Export size={14}/>Reçu PDF</button>
           {tx.status === "en attente" && (
-            <button className="btn brand" style={{ marginLeft: "auto" }} onClick={() => onValidate({ transactionId: tx._convex._id })}>
-              <I.Check size={14} stroke="white"/>Valider
+            <button
+              className="btn brand"
+              style={{ marginLeft: "auto" }}
+              disabled={isActionLoading}
+              onClick={() => onValidate({ transactionId: tx._convex._id })}
+            >
+              <I.Check size={14} stroke="white"/>
+              {isActionLoading ? 'Validation…' : 'Valider'}
             </button>
           )}
           {tx.status === "validée" && !showReversalPrompt && (
-            <button className="btn" style={{ marginLeft: "auto", color: "var(--neg)" }} onClick={() => setShowReversalPrompt(true)}>
+            <button
+              className="btn"
+              style={{ marginLeft: "auto", color: "var(--neg)" }}
+              disabled={isActionLoading}
+              onClick={() => setShowReversalPrompt(true)}
+            >
               Annuler
             </button>
           )}
@@ -227,11 +239,20 @@ function TxDrawer({ tx, onClose, onValidate, onReverse }) {
               }}
             />
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button className="btn ghost" onClick={() => { setShowReversalPrompt(false); setReversalReason(''); }}>
+              <button
+                className="btn ghost"
+                disabled={isActionLoading}
+                onClick={() => { setShowReversalPrompt(false); setReversalReason(''); }}
+              >
                 Annuler
               </button>
-              <button className="btn" style={{ color: "var(--neg)" }} onClick={handleReverse}>
-                Confirmer l'annulation
+              <button
+                className="btn"
+                style={{ color: "var(--neg)" }}
+                disabled={isActionLoading}
+                onClick={handleReverse}
+              >
+                {isActionLoading ? 'Annulation…' : "Confirmer l'annulation"}
               </button>
             </div>
           </div>
@@ -250,6 +271,8 @@ export default function TransactionsPage() {
   const [period, setPeriod] = useState("7j")
   const [selected, setSelected] = useState(null)
   const [page, setPage] = useState(1)
+  // ── Guard against duplicate submissions while a mutation is in flight ──
+  const [isTxActionLoading, setIsTxActionLoading] = useState(false)
   
   // Convex queries and mutations
   const dateRange = getDateRangeForPeriod(period)
@@ -292,7 +315,6 @@ export default function TransactionsPage() {
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
 
   const totalIn  = filtered.filter(t => t.type === "in"  && t.status === "validée").reduce((s, t) => s + t.amount, 0)
   const totalOut = filtered.filter(t => t.type === "out" && t.status === "validée").reduce((s, t) => s + t.amount, 0)
@@ -471,20 +493,29 @@ export default function TransactionsPage() {
         <TxDrawer
           tx={selected}
           onClose={() => setSelected(null)}
+          isActionLoading={isTxActionLoading}
           onValidate={async (args) => {
+            if (isTxActionLoading) return
+            setIsTxActionLoading(true)
             try {
               await validateTransaction(args)
               setSelected(null)
             } catch (err) {
               alert('Erreur lors de la validation: ' + err.message)
+            } finally {
+              setIsTxActionLoading(false)
             }
           }}
           onReverse={async (args) => {
+            if (isTxActionLoading) return
+            setIsTxActionLoading(true)
             try {
               await reverseTransaction(args)
               setSelected(null)
             } catch (err) {
               alert('Erreur lors de l\'annulation: ' + err.message)
+            } finally {
+              setIsTxActionLoading(false)
             }
           }}
         />
