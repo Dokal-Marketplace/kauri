@@ -97,20 +97,19 @@ export default defineSchema({
   }).index('by_status', ['status']),
   // Add this to your existing schema.ts
   reconciliations: defineTable({
-    agentId: v.id('users'),
-    branchId: v.id('branches'),
-    verifiedBy: v.id('users'), // The Accountant/Supervisor
-
-    date: v.string(), // YYYY-MM-DD for easy indexing
-    systemExpectedAmount: v.number(), // Sum of transactions
-    physicalCashReceived: v.number(), // What the agent actually handed over
-    variance: v.number(), // physical - expected
-    timestamp: v.number(),
-    status: v.union(v.literal('pending'), v.literal('settled'), v.literal('discrepancy')),
-    notes: v.optional(v.string()),
+    agentId:              v.id("users"),
+    branchId:             v.id("branches"),
+    verifiedBy:           v.id("users"),
+    date:                 v.string(),
+    systemExpectedAmount: v.number(),
+    physicalCashReceived: v.number(),
+    variance:             v.number(),
+    status:               v.union(v.literal("settled"), v.literal("discrepancy"), v.literal("pending")),
+    timestamp:            v.number(),
+    notes:                v.optional(v.string()),
   })
-    .index("by_agent_date", ["agentId", "date"])
-    .index("by_branch_status", ["branchId", "status"]),
+    .index("by_branch_status", ["branchId", "status"])
+    .index("by_agent_date",    ["agentId",  "date"]), 
 
   products: defineTable({
     organizationId: v.id('organizations'),

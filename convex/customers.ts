@@ -52,6 +52,13 @@ export const createProspect = mutation({
     idNumber:    v.string(),
   },
   handler: async (ctx, args) => {
+    const fullName = args.fullName.trim()
+    const phoneNumber = args.phoneNumber.trim()
+    const idNumber = args.idNumber.trim()
+    if (!fullName || !phoneNumber || !idNumber) {
+      throw new Error('All fields are required')
+    }
+
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
 
@@ -66,7 +73,9 @@ export const createProspect = mutation({
       .require(ctx, identity.subject, 'customers:create_prospect')
 
     return ctx.db.insert('customers', {
-      ...args,
+      fullName,
+      phoneNumber,
+      idNumber,
       branchId:    agent.branchId,
       onboardedBy: agent._id,
       status:      'prospect',
