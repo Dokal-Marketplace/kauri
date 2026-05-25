@@ -62,3 +62,26 @@ export const upsert = mutation({
     return ctx.db.insert('products', fields)
   },
 })
+
+export const canManageProducts = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return false
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!user) return false
+
+    try {
+      await authz
+        .withTenant(user.branchId)
+        .require(ctx, identity.subject, 'products:manage')
+      return true
+    } catch {
+      return false
+    }
+  },
+})
