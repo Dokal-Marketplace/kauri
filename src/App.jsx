@@ -12,6 +12,7 @@ const ObjectifsPage = lazy(() => import('./pages/ObjectifsPage'))
 const ProductsPage = lazy(() => import('./pages/ProductsPage'))
 const ReconciliationPage = lazy(() => import('./pages/ReconciliationPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const DisbursementsPage  = lazy(() => import('./pages/DisbursementsPage'))
 
 function Layout() {
   return (
@@ -50,6 +51,7 @@ const router = createBrowserRouter([
       { path: 'produits', element: <ProductsPage /> },
       { path: 'reconciliation', element: <ReconciliationPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'decaissements', element: <DisbursementsPage />  },
     ],
   },
 ])

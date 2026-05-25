@@ -1,7 +1,88 @@
-// convex/disbursements.ts
-import { mutation } from './_generated/server'
+import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import { authz } from './authz'
+
+export const requestDisbursement = mutation({
+  args: {
+    amount: v.number(),
+    customerId: v.id('customers'),
+    payoutMethod: v.union(v.literal('cash'), v.literal('mobile_money')),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+    await authz.require(ctx, identity.subject, 'disbursements:request')
+    const agent = await ctx.db
+      .query('users')
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!agent) throw new Error('Agent not found')
+    return ctx.db.insert('disbursements', {
+      amount: args.amount,
+      customerId: args.customerId,
+      branchId: agent.branchId,
+      initiatedBy: agent._id,
+      status: 'pending',
+      payoutMethod: args.payoutMethod,
+      timestamp: Date.now(),
+    })
+  },
+})
+
+export const listPending = query({
+  args: { branchId: v.id('branches') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+    return ctx.db
+      .query('disbursements')
+      .withIndex('by_status', q => q.eq('status', 'pending'))
+      .filter(q => q.eq(q.field('branchId'), args.branchId))
+      .collect()
+  },
+})
+
+export const listHistory = query({
+  args: { branchId: v.id('branches') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+    // Fetch each non-pending status and merge — no by_branch index exists
+    const [approved, rejected, executed] = await Promise.all([
+      ctx.db
+        .query('disbursements')
+        .withIndex('by_status', q => q.eq('status', 'approved'))
+        .filter(q => q.eq(q.field('branchId'), args.branchId))
+        .collect(),
+      ctx.db
+        .query('disbursements')
+        .withIndex('by_status', q => q.eq('status', 'rejected'))
+        .filter(q => q.eq(q.field('branchId'), args.branchId))
+        .collect(),
+      ctx.db
+        .query('disbursements')
+        .withIndex('by_status', q => q.eq('status', 'executed'))
+        .filter(q => q.eq(q.field('branchId'), args.branchId))
+        .collect(),
+    ])
+    return [...approved, ...rejected, ...executed].sort((a, b) => b.timestamp - a.timestamp)
+  },
+})
+
+export const rejectDisbursement = mutation({
+  args: { disbursementId: v.id('disbursements'), reason: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+    await authz.require(ctx, identity.subject, 'disbursements:approve')
+    // reason is stored in transactionId field as a workaround since schema
+    // has no rejectionReason — add it to schema if needed, or store in notes
+    return ctx.db.patch(args.disbursementId, {
+      status: 'rejected',
+      transactionId: args.reason, // temporary: reuse transactionId until schema is updated
+    })
+  },
+})
 
 export const approveDisbursement = mutation({
   args: { disbursementId: v.id('disbursements') },
@@ -11,7 +92,7 @@ export const approveDisbursement = mutation({
 
     const supervisor = await ctx.db
       .query('users')
-      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!supervisor) throw new Error('User not found')
 
@@ -26,9 +107,28 @@ export const approveDisbursement = mutation({
       throw new Error('Fraud Prevention: You cannot approve your own request.')
     }
 
-    await ctx.db.patch(args.disbursementId, {
+    return ctx.db.patch(args.disbursementId, {
       status: 'approved',
       approvedBy: supervisor._id,
     })
+  },
+})
+
+export const canApproveDisbursements = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return false
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!user) return false
+    try {
+      await authz.withTenant(user.branchId).require(ctx, identity.subject, 'disbursements:approve')
+      return true
+    } catch {
+      return false
+    }
   },
 })
