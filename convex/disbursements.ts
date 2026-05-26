@@ -34,6 +34,14 @@ export const listPending = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
+    // Fix #1: enforce branch membership before exposing any records
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!user || user.branchId !== args.branchId) {
+      throw new Error('Unauthorized: Cannot view disbursements for this branch')
+    }
     return ctx.db
       .query('disbursements')
       .withIndex('by_status', q => q.eq('status', 'pending'))
@@ -47,6 +55,14 @@ export const listHistory = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
+    // Fix #1: enforce branch membership before exposing any records
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!user || user.branchId !== args.branchId) {
+      throw new Error('Unauthorized: Cannot view disbursements for this branch')
+    }
     // Fetch each non-pending status and merge — no by_branch index exists
     const [approved, rejected, executed] = await Promise.all([
       ctx.db
@@ -74,12 +90,35 @@ export const rejectDisbursement = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
-    await authz.require(ctx, identity.subject, 'disbursements:approve')
+
+    // Fix #2a: load the user to scope authorization to their branch (mirrors approveDisbursement)
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!user) throw new Error('User not found')
+
+    // Fix #2b: verify the disbursement exists before touching it
+    const record = await ctx.db.get(args.disbursementId)
+    if (!record) throw new Error('Disbursement not found')
+
+    // Fix #2c: guard against rejecting a non-pending record
+    if (record.status !== 'pending') {
+      throw new Error('Can only reject pending disbursements')
+    }
+
+    // Fix #2a (cont): branch-scoped authz, consistent with approveDisbursement
+    await authz
+      .withTenant(user.branchId)
+      .require(ctx, identity.subject, 'disbursements:approve')
+
     // reason is stored in transactionId field as a workaround since schema
-    // has no rejectionReason — add it to schema if needed, or store in notes
+    // has no rejectionReason — add it to schema if needed, or store in notes.
+    // Fix #2d: reuse approvedBy as "decidedBy" for audit trail until schema adds rejectedBy
     return ctx.db.patch(args.disbursementId, {
       status: 'rejected',
       transactionId: args.reason, // temporary: reuse transactionId until schema is updated
+      approvedBy: user._id,       // temporary: reuse as "decidedBy" until schema adds rejectedBy
     })
   },
 })

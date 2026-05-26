@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { useCurrentUser } from '../hooks/useCurrentUser'
@@ -32,14 +32,18 @@ function fmtDate(ts) {
 export default function DisbursementsPage() {
   const { tenantId: branchId } = useCurrentUser()
 
-  const pending    = useQuery(api.disbursements.listPending,  branchId ? { branchId } : 'skip') ?? []
-  const history    = useQuery(api.disbursements.listHistory,  branchId ? { branchId } : 'skip') ?? []
-  const canApprove = useQuery(api.disbursements.canApproveDisbursements) ?? false
+  // FIX #2 — keep raw query results so isLoading can detect undefined (loading)
+  const shouldQuery  = !!branchId
+  const pendingQuery = useQuery(api.disbursements.listPending, shouldQuery ? { branchId } : 'skip')
+  const historyQuery = useQuery(api.disbursements.listHistory, shouldQuery ? { branchId } : 'skip')
+  const canApprove   = useQuery(api.disbursements.canApproveDisbursements) ?? false
+
+  const isLoading = shouldQuery && (pendingQuery === undefined || historyQuery === undefined)
+  const pending   = pendingQuery ?? []
+  const history   = historyQuery ?? []
 
   const approveMut = useMutation(api.disbursements.approveDisbursement)
   const rejectMut  = useMutation(api.disbursements.rejectDisbursement)
-
-  const isLoading = pending === undefined || history === undefined
 
   const [tab, setTab]               = useState('pending')
   const [rejectModal, setRejectModal] = useState(null)   // disbursementId | null
@@ -224,9 +228,10 @@ function PendingTable({ rows, canApprove, fraudError, onApprove, onReject }) {
             const MIc = I[method.icon]
             const sm = STATUS_META[d.status]
             const isFraud = fraudError === d._id
+            // FIX #1 — key on Fragment, not on inner <tr> elements
             return (
-              <>
-                <tr key={d._id}>
+              <Fragment key={d._id}>
+                <tr>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span className="prod-glyph" style={{ background: 'var(--brand)' }}>
@@ -275,7 +280,7 @@ function PendingTable({ rows, canApprove, fraudError, onApprove, onReject }) {
                   )}
                 </tr>
                 {isFraud && (
-                  <tr key={d._id + '-fraud'}>
+                  <tr>
                     <td colSpan={canApprove ? 6 : 5} style={{ padding: '0 16px 10px' }}>
                       <div style={{
                         background: 'oklch(0.97 0.02 20)',
@@ -295,7 +300,7 @@ function PendingTable({ rows, canApprove, fraudError, onApprove, onReject }) {
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             )
           })}
         </tbody>
@@ -330,6 +335,8 @@ function HistoryTable({ rows }) {
             const method = METHOD_META[d.payoutMethod] ?? { label: d.payoutMethod, icon: 'Coin' }
             const MIc = I[method.icon]
             const sm = STATUS_META[d.status] ?? { label: d.status, class: '' }
+            // FIX #3 — show rejection reason, not transactionId
+            const rejectionReason = d.reason ?? d.rejectionReason
             return (
               <tr key={d._id}>
                 <td>
@@ -362,8 +369,8 @@ function HistoryTable({ rows }) {
                   <span className={'tag ' + sm.class}>{sm.label}</span>
                 </td>
                 <td style={{ fontSize: 12, maxWidth: 220 }}>
-                  {d.status === 'rejected' && d.transactionId
-                    ? <span style={{ color: 'var(--neg)' }}>{d.transactionId}</span>
+                  {d.status === 'rejected'
+                    ? <span style={{ color: 'var(--neg)' }}>{rejectionReason || 'Motif non renseigné'}</span>
                     : d.approvedBy
                     ? <span style={{ color: 'var(--ink-2)' }}>Approuvé · {String(d.approvedBy).slice(-6)}</span>
                     : <span style={{ color: 'var(--ink-3)' }}>—</span>
