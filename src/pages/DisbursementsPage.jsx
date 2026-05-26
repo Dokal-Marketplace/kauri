@@ -336,7 +336,8 @@ function HistoryTable({ rows }) {
             const MIc = I[method.icon]
             const sm = STATUS_META[d.status] ?? { label: d.status, class: '' }
             // FIX #3 — show rejection reason, not transactionId
-            const rejectionReason = d.reason ?? d.rejectionReason
+            // Backend stores reason in transactionId as workaround until schema adds rejectionReason
+            const rejectionReason = d.reason ?? d.rejectionReason ?? d.transactionId
             return (
               <tr key={d._id}>
                 <td>

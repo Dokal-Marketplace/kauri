@@ -34,7 +34,7 @@ export const listPending = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
-    // Fix #1: enforce branch membership before exposing any records
+    // Enforce branch membership before exposing any records
     const user = await ctx.db
       .query('users')
       .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
@@ -55,7 +55,7 @@ export const listHistory = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
-    // Fix #1: enforce branch membership before exposing any records
+    // Enforce branch membership before exposing any records
     const user = await ctx.db
       .query('users')
       .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
@@ -91,20 +91,25 @@ export const rejectDisbursement = mutation({
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
 
-    // Fix #2a: load the user to scope authorization to their branch (mirrors approveDisbursement)
+    // load the user to scope authorization to their branch (mirrors approveDisbursement)
     const user = await ctx.db
       .query('users')
       .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!user) throw new Error('User not found')
 
-    // Fix #2b: verify the disbursement exists before touching it
+    // Verify the disbursement exists before touching it
     const record = await ctx.db.get(args.disbursementId)
     if (!record) throw new Error('Disbursement not found')
 
-    // Fix #2c: guard against rejecting a non-pending record
+    // Guard against rejecting a non-pending record
     if (record.status !== 'pending') {
       throw new Error('Can only reject pending disbursements')
+    }
+
+    // Verify the disbursement belongs to the user's branch before authorizing
+    if (record.branchId !== user.branchId) {
+      throw new Error('Unauthorized: Cannot reject disbursements from another branch')
     }
 
     // Fix #2a (cont): branch-scoped authz, consistent with approveDisbursement
@@ -114,7 +119,7 @@ export const rejectDisbursement = mutation({
 
     // reason is stored in transactionId field as a workaround since schema
     // has no rejectionReason — add it to schema if needed, or store in notes.
-    // Fix #2d: reuse approvedBy as "decidedBy" for audit trail until schema adds rejectedBy
+    // Reuse approvedBy as "decidedBy" for audit trail until schema adds rejectedBy
     return ctx.db.patch(args.disbursementId, {
       status: 'rejected',
       transactionId: args.reason, // temporary: reuse transactionId until schema is updated
