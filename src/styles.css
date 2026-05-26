@@ -7,6 +7,7 @@
   --bg-sidebar: oklch(0.975 0.007 75);
   --surface: oklch(1 0 0);
   --surface-2: oklch(0.978 0.006 75);
+  --surface-3: oklch(0.95 0.008 75);
   --surface-inset: oklch(0.965 0.008 75);
 
   /* Borders + dividers */
@@ -34,6 +35,12 @@
   --warn: oklch(0.72 0.13 75);
   --info: oklch(0.62 0.1 230);
   --info-soft: oklch(0.96 0.025 230);
+
+  /* Aliases for dashboard */
+  --success: var(--pos);
+  --danger: var(--neg);
+  --accent: var(--brand);
+  --warning: var(--warn);
 
   /* Type */
   --font-sans: 'Inter', 'Söhne', system-ui, -apple-system, sans-serif;
@@ -901,6 +908,7 @@ a {
   --bg-sidebar: oklch(0.16 0.008 70);
   --surface: oklch(0.21 0.008 70);
   --surface-2: oklch(0.235 0.008 70);
+  --surface-3: oklch(0.25 0.008 70);
   --surface-inset: oklch(0.245 0.008 70);
   --border: oklch(0.3 0.008 70);
   --border-strong: oklch(0.35 0.008 70);
@@ -2324,6 +2332,251 @@ textarea.input {
   background: var(--pos);
   color: white;
 }
+/* === Dashboard page extras === */
+
+/* Skeleton loaders */
+.skeleton-bone {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0 }
+  to { background-position: -200% 0 }
+}
+
+.skeleton-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+}
+
+/* KPI cards */
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.kpi-label {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.kpi-sub {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.kpi-trend {
+  font-size: 11px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.kpi-trend.up {
+  color: var(--pos);
+}
+
+.kpi-trend.down {
+  color: var(--neg);
+}
+
+/* Chart bars */
+.bar-in {
+  background: var(--pos);
+  opacity: 0.85;
+}
+
+.bar-out {
+  background: var(--neg);
+  opacity: 0.75;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.legend-dot.in {
+  background: var(--pos);
+}
+
+.legend-dot.out {
+  background: var(--neg);
+}
+
+/* Progress bars */
+.progress-track {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), var(--pos));
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* Feed rows */
+.feed-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.feed-row:last-child {
+  border-bottom: none;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.feed-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.feed-name {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feed-sub {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.feed-amount {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.feed-amount.deposit {
+  color: var(--pos);
+}
+
+.feed-amount.withdrawal {
+  color: var(--neg);
+}
+
+.feed-time {
+  font-size: 11px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* Transaction icons */
+.tx-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.tx-icon.tx-deposit {
+  background: color-mix(in srgb, var(--pos) 15%, transparent);
+  color: var(--pos);
+}
+
+.tx-icon.tx-withdrawal {
+  background: color-mix(in srgb, var(--neg) 15%, transparent);
+  color: var(--neg);
+}
+
+.tx-icon.tx-reconciliation {
+  background: color-mix(in srgb, var(--brand) 15%, transparent);
+  color: var(--brand);
+}
+
+/* Badges */
+.badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-verified {
+  background: color-mix(in srgb, var(--pos) 15%, transparent);
+  color: var(--pos);
+}
+
+.badge-pending {
+  background: color-mix(in srgb, var(--warn) 15%, transparent);
+  color: var(--warn);
+}
+
+.badge-completed {
+  background: color-mix(in srgb, var(--pos) 15%, transparent);
+  color: var(--pos);
+}
+
+.badge-rejected {
+  background: color-mix(in srgb, var(--neg) 15%, transparent);
+  color: var(--neg);
+}
+
+.badge-reversed {
+  background: color-mix(in srgb, var(--neg) 15%, transparent);
+  color: var(--neg);
+}
+
+/* Card title */
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 4px;
+}
+
 .recon-step.active .recon-step-num {
   background: var(--ink);
   color: white;
