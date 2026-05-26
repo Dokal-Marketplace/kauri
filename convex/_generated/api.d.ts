@@ -12,6 +12,7 @@ import type * as agents from "../agents.js";
 import type * as authz from "../authz.js";
 import type * as customers from "../customers.js";
 import type * as disbursements from "../disbursements.js";
+import type * as goals from "../goals.js";
 import type * as products from "../products.js";
 import type * as reconciliation from "../reconciliation.js";
 import type * as seed from "../seed.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   authz: typeof authz;
   customers: typeof customers;
   disbursements: typeof disbursements;
+  goals: typeof goals;
   products: typeof products;
   reconciliation: typeof reconciliation;
   seed: typeof seed;

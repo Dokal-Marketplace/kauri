@@ -1,135 +1,88 @@
+// src/pages/ObjectifsPage.jsx
 import { useState, useMemo } from 'react'
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
 import { fmt, KPI, PageHeader } from '../components'
 import Novu from '../components/Inbox'
-const CLIENTS = []
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
 const OBJ_STATUSES = {
-  atteint: { label: 'Atteint', tagClass: 'actif', dot: 'var(--pos)' },
-  enavance: { label: 'En avance', tagClass: 'actif', dot: 'var(--pos)' },
-  surrythme: { label: 'Sur le rythme', tagClass: 'attente', dot: 'var(--warn)' },
-  enretard: { label: 'En retard', tagClass: 'archive', dot: 'var(--neg)' },
-  enpause: { label: 'En pause', tagClass: 'archive', dot: 'oklch(0.7 0.02 70)' },
+  atteint:  { label: 'Atteint',        tagClass: 'actif',   dot: 'var(--pos)' },
+  encours:  { label: 'En avance',      tagClass: 'actif',   dot: 'var(--pos)' },
+  enretard: { label: 'En retard',      tagClass: 'archive', dot: 'var(--neg)' },
+  enpause:  { label: 'En pause',       tagClass: 'archive', dot: 'oklch(0.7 0.02 70)' },
 }
 
-function buildObjectifs() {
-  const base = CLIENTS.filter((c) => c.status !== 'attente').map((c, i) => {
-    const pct = Math.round((c.balance / c.goal) * 100)
-    const days = [62, 38, 91, 14, 27, 120, 9, 48][i] || 30
-    const cat =
-      [
-        'Pèlerinage',
-        'Scolarité',
-        'Mariage',
-        'Logement',
-        'Tontine',
-        'Soudure agricole',
-        'Logement',
-        'Scolarité',
-      ][i] || 'Tontine'
-    const deadline =
-      [
-        '1 juil. 2026',
-        '12 juin 2026',
-        '5 août 2026',
-        '19 mai 2026',
-        '1 juin 2026',
-        '2 sept. 2026',
-        '14 mai 2026',
-        '22 juin 2026',
-      ][i] || '—'
-    const status =
-      pct >= 100
-        ? 'atteint'
-        : days < 21 && pct < 80
-          ? 'enretard'
-          : pct >= 80
-            ? 'enavance'
-            : 'surrythme'
-    return {
-      id: 10 + c.id,
-      client: c.name,
-      initials: c.initials,
-      phone: c.phone,
-      agent: c.agent,
-      village: c.village,
-      product: c.product,
-      category: cat,
-      target: c.goal,
-      current: c.balance,
-      monthly: c.monthlyAvg,
-      pct,
-      daysLeft: days,
-      deadline,
-      created: c.joined,
-      status,
-    }
-  })
-  return base
+const CATEGORY_COLORS = {
+  'Scolarité':        'oklch(0.6 0.13 230)',
+  'Logement':         'var(--brand)',
+  'Pèlerinage':       'oklch(0.55 0.13 280)',
+  'Mariage':          'oklch(0.6 0.13 340)',
+  'Soudure agricole': 'oklch(0.6 0.13 130)',
+  'Tontine':          'oklch(0.65 0.06 70)',
 }
 
-const OBJECTIFS = buildObjectifs()
-
-const OBJ_KPIS = [
-  {
-    label: 'Objectifs actifs',
-    value: String(OBJECTIFS.filter((o) => o.status !== 'atteint').length),
-    unit: '',
-    delta: '+3',
-    dir: 'up',
-    note: 'ce mois',
-    icon: 'users',
-  },
-  {
-    label: 'Épargne cumulée',
-    value: fmt(OBJECTIFS.reduce((s, o) => s + o.current, 0)),
-    unit: 'FCFA',
-    delta: '+6,1%',
-    dir: 'up',
-    note: 'vs. avr.',
-    icon: 'wallet',
-  },
-  {
-    label: 'Atteints (12 mois)',
-    value: '37',
-    unit: '',
-    delta: '+5',
-    dir: 'up',
-    note: 'vs. 2025',
-    icon: 'coin',
-  },
-  {
-    label: "Taux moy. d'atteinte",
-    value: '68',
-    unit: '%',
-    delta: '+4 pts',
-    dir: 'up',
-    note: 'objectifs actifs',
-    icon: 'receipt',
-  },
-]
-
-const CATEGORIES = [
-  { name: 'Scolarité', count: 42, sum: 1820000, color: 'oklch(0.6 0.13 230)' },
-  { name: 'Logement', count: 18, sum: 2640000, color: 'var(--brand)' },
-  { name: 'Pèlerinage', count: 11, sum: 1490000, color: 'oklch(0.55 0.13 280)' },
-  { name: 'Mariage', count: 14, sum: 1180000, color: 'oklch(0.6 0.13 340)' },
-  { name: 'Soudure agricole', count: 23, sum: 760000, color: 'oklch(0.6 0.13 130)' },
-  { name: 'Tontine', count: 34, sum: 920000, color: 'oklch(0.65 0.06 70)' },
+const ALL_CATEGORIES = [
+  'Scolarité',
+  'Logement',
+  'Pèlerinage',
+  'Mariage',
+  'Soudure agricole',
+  'Tontine',
+  'Autre',
 ]
 
 function catColor(name) {
-  return (CATEGORIES.find((c) => c.name === name) || {}).color || 'var(--ink-3)'
+  return CATEGORY_COLORS[name] ?? 'var(--ink-3)'
 }
 
-function statusOf(o) {
-  return OBJ_STATUSES[o.status]
+function statusOf(status) {
+  return OBJ_STATUSES[status] ?? OBJ_STATUSES.encours
 }
+
+function daysUntil(deadline) {
+  const end = new Date(deadline).getTime()
+  return Math.round((end - Date.now()) / 86_400_000)
+}
+
+function fmtDeadline(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+// ---------------------------------------------------------------------------
+// KPI derivation from live goals
+// ---------------------------------------------------------------------------
+
+function buildKPIs(goals) {
+  const active  = goals.filter((g) => g.status !== 'atteint').length
+  const saved   = goals.reduce((s, g) => s + (g.currentAmount ?? 0), 0)
+  const reached = goals.filter((g) => g.status === 'atteint').length
+  const avgPct  = goals.length
+    ? Math.round(goals.reduce((s, g) => s + (g.pct ?? 0), 0) / goals.length)
+    : 0
+
+  return [
+    { label: 'Objectifs actifs',      value: String(active),  unit: '',   delta: '',      dir: 'up', note: 'ce mois',       icon: 'users'   },
+    { label: 'Épargne cumulée',       value: fmt(saved),      unit: 'FCFA', delta: '',    dir: 'up', note: 'total',         icon: 'wallet'  },
+    { label: 'Atteints (12 mois)',    value: String(reached), unit: '',   delta: '',      dir: 'up', note: 'vs. 2025',      icon: 'coin'    },
+    { label: "Taux moy. d'atteinte",  value: String(avgPct),  unit: '%',  delta: '',      dir: 'up', note: 'objectifs actifs', icon: 'receipt' },
+  ]
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
 
 function SpotlightCard({ o }) {
   if (!o) return null
-  const reste = Math.max(0, o.target - o.current)
-  const monthsNeeded = o.monthly > 0 ? Math.ceil(reste / o.monthly) : '—'
+  const reste = Math.max(0, o.targetAmount - (o.currentAmount ?? 0))
+  const monthsNeeded = o.monthlyAvg > 0 ? Math.ceil(reste / o.monthlyAvg) : '—'
+  const st = statusOf(o.status)
   return (
     <div className="card spotlight">
       <div className="card-head">
@@ -143,65 +96,45 @@ function SpotlightCard({ o }) {
       </div>
       <div className="spotlight-body">
         <div className="spotlight-head">
-          <div className="avatar lg">{o.initials}</div>
+          <div className="avatar lg">{o.initials ?? '?'}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 600, fontSize: 16, letterSpacing: '-0.015em' }}>
-              {o.client}
+              {o.customerName ?? o.customerId}
             </div>
             <div className="cell-sub">
-              {o.category} · {o.product} · {o.agent}
+              {o.category} · {o.productCode} · {o.agentName ?? o.agentId}
             </div>
           </div>
           <span className="status-chip" data-status={o.status}>
-            <span className="status-chip-dot" style={{ background: statusOf(o).dot }} />
-            {statusOf(o).label}
+            <span className="status-chip-dot" style={{ background: st.dot }} />
+            {st.label}
           </span>
         </div>
 
         <div className="spotlight-prog">
           <div className="spotlight-amount">
-            <span className="big">{fmt(o.current)}</span>
+            <span className="big">{fmt(o.currentAmount ?? 0)}</span>
             <span className="cell-sub" style={{ fontSize: 12.5, marginLeft: 6 }}>
-              / {fmt(o.target)} FCFA
+              / {fmt(o.targetAmount)} FCFA
             </span>
           </div>
           <div className="goal-bar" style={{ height: 8, marginTop: 12 }}>
-            <div className="goal-fill" style={{ width: Math.min(100, o.pct) + '%' }} />
+            <div className="goal-fill" style={{ width: Math.min(100, o.pct ?? 0) + '%' }} />
           </div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: 6,
-              fontSize: 12,
-              color: 'var(--ink-3)',
-            }}
-          >
-            <span>
-              <strong style={{ color: 'var(--ink)' }}>{o.pct}%</strong> atteint
-            </span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 12, color: 'var(--ink-3)' }}>
+            <span><strong style={{ color: 'var(--ink)' }}>{o.pct ?? 0}%</strong> atteint</span>
             <span>Reste {fmt(reste)} FCFA</span>
           </div>
         </div>
 
         <div className="spotlight-stats">
           <div>
-            <div className="cell-sub">Cadence actuelle</div>
-            <div className="ssv">
-              {fmt(o.monthly)} <span className="u">/mois</span>
-            </div>
-          </div>
-          <div>
-            <div className="cell-sub">Mois restants</div>
-            <div className="ssv">
-              {monthsNeeded} <span className="u">mois</span>
-            </div>
-          </div>
-          <div>
             <div className="cell-sub">Échéance</div>
-            <div className="ssv" style={{ fontSize: 14 }}>
-              {o.deadline}
-            </div>
+            <div className="ssv" style={{ fontSize: 14 }}>{fmtDeadline(o.deadline)}</div>
+          </div>
+          <div>
+            <div className="cell-sub">Jours restants</div>
+            <div className="ssv">{daysUntil(o.deadline)} <span className="u">j</span></div>
           </div>
         </div>
       </div>
@@ -209,7 +142,17 @@ function SpotlightCard({ o }) {
   )
 }
 
-function CategoriesCard({ cats }) {
+function CategoriesCard({ goals }) {
+  const cats = useMemo(() => {
+    const map = {}
+    goals.forEach((g) => {
+      if (!map[g.category]) map[g.category] = { name: g.category, count: 0, sum: 0 }
+      map[g.category].count += 1
+      map[g.category].sum   += g.currentAmount ?? 0
+    })
+    return Object.values(map).sort((a, b) => b.count - a.count)
+  }, [goals])
+
   const total = cats.reduce((s, c) => s + c.count, 0)
   return (
     <div className="card">
@@ -228,7 +171,7 @@ function CategoriesCard({ cats }) {
             <span
               key={c.name}
               title={`${c.name} · ${c.count}`}
-              style={{ flex: c.count, background: c.color }}
+              style={{ flex: c.count, background: catColor(c.name) }}
             />
           ))}
         </div>
@@ -236,12 +179,10 @@ function CategoriesCard({ cats }) {
       <div className="cat-list">
         {cats.map((c) => (
           <div key={c.name} className="cat-row">
-            <span className="cat-dot" style={{ background: c.color }} />
+            <span className="cat-dot"   style={{ background: catColor(c.name) }} />
             <span className="cat-name">{c.name}</span>
             <span className="cat-count">{c.count}</span>
-            <span className="cat-sum">
-              {fmt(c.sum)} <span className="cell-sub">FCFA</span>
-            </span>
+            <span className="cat-sum">{fmt(c.sum)} <span className="cell-sub">FCFA</span></span>
           </div>
         ))}
       </div>
@@ -249,66 +190,225 @@ function CategoriesCard({ cats }) {
   )
 }
 
-export default function ObjectifsPage() {
-  const [q, setQ] = useState('')
-  const [seg, setSeg] = useState('tous')
-  const [cat, setCat] = useState('toutes')
-  const [agent, setAgent] = useState('tous')
-  const [sortBy, setSortBy] = useState('pct')
-  const [sortDir, setSortDir] = useState('desc')
-  const [online, setOnline] = useState(true)
+// ---------------------------------------------------------------------------
+// "Nouvel objectif" modal
+// ---------------------------------------------------------------------------
 
-  const agents = useMemo(() => ['tous', ...Array.from(new Set(OBJECTIFS.map((o) => o.agent)))], [])
+const EMPTY_FORM = {
+  customerId:   '',
+  category:     ALL_CATEGORIES[0],
+  productCode:  '',
+  targetAmount: '',
+  deadline:     '',
+}
+
+function NouvelObjectifModal({ onClose, customers }) {
+  const createGoal = useMutation(api.goals.create)
+  const [form, setForm]   = useState(EMPTY_FORM)
+  const [busy, setBusy]   = useState(false)
+  const [error, setError] = useState(null)
+
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError(null)
+
+    if (!form.customerId)   return setError('Sélectionnez un client.')
+    if (!form.productCode)  return setError('Renseignez le code produit.')
+    if (!form.targetAmount || Number(form.targetAmount) <= 0) return setError('Montant invalide.')
+    if (!form.deadline)     return setError('Sélectionnez une échéance.')
+
+    setBusy(true)
+    try {
+      await createGoal({
+        customerId:   form.customerId,
+        category:     form.category,
+        productCode:  form.productCode,
+        targetAmount: Number(form.targetAmount),
+        deadline:     form.deadline,
+      })
+      onClose()
+    } catch (err) {
+      setError(err.message ?? 'Erreur inattendue.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 480 }}>
+        <div className="modal-head">
+          <div className="card-title">Nouvel objectif d'épargne</div>
+          <button className="btn ghost sm" onClick={onClose} style={{ padding: 4 }}>✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="modal-body">
+          {/* Customer */}
+          <div className="form-group">
+            <label className="filter-label">Client</label>
+            {customers && customers.length > 0 ? (
+              <select className="filter-select" value={form.customerId} onChange={set('customerId')} required>
+                <option value="">— Sélectionner —</option>
+                {customers.map((c) => (
+                  <option key={c._id} value={c._id}>{c.fullName} · {c.phoneNumber}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className="filter-select"
+                placeholder="ID client (ex: k7abc123…)"
+                value={form.customerId}
+                onChange={set('customerId')}
+                required
+              />
+            )}
+          </div>
+
+          {/* Category */}
+          <div className="form-group">
+            <label className="filter-label">Catégorie</label>
+            <select className="filter-select" value={form.category} onChange={set('category')}>
+              {ALL_CATEGORIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Product code */}
+          <div className="form-group">
+            <label className="filter-label">Code produit</label>
+            <input
+              className="filter-select"
+              placeholder="ex: EPARGNE-LIBRE"
+              value={form.productCode}
+              onChange={set('productCode')}
+              required
+            />
+          </div>
+
+          {/* Target amount */}
+          <div className="form-group">
+            <label className="filter-label">Montant cible (FCFA)</label>
+            <input
+              className="filter-select"
+              type="number"
+              min="1"
+              placeholder="ex: 500000"
+              value={form.targetAmount}
+              onChange={set('targetAmount')}
+              required
+            />
+          </div>
+
+          {/* Deadline */}
+          <div className="form-group">
+            <label className="filter-label">Échéance</label>
+            <input
+              className="filter-select"
+              type="date"
+              value={form.deadline}
+              onChange={set('deadline')}
+              required
+            />
+          </div>
+
+          {error && (
+            <div style={{ color: 'var(--neg)', fontSize: 12.5, marginTop: 4 }}>{error}</div>
+          )}
+
+          <div className="modal-actions">
+            <button type="button" className="btn ghost" onClick={onClose}>Annuler</button>
+            <button type="submit" className="btn brand" disabled={busy}>
+              {busy ? 'Enregistrement…' : 'Créer l\'objectif'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Main page
+// ---------------------------------------------------------------------------
+
+/**
+ * The branchId is normally resolved from the authenticated user's profile.
+ * Pass it in as a prop or pull it from a context / Zustand store.
+ */
+export default function ObjectifsPage({ branchId, customers }) {
+  // ── Live data ──────────────────────────────────────────────────────────────
+  // useQuery returns undefined while loading; we default to [] for safe rendering.
+  const goals = useQuery(api.goals.listByBranch, branchId ? { branchId } : 'skip') ?? []
+
+  // ── UI state ───────────────────────────────────────────────────────────────
+  const [q,          setQ]          = useState('')
+  const [seg,        setSeg]        = useState('tous')
+  const [cat,        setCat]        = useState('toutes')
+  const [agent,      setAgent]      = useState('tous')
+  const [sortBy,     setSortBy]     = useState('pct')
+  const [sortDir,    setSortDir]    = useState('desc')
+  const [online,     setOnline]     = useState(true)
+  const [showModal,  setShowModal]  = useState(false)
+
+  // ── Derived values ─────────────────────────────────────────────────────────
+  const agents = useMemo(
+    () => ['tous', ...Array.from(new Set(goals.map((g) => g.agentName ?? String(g.agentId))))],
+    [goals]
+  )
   const cats = useMemo(
-    () => ['toutes', ...Array.from(new Set(OBJECTIFS.map((o) => o.category)))],
-    []
+    () => ['toutes', ...Array.from(new Set(goals.map((g) => g.category)))],
+    [goals]
   )
 
+  const counts = useMemo(() => ({
+    tous:     goals.length,
+    encours:  goals.filter((g) => g.status !== 'atteint' && g.status !== 'enpause').length,
+    atteints: goals.filter((g) => g.status === 'atteint').length,
+    enretard: goals.filter((g) => g.status === 'enretard').length,
+    enpause:  goals.filter((g) => g.status === 'enpause').length,
+  }), [goals])
+
   const filtered = useMemo(() => {
-    let r = OBJECTIFS.filter((o) => {
-      if (seg === 'encours' && (o.status === 'atteint' || o.status === 'enpause')) return false
-      if (seg === 'atteints' && o.status !== 'atteint') return false
-      if (seg === 'enretard' && o.status !== 'enretard') return false
-      if (seg === 'enpause' && o.status !== 'enpause') return false
-      if (cat !== 'toutes' && o.category !== cat) return false
-      if (agent !== 'tous' && o.agent !== agent) return false
-      if (
-        q &&
-        !o.client.toLowerCase().includes(q.toLowerCase()) &&
-        !o.category.toLowerCase().includes(q.toLowerCase())
-      )
-        return false
+    let r = goals.filter((g) => {
+      if (seg === 'encours'  && (g.status === 'atteint' || g.status === 'enpause')) return false
+      if (seg === 'atteints' && g.status !== 'atteint')  return false
+      if (seg === 'enretard' && g.status !== 'enretard') return false
+      if (seg === 'enpause'  && g.status !== 'enpause')  return false
+      if (cat !== 'toutes'   && g.category !== cat)      return false
+      const agentLabel = g.agentName ?? String(g.agentId)
+      if (agent !== 'tous'   && agentLabel !== agent)    return false
+      const lq = q.toLowerCase()
+      if (q && !(g.customerName ?? '').toLowerCase().includes(lq) && !g.category.toLowerCase().includes(lq)) return false
       return true
     })
     r.sort((a, b) => {
-      const va = a[sortBy],
-        vb = b[sortBy]
+      const va = a[sortBy], vb = b[sortBy]
       const cmp = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb), 'fr')
       return sortDir === 'asc' ? cmp : -cmp
     })
     return r
-  }, [q, seg, cat, agent, sortBy, sortDir])
+  }, [goals, q, seg, cat, agent, sortBy, sortDir])
 
-  const counts = {
-    tous: OBJECTIFS.length,
-    encours: OBJECTIFS.filter((o) => o.status !== 'atteint' && o.status !== 'enpause').length,
-    atteints: OBJECTIFS.filter((o) => o.status === 'atteint').length,
-    enretard: OBJECTIFS.filter((o) => o.status === 'enretard').length,
-    enpause: OBJECTIFS.filter((o) => o.status === 'enpause').length,
-  }
+  const spotlight = useMemo(
+    () =>
+      [...goals]
+        .filter((g) => g.status !== 'atteint' && g.status !== 'enpause')
+        .sort((a, b) => (b.pct ?? 0) - (a.pct ?? 0))[0],
+    [goals]
+  )
 
+  const kpis = useMemo(() => buildKPIs(goals), [goals])
+
+  // ── Sort helpers ───────────────────────────────────────────────────────────
   const toggleSort = (col) => {
     if (sortBy === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    else {
-      setSortBy(col)
-      setSortDir('desc')
-    }
+    else { setSortBy(col); setSortDir('desc') }
   }
   const SortHead = ({ col, children, align }) => (
-    <th
-      onClick={() => toggleSort(col)}
-      style={{ textAlign: align || 'left', cursor: 'pointer', userSelect: 'none' }}
-    >
+    <th onClick={() => toggleSort(col)} style={{ textAlign: align || 'left', cursor: 'pointer', userSelect: 'none' }}>
       <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
         {children}
         <span style={{ opacity: sortBy === col ? 1 : 0.25, fontSize: 9 }}>
@@ -318,103 +418,87 @@ export default function ObjectifsPage() {
     </th>
   )
 
-  const spotlight = useMemo(
-    () =>
-      [...OBJECTIFS]
-        .filter((o) => o.status !== 'atteint' && o.status !== 'enpause')
-        .sort((a, b) => b.pct - a.pct)[0],
-    []
-  )
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="objectifs-page">
       <PageHeader
         crumbs={['Objectifs']}
         title="Objectifs d'épargne"
-        sub={`${counts.tous} objectifs · ${counts.encours} en cours · ${counts.atteints} atteints sur 12 mois`}
+        sub={`${counts.tous} objectifs · ${counts.encours} en cours · ${counts.atteints} atteints`}
       >
         <button
           className={'status-pill' + (online ? '' : ' offline')}
           onClick={() => setOnline(!online)}
         >
-          <span className="status-dot"></span>
+          <span className="status-dot" />
           {online ? 'En ligne · synchronisé' : 'Hors ligne · 4 en file'}
         </button>
         <Novu />
       </PageHeader>
 
       <section className="kpi-row">
-        {OBJ_KPIS.map((k) => (
-          <KPI key={k.label} k={k} />
-        ))}
+        {kpis.map((k) => <KPI key={k.label} k={k} />)}
       </section>
 
       <section className="row obj-row" style={{ marginBottom: 14 }}>
         <SpotlightCard o={spotlight} />
-        <CategoriesCard cats={CATEGORIES} />
+        <CategoriesCard goals={goals} />
       </section>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          gap: 8,
-          marginBottom: 12,
-        }}
-      >
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <button className="btn">
           <I.Export size={14} />
           Exporter
         </button>
-        <button className="btn brand">
+        <button className="btn brand" onClick={() => setShowModal(true)}>
           <I.Plus size={14} stroke="white" />
           Nouvel objectif
         </button>
       </div>
+
       <div className="card" style={{ marginBottom: 14 }}>
         <div className="filter-bar">
           <div className="seg-tabs">
             {[
-              { k: 'tous', label: 'Tous', n: counts.tous },
-              { k: 'encours', label: 'En cours', n: counts.encours },
-              { k: 'atteints', label: 'Atteints', n: counts.atteints },
-              { k: 'enretard', label: 'En retard', n: counts.enretard },
-              { k: 'enpause', label: 'En pause', n: counts.enpause },
+              { k: 'tous',     label: 'Tous',       n: counts.tous     },
+              { k: 'encours',  label: 'En cours',   n: counts.encours  },
+              { k: 'atteints', label: 'Atteints',   n: counts.atteints },
+              { k: 'enretard', label: 'En retard',  n: counts.enretard },
+              { k: 'enpause',  label: 'En pause',   n: counts.enpause  },
             ].map((t) => (
-              <button
-                key={t.k}
-                className={'seg-tab ' + (seg === t.k ? 'on' : '')}
-                onClick={() => setSeg(t.k)}
-              >
+              <button key={t.k} className={'seg-tab ' + (seg === t.k ? 'on' : '')} onClick={() => setSeg(t.k)}>
                 {t.label}
                 <span className="seg-count">{t.n}</span>
               </button>
             ))}
           </div>
           <div className="filter-spacer" />
+
           <div className="filter-group">
             <label className="filter-label">Catégorie</label>
             <select className="filter-select" value={cat} onChange={(e) => setCat(e.target.value)}>
               {cats.map((a) => (
-                <option key={a} value={a}>
-                  {a === 'toutes' ? 'Toutes' : a}
-                </option>
+                <option key={a} value={a}>{a === 'toutes' ? 'Toutes' : a}</option>
               ))}
             </select>
           </div>
           <div className="filter-group">
             <label className="filter-label">Agent</label>
-            <select
-              className="filter-select"
-              value={agent}
-              onChange={(e) => setAgent(e.target.value)}
-            >
+            <select className="filter-select" value={agent} onChange={(e) => setAgent(e.target.value)}>
               {agents.map((a) => (
-                <option key={a} value={a}>
-                  {a === 'tous' ? 'Tous les agents' : a}
-                </option>
+                <option key={a} value={a}>{a === 'tous' ? 'Tous les agents' : a}</option>
               ))}
             </select>
+          </div>
+
+          <div className="filter-group">
+            <input
+              className="filter-select"
+              style={{ minWidth: 160 }}
+              placeholder="Rechercher…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
           </div>
         </div>
 
@@ -422,108 +506,82 @@ export default function ObjectifsPage() {
           <table className="data-table obj-table">
             <thead>
               <tr>
-                <SortHead col="client">Client</SortHead>
+                <SortHead col="customerName">Client</SortHead>
                 <SortHead col="category">Catégorie</SortHead>
                 <th style={{ width: '26%' }}>Progression</th>
-                <SortHead col="current" align="right">
-                  Épargne
-                </SortHead>
-                <SortHead col="monthly" align="right">
-                  Cadence / mois
-                </SortHead>
-                <SortHead col="daysLeft">Échéance</SortHead>
+                <SortHead col="currentAmount" align="right">Épargne</SortHead>
+                <SortHead col="targetAmount"  align="right">Objectif</SortHead>
+                <SortHead col="deadline">Échéance</SortHead>
                 <SortHead col="status">Statut</SortHead>
                 <th style={{ width: 30 }}></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((o) => {
-                const st = statusOf(o)
+              {filtered.map((g) => {
+                const st = statusOf(g.status)
+                const daysLeft = daysUntil(g.deadline)
                 return (
-                  <tr key={o.id}>
+                  <tr key={g._id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div className="avatar sm">{o.initials}</div>
+                        <div className="avatar sm">{(g.initials ?? g.customerName?.[0] ?? '?')}</div>
                         <div>
-                          <div style={{ fontWeight: 550 }}>{o.client}</div>
-                          <div className="cell-sub">
-                            {o.agent} · {o.village}
-                          </div>
+                          <div style={{ fontWeight: 550 }}>{g.customerName ?? g.customerId}</div>
+                          <div className="cell-sub">{g.agentName ?? g.agentId}</div>
                         </div>
                       </div>
                     </td>
                     <td>
-                      <span className="chip cat-chip" data-cat={o.category}>
-                        <span className="cat-dot" style={{ background: catColor(o.category) }} />
-                        {o.category}
+                      <span className="chip cat-chip" data-cat={g.category}>
+                        <span className="cat-dot" style={{ background: catColor(g.category) }} />
+                        {g.category}
                       </span>
                     </td>
                     <td>
                       <div className="prog-cell">
                         <div className="prog-row">
-                          <span className="prog-pct">{o.pct}%</span>
+                          <span className="prog-pct">{g.pct ?? 0}%</span>
                           <span className="prog-target">
-                            {fmt(o.target)} <span className="cell-sub">FCFA</span>
+                            {fmt(g.targetAmount)} <span className="cell-sub">FCFA</span>
                           </span>
                         </div>
                         <div className="goal-bar">
                           <div
                             className="goal-fill"
                             style={{
-                              width: Math.min(100, o.pct) + '%',
+                              width: Math.min(100, g.pct ?? 0) + '%',
                               background:
-                                o.status === 'atteint'
-                                  ? 'linear-gradient(90deg, var(--pos), oklch(0.65 0.12 155))'
-                                  : o.status === 'enretard'
-                                    ? 'linear-gradient(90deg, var(--neg), oklch(0.7 0.16 30))'
-                                    : o.status === 'enpause'
-                                      ? 'linear-gradient(90deg, oklch(0.78 0.01 70), oklch(0.85 0.01 70))'
-                                      : undefined,
+                                g.status === 'atteint'  ? 'linear-gradient(90deg, var(--pos), oklch(0.65 0.12 155))' :
+                                g.status === 'enretard' ? 'linear-gradient(90deg, var(--neg), oklch(0.7 0.16 30))' :
+                                g.status === 'enpause'  ? 'linear-gradient(90deg, oklch(0.78 0.01 70), oklch(0.85 0.01 70))' :
+                                undefined,
                             }}
                           />
                         </div>
                       </div>
                     </td>
-                    <td
-                      style={{
-                        textAlign: 'right',
-                        fontVariantNumeric: 'tabular-nums',
-                        fontWeight: 550,
-                      }}
-                    >
-                      {fmt(o.current)}
-                      <span className="cell-sub" style={{ marginLeft: 4 }}>
-                        FCFA
-                      </span>
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 550 }}>
+                      {fmt(g.currentAmount ?? 0)}
+                      <span className="cell-sub" style={{ marginLeft: 4 }}>FCFA</span>
                     </td>
-                    <td
-                      style={{
-                        textAlign: 'right',
-                        fontVariantNumeric: 'tabular-nums',
-                        color: 'var(--ink-2)',
-                      }}
-                    >
-                      {o.monthly > 0 ? fmt(o.monthly) : '—'}
-                      {o.monthly > 0 && (
-                        <span className="cell-sub" style={{ marginLeft: 4 }}>
-                          FCFA
-                        </span>
-                      )}
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--ink-2)' }}>
+                      {fmt(g.targetAmount)}
+                      <span className="cell-sub" style={{ marginLeft: 4 }}>FCFA</span>
                     </td>
                     <td>
-                      {o.status === 'atteint' ? (
-                        <span className="cell-sub">{o.deadline}</span>
+                      {g.status === 'atteint' ? (
+                        <span className="cell-sub">{fmtDeadline(g.deadline)}</span>
                       ) : (
                         <div style={{ lineHeight: 1.25 }}>
                           <div style={{ fontWeight: 500, fontSize: 13 }}>
-                            {o.daysLeft > 0 ? `${o.daysLeft} j` : "Aujourd'hui"}
+                            {daysLeft > 0 ? `${daysLeft} j` : "Aujourd'hui"}
                           </div>
-                          <div className="cell-sub">{o.deadline}</div>
+                          <div className="cell-sub">{fmtDeadline(g.deadline)}</div>
                         </div>
                       )}
                     </td>
                     <td>
-                      <span className="status-chip" data-status={o.status}>
+                      <span className="status-chip" data-status={g.status}>
                         <span className="status-chip-dot" style={{ background: st.dot }} />
                         {st.label}
                       </span>
@@ -538,26 +596,32 @@ export default function ObjectifsPage() {
               })}
             </tbody>
           </table>
+
           {filtered.length === 0 && (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-              Aucun objectif ne correspond aux filtres.
+              {goals.length === 0
+                ? 'Chargement des objectifs…'
+                : 'Aucun objectif ne correspond aux filtres.'}
             </div>
           )}
+
           <div className="table-foot">
-            <span>
-              Affichage de {filtered.length} sur {OBJECTIFS.length} objectifs
-            </span>
+            <span>Affichage de {filtered.length} sur {goals.length} objectifs</span>
             <div className="pager">
-              <button className="btn ghost sm" disabled>
-                ‹ Précédent
-              </button>
+              <button className="btn ghost sm" disabled>‹ Précédent</button>
               <span className="page-num on">1</span>
-              <span className="page-num">2</span>
-              <button className="btn ghost sm">Suivant ›</button>
+              <button className="btn ghost sm" disabled>Suivant ›</button>
             </div>
           </div>
         </div>
       </div>
+
+      {showModal && (
+        <NouvelObjectifModal
+          onClose={() => setShowModal(false)}
+          customers={customers ?? []}
+        />
+      )}
     </div>
   )
 }

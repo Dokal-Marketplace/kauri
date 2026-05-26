@@ -137,4 +137,27 @@ export default defineSchema({
   })
     .index('by_org', ['organizationId'])
     .index('by_status', ['organizationId', 'status']),
+
+  // 9. SAVINGS GOALS
+  // Progress (currentAmount, pct) is computed at query time by summing completed
+  // transactions for the customer — never stored — so it stays in sync automatically.
+  savingsGoals: defineTable({
+    customerId: v.id('customers'),
+    branchId: v.id('branches'),
+    agentId: v.id('users'), // responsible agent
+    category: v.string(), // "Scolarité", "Mariage", etc.
+    productCode: v.string(), // links to a product
+    targetAmount: v.number(),
+    deadline: v.string(), // ISO date YYYY-MM-DD
+    status: v.union(
+      v.literal('encours'),
+      v.literal('atteint'),
+      v.literal('enretard'),
+      v.literal('enpause')
+    ),
+    createdAt: v.number(),
+  })
+    .index('by_customer', ['customerId'])
+    .index('by_branch_status', ['branchId', 'status'])
+    .index('by_agent', ['agentId']),
 })
