@@ -17,7 +17,10 @@ export const requestDisbursement = mutation({
       .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!agent) throw new Error('Agent not found')
-    return ctx.db.insert('disbursements', {
+      await authz
+      .withTenant(agent.branchId)
+      .require(ctx, identity.subject, 'disbursements:request')
+      return ctx.db.insert('disbursements', {
       amount: args.amount,
       customerId: args.customerId,
       branchId: agent.branchId,

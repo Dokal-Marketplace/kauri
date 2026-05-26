@@ -54,7 +54,7 @@ export const listByBranch = query({
           .collect()
 
         const currentAmount = txs.reduce((s, t) => s + t.amount, 0)
-        const pct = Math.round((currentAmount / g.targetAmount) * 100)
+        const pct = g.targetAmount > 0 ? Math.round((currentAmount / g.targetAmount) * 100) : 0
         const daysLeft = daysUntil(g.deadline)
 
         return { ...g, currentAmount, pct, daysLeft }
@@ -84,6 +84,12 @@ export const create = mutation({
       .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!agent) throw new Error('Agent not found')
+
+    // Verify customer belongs to agent's branch
+    const customer = await ctx.db.get(args.customerId)
+    if (!customer || customer.branchId !== agent.branchId) {
+      throw new Error('Unauthorized: Customer does not belong to your branch')
+    }
 
     return ctx.db.insert('savingsGoals', {
       ...args,

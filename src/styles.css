@@ -2412,7 +2412,7 @@ textarea.input {
   opacity: 0.75;
 }
 
-.legend-dot {
+.dashboard .legend-dot {
   display: inline-block;
   width: 8px;
   height: 8px;
@@ -2420,11 +2420,11 @@ textarea.input {
   margin-right: 4px;
 }
 
-.legend-dot.in {
+.dashboard .legend-dot.in {
   background: var(--pos);
 }
 
-.legend-dot.out {
+.dashboard .legend-dot.out {
   background: var(--neg);
 }
 
@@ -2456,7 +2456,7 @@ textarea.input {
   border-bottom: none;
 }
 
-.avatar {
+.dashboard .feed-row .avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -2508,7 +2508,7 @@ textarea.input {
 }
 
 /* Transaction icons */
-.tx-icon {
+.dashboard .tx-icon {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -2518,17 +2518,17 @@ textarea.input {
   flex-shrink: 0;
 }
 
-.tx-icon.tx-deposit {
+.dashboard .tx-icon.tx-deposit {
   background: color-mix(in srgb, var(--pos) 15%, transparent);
   color: var(--pos);
 }
 
-.tx-icon.tx-withdrawal {
+.dashboard .tx-icon.tx-withdrawal {
   background: color-mix(in srgb, var(--neg) 15%, transparent);
   color: var(--neg);
 }
 
-.tx-icon.tx-reconciliation {
+.dashboard .tx-icon.tx-reconciliation {
   background: color-mix(in srgb, var(--brand) 15%, transparent);
   color: var(--brand);
 }
@@ -2570,7 +2570,7 @@ textarea.input {
 }
 
 /* Card title */
-.card-title {
+.dashboard .card-title {
   font-size: 13px;
   font-weight: 600;
   color: var(--ink-2);

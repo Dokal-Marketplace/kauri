@@ -26,6 +26,15 @@ export const branchSummary = query({
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
 
+    // Enforce branch membership
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!user || user.branchId !== args.branchId) {
+      throw new Error('Unauthorized: Cannot view dashboard for this branch')
+    }
+
     const today        = new Date().toISOString().split('T')[0]
     const startOfMonth = today.slice(0, 7) + '-01'
     const startOfMonthTs = new Date(startOfMonth).getTime()
