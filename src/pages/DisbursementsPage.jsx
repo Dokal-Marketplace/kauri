@@ -6,6 +6,8 @@ import { useCurrentUser } from '../hooks/useCurrentUser'
 import { I } from '../icons'
 import { fmt, KPI, PageHeader } from '../components'
 import { SkeletonTableRows } from '../components/Skeleton'
+import { EmptyState } from '../components/EmptyState'
+import { DisbursementIllustration } from '../components/Illustrations'
 
 const STATUS_META = {
   pending:  { label: 'En attente', class: 'attente'  },
@@ -305,9 +307,15 @@ export default function DisbursementsPage() {
 function PendingTable({ rows, canApprove, fraudError, loadingId, onApprove, onReject }) {
   if (rows.length === 0) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-        Aucun décaissement en attente.
-      </div>
+      <EmptyState
+        variant="celebration"
+        emoji="✅"
+        eyebrow="File vide"
+        eyebrowColor="var(--pos)"
+        title="Tout est traité"
+        description="Aucun décaissement en attente de validation. Revenez plus tard ou attendez une nouvelle demande."
+        celebrationStyle={{ background: 'linear-gradient(135deg, var(--tofee-success-bg, oklch(0.96 0.04 155)), oklch(0.96 0.03 155))' }}
+      />
     )
   }
   return (
@@ -417,9 +425,12 @@ function PendingTable({ rows, canApprove, fraudError, loadingId, onApprove, onRe
 function HistoryTable({ rows }) {
   if (rows.length === 0) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-        Aucun historique disponible.
-      </div>
+      <EmptyState
+        variant="compact"
+        illustration={<DisbursementIllustration />}
+        title="Aucun historique"
+        description="Les décaissements approuvés ou rejetés apparaîtront ici une fois traités."
+      />
     )
   }
   return (

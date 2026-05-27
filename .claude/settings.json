@@ -11,8 +11,16 @@
       "Bash(npx vite *)",
       "Bash(pnpm build *)",
       "Bash(pnpm add *)",
-      "Bash(pnpm lint *)"
+      "Bash(pnpm lint *)",
+      "Bash(gh repo *)",
+      "Bash(gh issue *)",
+      "Bash(gh project *)",
+      "Bash(gh auth *)",
+      "Bash(gh label *)",
+      "Bash(wait)"
     ],
-    "additionalDirectories": ["/Users/serge/Downloads/TontiPro"]
+    "additionalDirectories": [
+      "/Users/serge/Downloads/TontiPro"
+    ]
   }
 }
