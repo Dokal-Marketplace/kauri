@@ -465,11 +465,6 @@ export default function ObjectifsPage({ branchId: branchIdProp, customers: custo
         {kpis.map((k) => <KPI key={k.label} k={k} />)}
       </section>
 
-      <section className="row obj-row" style={{ marginBottom: 14 }}>
-        <SpotlightCard o={spotlight} />
-        <CategoriesCard goals={goals} />
-      </section>
-
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <button className="btn">
           <I.Export size={14} />

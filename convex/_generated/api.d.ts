@@ -10,6 +10,7 @@
 
 import type * as agents from "../agents.js";
 import type * as authz from "../authz.js";
+import type * as crons from "../crons.js";
 import type * as customers from "../customers.js";
 import type * as dashboard from "../dashboard.js";
 import type * as disbursements from "../disbursements.js";
@@ -29,6 +30,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   agents: typeof agents;
   authz: typeof authz;
+  crons: typeof crons;
   customers: typeof customers;
   dashboard: typeof dashboard;
   disbursements: typeof disbursements;
