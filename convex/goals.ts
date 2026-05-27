@@ -143,16 +143,3 @@ export const refreshStatuses = internalMutation({
   },
 })
 
-// ---------------------------------------------------------------------------
-// Cron — run refreshStatuses every day at 01:00 UTC
-// ---------------------------------------------------------------------------
-
-const crons = cronJobs()
-
-crons.daily(
-  'refresh goal statuses',
-  { hourUTC: 1, minuteUTC: 0 },
-  internal.goals.refreshStatuses
-)
-
-export default crons
