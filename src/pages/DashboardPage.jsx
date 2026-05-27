@@ -271,10 +271,6 @@ export default function DashboardPage() {
   return (
     <>
       <Topbar online={online} setOnline={setOnline} inbox={<Novu />} />
-      <h1 className="h1">Bonsoir, Djibril</h1>
-      <div className="h1-sub mb-6">
-        {today} · Agence Bobo-Dioulasso · 6 agents en service
-      </div>
 
       {/* ── skeleton while loading ── */}
       {branchId && summary === undefined && <DashboardSkeleton />}

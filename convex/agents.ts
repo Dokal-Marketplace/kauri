@@ -27,7 +27,14 @@ export const bindDevice = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
-    await authz.require(ctx, identity.subject, 'devices:bind')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
     const device = await ctx.db
       .query('devices')
       .withIndex('by_serial', q => q.eq('serialNumber', args.serialNumber))

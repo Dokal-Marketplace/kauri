@@ -41,7 +41,6 @@ const permissions = definePermissions({
 const roles = defineRoles(permissions, {
   // Field-based role
   field_agent: {
-    includes: ['base_agent'], //
     transactions: ['collect', 'view_ledger'],
     customers: ['create_prospect', 'view'], // Can onboard but not verify
     disbursements: ['request'],

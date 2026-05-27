@@ -87,7 +87,16 @@ export const listByBranch = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
-    await authz.require(ctx, identity.subject, "reconciliation:liquidate");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
+      .unique();
+    if (!user) throw new Error("User not found");
+
+    await authz
+      .withTenant(user.branchId)
+      .require(ctx, identity.subject, "reconciliation:liquidate");
 
     const allRecords = await ctx.db
       .query("reconciliations")
