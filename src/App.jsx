@@ -6,6 +6,7 @@ import AppCommandPalette from './components/CommandPalette'
 import { lazyWithReload } from './utils/lazyWithReload'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { useCurrentUser } from './hooks/useCurrentUser'
+import { TenantsProvider } from './components/providers/tenant-provider'
 
 const DashboardPage      = lazyWithReload(() => import('./pages/DashboardPage'))
 const ClientsPage        = lazyWithReload(() => import('./pages/ClientsPage'))
@@ -44,17 +45,22 @@ function AppShell() {
   const { isLoaded, convexUser } = useCurrentUser()
   if (isLoaded && !convexUser) return <OnboardingWizard />
   return (
-    <div className="app">
-      <Sidebar />
-      <main className="main">
-        <ChunkErrorBoundary>
-          <Suspense fallback={null}>
-            <Outlet />
-          </Suspense>
-        </ChunkErrorBoundary>
-      </main>
-      <AppCommandPalette />
-    </div>
+    <TenantsProvider
+      features={{ members: true, invitations: true, teams: true }}
+      onToast={(msg, type) => console[type === 'error' ? 'error' : 'log']('[tenant]', msg)}
+    >
+      <div className="app">
+        <Sidebar />
+        <main className="main">
+          <ChunkErrorBoundary>
+            <Suspense fallback={null}>
+              <Outlet />
+            </Suspense>
+          </ChunkErrorBoundary>
+        </main>
+        <AppCommandPalette />
+      </div>
+    </TenantsProvider>
   )
 }
 
