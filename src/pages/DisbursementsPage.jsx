@@ -4,6 +4,7 @@ import { api } from '../../convex/_generated/api'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { I } from '../icons'
 import { fmt, KPI, PageHeader } from '../components'
+import { SkeletonTableRows } from '../components/Skeleton'
 
 const STATUS_META = {
   pending:  { label: 'En attente', class: 'attente'  },
@@ -141,8 +142,12 @@ export default function DisbursementsPage() {
         </div>
 
         {isLoading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-            Chargement…
+          <div className="table-wrap">
+            <table className="data-table">
+              <tbody>
+                <SkeletonTableRows cols={[160, 80, 70, 80, 90, 90, 70]} rows={6} />
+              </tbody>
+            </table>
           </div>
         ) : tab === 'pending' ? (
           <PendingTable

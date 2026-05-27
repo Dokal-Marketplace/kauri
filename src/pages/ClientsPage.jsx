@@ -371,7 +371,7 @@ export default function ClientsPage() {
                 ))}
                 </tbody>
             </table>
-            {filtered.length === 0 && (
+            {!clientsLoading && filtered.length === 0 && (
               <div style={{ padding: 40, textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
                 Aucun client ne correspond aux filtres.
               </div>

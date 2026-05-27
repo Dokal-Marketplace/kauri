@@ -5,6 +5,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser'
 import { I } from '../icons'
 import { fmt, PageHeader } from '../components'
 import Novu from '../components/Inbox'
+import { SkeletonTableRows } from '../components/Skeleton'
 
 const ROLE_TAGS = {
   Administrateur: { bg: 'oklch(0.94 0.04 50)', fg: 'var(--brand-ink)' },
@@ -308,7 +309,9 @@ export default function AgentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 ? (
+                {rawAgents === undefined ? (
+                  <SkeletonTableRows cols={[160, 80, 70, 90, 90, 80, 80, 70, 30]} rows={6} />
+                ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={10} style={{ padding: 40, textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
                       Aucun agent ne correspond aux filtres.

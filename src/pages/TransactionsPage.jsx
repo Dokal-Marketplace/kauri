@@ -5,6 +5,7 @@ import { I } from '../icons'
 import Novu from '../components/Inbox'
 import { fmt, PageHeader } from '../components'
 import { useCurrentBranch } from '../hooks/useCurrentBranch'
+import { SkeletonTableRows } from '../components/Skeleton'
 
 const PAGE_SIZE = 10
 
@@ -276,13 +277,15 @@ export default function TransactionsPage() {
   
   // Convex queries and mutations
   const dateRange = getDateRangeForPeriod(period)
-  const convexData = useQuery(
+  const convexRaw = useQuery(
     api.transactions.listByBranch,
     branchId ? {
       from: dateRange.from,
       to: dateRange.to,
     } : 'skip'
-  ) ?? []
+  )
+  const convexData = convexRaw ?? []
+  const txLoading = branchId && convexRaw === undefined
   
   // Map Convex data to UI schema
   const TX_FULL = useMemo(() => convexData.map(mapConvexToUI), [convexData])
@@ -427,7 +430,9 @@ export default function TransactionsPage() {
               </tr>
             </thead>
             <tbody>
-              {paginated.map(t => {
+              {txLoading ? (
+                <SkeletonTableRows cols={[80, 160, 70, 110, 90, 80, 80, 70, 30]} rows={8} />
+              ) : paginated.map(t => {
                 const st = STATUS_STYLE[t.status]
                 return (
                   <tr key={t.id} onClick={() => setSelected(t)} className={selected && selected.id === t.id ? "selected" : ""}>
@@ -467,7 +472,7 @@ export default function TransactionsPage() {
               })}
             </tbody>
           </table>
-          {filtered.length === 0 && (
+          {!txLoading && filtered.length === 0 && (
             <div style={{ padding: 40, textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
               Aucun mouvement ne correspond aux filtres.
             </div>
