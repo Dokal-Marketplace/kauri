@@ -389,7 +389,6 @@ export default function ClientsPage() {
                 />
               ) : (
                 <EmptyState
-                  variant="compact"
                   illustration={<NoResultsIllustration />}
                   title="Aucun client trouvé"
                   description="Aucun client ne correspond aux filtres sélectionnés."

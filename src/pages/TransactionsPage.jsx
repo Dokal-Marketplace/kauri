@@ -477,14 +477,12 @@ export default function TransactionsPage() {
           {!txLoading && filtered.length === 0 && (
             TX_FULL.length === 0 ? (
               <EmptyState
-                variant="compact"
                 illustration={<TransactionsIllustration />}
                 title="Aucune transaction"
                 description="Les dépôts et retraits enregistrés sur les TPE apparaîtront ici."
               />
             ) : (
               <EmptyState
-                variant="compact"
                 illustration={<NoResultsIllustration />}
                 title="Aucun mouvement trouvé"
                 description="Aucune transaction ne correspond aux filtres ou à la période sélectionnée."
