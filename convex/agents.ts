@@ -7,6 +7,15 @@ export const listByBranch = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+    if (caller.branchId !== args.branchId)
+      throw new Error('Unauthorized: Cannot list agents for this branch')
+
     const users = await ctx.db
       .query('users')
       .withIndex('by_branch', q => q.eq('branchId', args.branchId))
@@ -27,7 +36,22 @@ export const bindDevice = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
-    await authz.require(ctx, identity.subject, 'devices:bind')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+
+    await authz
+      .withTenant(caller.branchId)
+      .require(ctx, identity.subject, 'devices:bind')
+
+    // Prevent binding a device to an agent from another branch
+    const target = await ctx.db.get(args.userId)
+    if (!target || target.branchId !== caller.branchId)
+      throw new Error('Unauthorized: Cannot bind device to a user from another branch')
+
     const device = await ctx.db
       .query('devices')
       .withIndex('by_serial', q => q.eq('serialNumber', args.serialNumber))

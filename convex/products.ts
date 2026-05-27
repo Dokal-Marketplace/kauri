@@ -57,6 +57,9 @@ export const upsert = mutation({
     const { productId, ...fields } = args
 
     if (productId) {
+      const existing = await ctx.db.get(productId)
+      if (!existing || existing.organizationId !== args.organizationId)
+        throw new Error('Unauthorized: Cannot update a product from another organization')
       return ctx.db.patch(productId, fields)
     }
     return ctx.db.insert('products', fields)

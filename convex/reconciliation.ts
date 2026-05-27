@@ -23,6 +23,11 @@ export const settleDailyCash = mutation({
       .withTenant(verifier.branchId)
       .require(ctx, identity.subject, "reconciliation:liquidate");
 
+    // Guard: verifier may only settle agents from their own branch
+    const agent = await ctx.db.get(args.agentId);
+    if (!agent || agent.branchId !== verifier.branchId)
+      throw new Error("Unauthorized: Cannot settle an agent from another branch");
+
     // Use provided date or fall back to today
     const date = args.date ?? new Date().toISOString().split("T")[0];
 
@@ -84,7 +89,18 @@ export const listByBranch = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
-    await authz.require(ctx, identity.subject, "reconciliation:liquidate");
+
+    const caller = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
+      .unique();
+    if (!caller) throw new Error("User not found");
+    if (caller.branchId !== args.branchId)
+      throw new Error("Unauthorized: Cannot view reconciliations for this branch");
+
+    await authz
+      .withTenant(caller.branchId)
+      .require(ctx, identity.subject, "reconciliation:liquidate");
 
     const records = await ctx.db
       .query("reconciliations")
