@@ -6,6 +6,7 @@ import { fmt, PageHeader } from '../components'
 import Novu from '../components/Inbox'
 import { useCurrentBranch } from '../hooks/useCurrentBranch'
 import { NewProspectModal } from '../components/NewProspectModal'
+import { SkeletonTableRows, SkeletonTablePage } from '../components/Skeleton'
 import { EmptyState, EmptyInline } from '../components/EmptyState'
 import { ClientsIllustration, NoResultsIllustration } from '../components/Illustrations'
 
@@ -107,10 +108,12 @@ export default function ClientsPage() {
   const branchId = useCurrentBranch()
   
   // Convex hooks
-  const clients = useQuery(
+  const clientsRaw = useQuery(
     api.customers.listByBranch,
     branchId ? {} : 'skip'
-  ) ?? []
+  )
+  const clients = clientsRaw ?? []
+  const clientsLoading = branchId && clientsRaw === undefined
   
   const createProspectMutation = useMutation(api.customers.createProspect)
 
@@ -200,12 +203,13 @@ export default function ClientsPage() {
   if (!branchId) {
     return (
       <div className="clients-page">
-        <PageHeader crumbs={["Clients"]} title="Clients" sub="Chargement..." >
+        <PageHeader crumbs={["Clients"]} title="Clients" sub="Chargement...">
           <Novu />
         </PageHeader>
-        <div style={{ padding: 40, textAlign: "center", color: "var(--ink-3)" }}>
-          Authentification en cours...
-        </div>
+        <SkeletonTablePage
+          cols={[36, 180, 90, 80, 80, 70, 40, 90, 70, 30]}
+          rows={8}
+        />
       </div>
     )
   }
@@ -331,7 +335,9 @@ export default function ClientsPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginated.map(c => (
+                {clientsLoading ? (
+                  <SkeletonTableRows cols={[36, 180, 90, 80, 80, 70, 40, 90, 70, 30]} rows={8} />
+                ) : paginated.map(c => (
                   <tr key={c.id} onClick={() => setOpenClient(c)} className={selected.has(c.id) ? "selected" : ""}>
                     <td onClick={e => e.stopPropagation()}>
                       <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} />
@@ -363,9 +369,9 @@ export default function ClientsPage() {
                     <td><button className="btn ghost sm" style={{ padding: 4 }} onClick={e => { e.stopPropagation(); setOpenClient(c) }}><I.Arrow size={12}/></button></td>
                   </tr>
                 ))}
-              </tbody>
+                </tbody>
             </table>
-            {filtered.length === 0 && (
+            {!clientsLoading && filtered.length === 0 && (
               displayClients.length === 0 ? (
                 <EmptyState
                   variant="compact"

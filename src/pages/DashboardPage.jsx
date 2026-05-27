@@ -4,10 +4,10 @@ import { api } from '../../convex/_generated/api'
 import { useState } from 'react'
 import { Topbar, QuickActionsCard } from '../components'
 import Novu from '../components/Inbox'
-import { useCurrentBranch } from '../hooks/useCurrentBranch'
+import { useCurrentUser } from '../hooks/useCurrentUser'
+import { SkeletonDashboard } from '../components/Skeleton'
 
 // ─── Skeleton primitives ─────────────────────────────────────────────────────
-
 
 function Bone({ w = '100%', h = 16, radius = 6, style = {} }) {
   return (
@@ -247,10 +247,9 @@ function timeAgo(ts) {
 
 export default function DashboardPage() {
   const [online, setOnline] = useState(true)
-  const branchId = useCurrentBranch()
+  const { isLoaded, convexUser } = useCurrentUser()
+  const branchId = convexUser?.branchId ?? null
 
-  // Convex reactive query — returns undefined while loading, null when the
-  // branch is missing/skipped, and a data object once ready.
   const summary = useQuery(
     api.dashboard.branchSummary,
     branchId ? { branchId } : 'skip'
@@ -259,6 +258,15 @@ export default function DashboardPage() {
   const today = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
+
+  if (!isLoaded) {
+    return (
+      <>
+        <Topbar online={online} setOnline={setOnline} inbox={<Novu />} />
+        <SkeletonDashboard />
+      </>
+    )
+  }
 
   return (
     <>
@@ -377,5 +385,16 @@ export default function DashboardPage() {
         .card-title { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 4px; }
       */}
     </>
+  )
+}
+
+function PendingCard({ label }) {
+  return (
+    <div
+      className="card"
+      style={{ padding: 24, color: 'var(--ink-3)', fontSize: 13, textAlign: 'center' }}
+    >
+      {label} — données en attente
+    </div>
   )
 }

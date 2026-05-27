@@ -6,6 +6,7 @@ import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
 import { fmt, KPI, PageHeader } from '../components'
 import Novu from '../components/Inbox'
+import { SkeletonTableRows } from '../components/Skeleton'
 import { EmptyState } from '../components/EmptyState'
 import { GoalIllustration, NoResultsIllustration } from '../components/Illustrations'
 
@@ -362,8 +363,8 @@ export default function ObjectifsPage({ branchId: branchIdProp, customers }) {
   // ── Live data ──────────────────────────────────────────────────────────────
   // useQuery returns undefined while loading; we default to [] for safe rendering.
   const goalsRaw = useQuery(api.goals.listByBranch, branchId ? { branchId } : 'skip')
-  const isLoading = goalsRaw === undefined
   const goals = goalsRaw ?? []
+  const goalsLoading = branchId && goalsRaw === undefined
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [q,          setQ]          = useState('')
@@ -539,7 +540,9 @@ export default function ObjectifsPage({ branchId: branchIdProp, customers }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((g) => {
+              {goalsLoading ? (
+                <SkeletonTableRows cols={[160, 80, 120, 80, 90, 70, 30]} rows={7} />
+              ) : filtered.map((g) => {
                 const st = statusOf(g.status)
                 const daysLeft = daysUntil(g.deadline)
                 return (
@@ -619,7 +622,7 @@ export default function ObjectifsPage({ branchId: branchIdProp, customers }) {
             </tbody>
           </table>
 
-          {filtered.length === 0 && (
+          {!goalsLoading && filtered.length === 0 && (
             goals.length === 0 ? (
               <EmptyState
                 variant="compact"

@@ -3,6 +3,7 @@ import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
 import { fmt, PageHeader } from '../components'
+import { SkeletonTableRows } from '../components/Skeleton'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -233,7 +234,9 @@ function ReconciliationIndex({ onOpen }) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(r => {
+                {!records ? (
+                  <SkeletonTableRows cols={[110, 160, 90, 80, 80, 80, 30]} rows={6} />
+                ) : filtered.map(r => {
                   const meta     = STATUS_META[r.status] ?? STATUS_META.pending
                   const variance = r.variance ?? 0
                   return (
