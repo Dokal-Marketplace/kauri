@@ -45,10 +45,13 @@ export default defineSchema({
     onboardedBy: v.id('users'),
     status: v.union(v.literal('prospect'), v.literal('verified'), v.literal('rejected')),
     metadata: v.optional(v.any()), // Extra KYC info
+    createdAt: v.number(), // Timestamp when customer was created
+    balance: v.optional(v.number()), // Current balance
   })
     .index('by_phone', ['phoneNumber'])
     .index('by_status', ['status'])
-    .index('by_branch', ['branchId']),
+    .index('by_branch', ['branchId'])
+    .index('by_branch_status', ['branchId', 'status']),
 
   // 4. DEVICE BINDING (TPE Tracking)
   devices: defineTable({
@@ -70,6 +73,7 @@ export default defineSchema({
     agentId: v.id('users'),
     branchId: v.id('branches'),
     tpeId: v.string(), // Serial of the TPE used
+    type: v.union(v.literal('deposit'), v.literal('withdrawal')), // Transaction type
     status: v.union(v.literal('pending'), v.literal('completed'), v.literal('reversed')),
     reversalReason: v.optional(v.string()),
     reversedBy: v.optional(v.id('users')), // Supervisor ID

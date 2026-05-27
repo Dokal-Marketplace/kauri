@@ -1,5 +1,6 @@
 // src/pages/ObjectifsPage.jsx
 import { useState, useMemo } from 'react'
+import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
@@ -355,10 +356,14 @@ function NouvelObjectifModal({ onClose, customers }) {
  * The branchId is normally resolved from the authenticated user's profile.
  * Pass it in as a prop or pull it from a context / Zustand store.
  */
-export default function ObjectifsPage({ branchId, customers }) {
+export default function ObjectifsPage({ branchId: branchIdProp, customers }) {
+  const { tenantId } = useCurrentUser()
+  const branchId = branchIdProp ?? tenantId
   // ── Live data ──────────────────────────────────────────────────────────────
   // useQuery returns undefined while loading; we default to [] for safe rendering.
-  const goals = useQuery(api.goals.listByBranch, branchId ? { branchId } : 'skip') ?? []
+  const goalsRaw = useQuery(api.goals.listByBranch, branchId ? { branchId } : 'skip')
+  const isLoading = goalsRaw === undefined
+  const goals = goalsRaw ?? []
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [q,          setQ]          = useState('')

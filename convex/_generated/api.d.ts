@@ -11,6 +11,7 @@
 import type * as agents from "../agents.js";
 import type * as authz from "../authz.js";
 import type * as customers from "../customers.js";
+import type * as dashboard from "../dashboard.js";
 import type * as disbursements from "../disbursements.js";
 import type * as goals from "../goals.js";
 import type * as products from "../products.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   agents: typeof agents;
   authz: typeof authz;
   customers: typeof customers;
+  dashboard: typeof dashboard;
   disbursements: typeof disbursements;
   goals: typeof goals;
   products: typeof products;
