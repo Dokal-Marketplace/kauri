@@ -2,9 +2,9 @@ import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
-import { fmt, PageHeader } from '../components'
+import { fmt, KPI, PageHeader } from '../components'
 import Novu from '../components/Inbox'
-import { useCurrentBranch } from '../hooks/useCurrentBranch'
+import { useCurrentUser } from '../hooks/useCurrentUser'
 import { NewProspectModal } from '../components/NewProspectModal'
 import { SkeletonTableRows, SkeletonTablePage } from '../components/Skeleton'
 import { EmptyState, EmptyInline } from '../components/EmptyState'
@@ -105,15 +105,16 @@ function ClientDrawer({ client, onClose }) {
 }
 
 export default function ClientsPage() {
-  const branchId = useCurrentBranch()
-  
+  const { isLoaded, convexUser } = useCurrentUser()
+  const branchId = convexUser?.branchId ?? null
+
   // Convex hooks
   const clientsRaw = useQuery(
     api.customers.listByBranch,
-    branchId ? {} : 'skip'
+    isLoaded && branchId ? {} : 'skip'
   )
   const clients = clientsRaw ?? []
-  const clientsLoading = branchId && clientsRaw === undefined
+  const clientsLoading = isLoaded && branchId && clientsRaw === undefined
   
   const createProspectMutation = useMutation(api.customers.createProspect)
 
@@ -199,8 +200,8 @@ export default function ClientsPage() {
     }
   }
 
-  // Loading state — early return AFTER all hooks
-  if (!branchId) {
+  // Show skeleton only while auth/user data is loading
+  if (!isLoaded) {
     return (
       <div className="clients-page">
         <PageHeader crumbs={["Clients"]} title="Clients" sub="Chargement...">
@@ -272,7 +273,10 @@ export default function ClientsPage() {
       </PageHeader>
 
       <section className="kpi-row">
-        {/* KPIs will be computed from real data */}
+        <KPI k={{ label: "Clients (total)", value: fmt(counts.tous),    unit: "",     delta: `${counts.tous}`, dir: "up", note: "enregistrés",      icon: "users"  }} />
+        <KPI k={{ label: "Actifs",          value: fmt(counts.actif),   unit: "",     delta: counts.tous > 0 ? `${Math.round((counts.actif / counts.tous) * 100)}%` : "0%", dir: "up", note: "du portefeuille", icon: "users"  }} />
+        <KPI k={{ label: "Solde moyen",     value: fmt(counts.tous > 0 ? Math.round(displayClients.reduce((s, c) => s + c.balance, 0) / counts.tous) : 0), unit: "FCFA", delta: "", dir: "up", note: "par client",       icon: "wallet" }} />
+        <KPI k={{ label: "En attente KYC",  value: fmt(counts.attente), unit: "",     delta: `${counts.attente}`, dir: counts.attente > 0 ? "down" : "up", note: "à vérifier", icon: "shield" }} />
       </section>
       <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <button className="btn"><I.Export size={14}/>Exporter</button>

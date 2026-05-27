@@ -277,10 +277,10 @@ export default function DashboardPage() {
       </div>
 
       {/* ── skeleton while loading ── */}
-      {summary === undefined && <DashboardSkeleton />}
+      {branchId && summary === undefined && <DashboardSkeleton />}
 
       {/* ── branch unavailable / no data ── */}
-      {summary === null && (
+      {(!branchId || summary === null) && (
         <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>📭</div>
           <div style={{ fontWeight: 600, marginBottom: 4 }}>Données indisponibles</div>
@@ -385,16 +385,5 @@ export default function DashboardPage() {
         .card-title { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 4px; }
       */}
     </>
-  )
-}
-
-function PendingCard({ label }) {
-  return (
-    <div
-      className="card"
-      style={{ padding: 24, color: 'var(--ink-3)', fontSize: 13, textAlign: 'center' }}
-    >
-      {label} — données en attente
-    </div>
   )
 }

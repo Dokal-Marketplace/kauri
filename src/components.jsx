@@ -189,7 +189,7 @@ export function Topbar({ online, setOnline, inbox, onSearch }) {
 }
 
 export function KPI({ k }) {
-  const Ic = { users: I.Users, wallet: I.Wallet, receipt: I.Receipt, coin: I.Coin }[k.icon]
+  const Ic = { users: I.Users, wallet: I.Wallet, receipt: I.Receipt, coin: I.Coin, shield: I.Shield }[k.icon]
   return (
     <div className="kpi">
       <div className="kpi-label">

@@ -4,6 +4,8 @@ import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react'
 import { Sidebar } from './components'
 import AppCommandPalette from './components/CommandPalette'
 import { lazyWithReload } from './utils/lazyWithReload'
+import { OnboardingWizard } from './components/OnboardingWizard'
+import { useCurrentUser } from './hooks/useCurrentUser'
 
 const DashboardPage      = lazyWithReload(() => import('./pages/DashboardPage'))
 const ClientsPage        = lazyWithReload(() => import('./pages/ClientsPage'))
@@ -38,21 +40,29 @@ class ChunkErrorBoundary extends Component {
 }
 
 // ─── Layout ────────────────────────────────────────────────────────────────────
+function AppShell() {
+  const { isLoaded, convexUser } = useCurrentUser()
+  if (isLoaded && !convexUser) return <OnboardingWizard />
+  return (
+    <div className="app">
+      <Sidebar />
+      <main className="main">
+        <ChunkErrorBoundary>
+          <Suspense fallback={null}>
+            <Outlet />
+          </Suspense>
+        </ChunkErrorBoundary>
+      </main>
+      <AppCommandPalette />
+    </div>
+  )
+}
+
 function Layout() {
   return (
     <>
       <SignedIn>
-        <div className="app">
-          <Sidebar />
-          <main className="main">
-            <ChunkErrorBoundary>
-              <Suspense fallback={null}>
-                <Outlet />
-              </Suspense>
-            </ChunkErrorBoundary>
-          </main>
-          <AppCommandPalette />
-        </div>
+        <AppShell />
       </SignedIn>
 
       <SignedOut>
