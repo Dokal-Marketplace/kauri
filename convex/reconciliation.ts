@@ -46,7 +46,10 @@ export const settleDailyCash = mutation({
       .withIndex("by_agent_date", (q) => q.eq("agentId", args.agentId))
       .filter((q) =>
         q.and(
-          q.eq(q.field("status"), "completed"),
+          q.or(
+            q.eq(q.field("status"), "completed"),
+            q.eq(q.field("status"), "pending")
+          ),
           q.gte(q.field("timestamp"), startOfDay),
           q.lte(q.field("timestamp"), endOfDay)
         )
@@ -55,7 +58,7 @@ export const settleDailyCash = mutation({
 
     if (!transactions[0])
       throw new Error(
-        "Aucune transaction complétée trouvée pour cet agent à cette date."
+        "Aucune transaction trouvée pour cet agent à cette date."
       );
 
     const systemExpected = transactions.reduce((sum, tx) => sum + tx.amount, 0);
@@ -86,11 +89,15 @@ export const listByBranch = query({
     if (!identity) throw new Error("Unauthenticated");
     await authz.require(ctx, identity.subject, "reconciliation:liquidate");
 
-    const records = await ctx.db
+    const allRecords = await ctx.db
       .query("reconciliations")
       .withIndex("by_branch_status", (r) => r.eq("branchId", args.branchId))
       .order("desc")
       .collect();
+
+    const records = args.date
+      ? allRecords.filter((r) => r.date === args.date)
+      : allRecords;
 
     // Enrich with agent and verifier names
     return Promise.all(

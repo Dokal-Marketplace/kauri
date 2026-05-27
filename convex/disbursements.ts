@@ -150,6 +150,10 @@ export const approveDisbursement = mutation({
     const record = await ctx.db.get(args.disbursementId)
     if (!record) throw new Error('Disbursement not found')
 
+    if (record.status !== 'pending') {
+      throw new Error('Can only approve pending disbursements')
+    }
+
     if (record.initiatedBy === supervisor._id) {
       throw new Error('Fraud Prevention: You cannot approve your own request.')
     }

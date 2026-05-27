@@ -77,6 +77,13 @@ export const create = mutation({
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
 
+    if (args.targetAmount <= 0) throw new Error('targetAmount must be greater than 0')
+
+    const deadlineMs = new Date(args.deadline).getTime()
+    if (isNaN(deadlineMs) || deadlineMs <= Date.now()) {
+      throw new Error('deadline must be a valid date in the future')
+    }
+
     const agent = await ctx.db
       .query('users')
       .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
@@ -142,4 +149,3 @@ export const refreshStatuses = internalMutation({
     )
   },
 })
-
