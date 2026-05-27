@@ -6,6 +6,8 @@ import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
 import { fmt, KPI, PageHeader } from '../components'
 import Novu from '../components/Inbox'
+import { EmptyState } from '../components/EmptyState'
+import { GoalIllustration, NoResultsIllustration } from '../components/Illustrations'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -166,27 +168,42 @@ function CategoriesCard({ goals }) {
           Détails <I.Arrow size={12} />
         </span>
       </div>
-      <div style={{ padding: '4px 16px 8px' }}>
-        <div className="cat-bar">
-          {cats.map((c) => (
-            <span
-              key={c.name}
-              title={`${c.name} · ${c.count}`}
-              style={{ flex: c.count, background: catColor(c.name) }}
-            />
-          ))}
-        </div>
-      </div>
-      <div className="cat-list">
-        {cats.map((c) => (
-          <div key={c.name} className="cat-row">
-            <span className="cat-dot"   style={{ background: catColor(c.name) }} />
-            <span className="cat-name">{c.name}</span>
-            <span className="cat-count">{c.count}</span>
-            <span className="cat-sum">{fmt(c.sum)} <span className="cell-sub">FCFA</span></span>
+      {cats.length === 0 ? (
+        <div style={{ padding: '0 16px 20px' }}>
+          <div style={{
+            padding: '20px', textAlign: 'center',
+            border: '1.5px dashed var(--border)',
+            borderRadius: 12,
+            color: 'var(--ink-3)', fontSize: 13,
+          }}>
+            La répartition par motif s'affichera dès le premier objectif créé.
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <>
+          <div style={{ padding: '4px 16px 8px' }}>
+            <div className="cat-bar">
+              {cats.map((c) => (
+                <span
+                  key={c.name}
+                  title={`${c.name} · ${c.count}`}
+                  style={{ flex: c.count, background: catColor(c.name) }}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="cat-list">
+            {cats.map((c) => (
+              <div key={c.name} className="cat-row">
+                <span className="cat-dot"   style={{ background: catColor(c.name) }} />
+                <span className="cat-name">{c.name}</span>
+                <span className="cat-count">{c.count}</span>
+                <span className="cat-sum">{fmt(c.sum)} <span className="cell-sub">FCFA</span></span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -603,13 +620,26 @@ export default function ObjectifsPage({ branchId: branchIdProp, customers }) {
           </table>
 
           {filtered.length === 0 && (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-              {isLoading
-                ? 'Chargement des objectifs…'
-                : goals.length === 0
-                ? 'Aucun objectif sur cette agence.'
-                : 'Aucun objectif ne correspond aux filtres.'}
-            </div>
+            goals.length === 0 ? (
+              <EmptyState
+                variant="compact"
+                illustration={<GoalIllustration />}
+                title="Aucun objectif d'épargne"
+                description="Créez le premier objectif d'épargne d'un client pour suivre sa progression."
+                actions={
+                  <button className="btn brand" style={{ marginTop: 4 }} onClick={() => setShowModal(true)}>
+                    <I.Plus size={13} stroke="white" /> Nouvel objectif
+                  </button>
+                }
+              />
+            ) : (
+              <EmptyState
+                variant="compact"
+                illustration={<NoResultsIllustration />}
+                title="Aucun objectif trouvé"
+                description="Aucun objectif ne correspond aux filtres ou à la recherche en cours."
+              />
+            )
           )}
 
           <div className="table-foot">

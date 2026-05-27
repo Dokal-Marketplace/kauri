@@ -5,6 +5,8 @@ import { useCurrentUser } from '../hooks/useCurrentUser'
 import { I } from '../icons'
 import { fmt, PageHeader } from '../components'
 import Novu from '../components/Inbox'
+import { EmptyState } from '../components/EmptyState'
+import { StaffIllustration, NoResultsIllustration } from '../components/Illustrations'
 
 const ROLE_TAGS = {
   Administrateur: { bg: 'oklch(0.94 0.04 50)', fg: 'var(--brand-ink)' },
@@ -288,10 +290,13 @@ export default function AgentsPage() {
 
         <div className="table-wrap">
           {isLoadingAgents ? (
-            <div style={{ padding: 40, textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
-              Chargement des agents…
-            </div>
+            <EmptyState
+              variant="compact"
+              icon={<I.Cloud size={22} />}
+              title="Chargement des agents…"
+            />
           ) : (
+            <>
             <table className="data-table">
               <thead>
                 <tr>
@@ -308,13 +313,7 @@ export default function AgentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} style={{ padding: 40, textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
-                      Aucun agent ne correspond aux filtres.
-                    </td>
-                  </tr>
-                ) : filtered.map(a => {
+                {filtered.map(a => {
                   const tag = ROLE_TAGS[a.role] || ROLE_TAGS["Agent terrain"]
                   const pct = a.target > 0 ? Math.round((a.collected / a.target) * 100) : 0
                   return (
@@ -371,6 +370,29 @@ export default function AgentsPage() {
                 })}
               </tbody>
             </table>
+            {filtered.length === 0 && (
+              AGENTS.length === 0 ? (
+                <EmptyState
+                  variant="compact"
+                  illustration={<StaffIllustration />}
+                  title="Aucun agent déployé"
+                  description="Ajoutez votre premier agent terrain pour commencer à suivre la flotte TPE."
+                  actions={
+                    <button className="btn brand" style={{ marginTop: 4 }}>
+                      <I.Plus size={13} stroke="white" /> Nouvel agent
+                    </button>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  variant="compact"
+                  illustration={<NoResultsIllustration />}
+                  title="Aucun agent trouvé"
+                  description="Aucun agent ne correspond aux filtres sélectionnés."
+                />
+              )
+            )}
+            </>
           )}
         </div>
       </div>
@@ -385,7 +407,12 @@ export default function AgentsPage() {
           </div>
           <div style={{ padding: "4px 14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
             {AGENTS.filter(a => a.collected > 0).sort((a,b) => b.collected - a.collected).slice(0,4).length === 0 ? (
-              <div style={{ padding: "12px 0", color: "var(--ink-3)", fontSize: 13 }}>Aucune collecte enregistrée ce mois.</div>
+              <EmptyState
+                variant="compact"
+                icon={<I.Wallet size={20} />}
+                title="Aucune collecte ce mois"
+                description="Les performances terrain s'afficheront ici dès la première transaction."
+              />
             ) : AGENTS.filter(a => a.collected > 0).sort((a,b) => b.collected - a.collected).slice(0,4).map((a, i) => {
               const pct = a.target > 0 ? Math.round((a.collected / a.target) * 100) : 0
               return (
@@ -491,7 +518,12 @@ export default function AgentsPage() {
             </div>
           )}
           {AGENTS.length === 0 && !isLoadingAgents && (
-            <div style={{ padding: "12px 0", color: "var(--ink-3)", fontSize: 13 }}>Aucun agent dans cette agence.</div>
+            <EmptyState
+              variant="compact"
+              icon={<I.Cloud size={20} />}
+              title="Aucune activité"
+              description="L'activité terrain des TPE s'affichera ici."
+            />
           )}
         </div>
       </div>

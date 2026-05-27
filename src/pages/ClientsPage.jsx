@@ -6,6 +6,8 @@ import { fmt, PageHeader } from '../components'
 import Novu from '../components/Inbox'
 import { useCurrentBranch } from '../hooks/useCurrentBranch'
 import { NewProspectModal } from '../components/NewProspectModal'
+import { EmptyState, EmptyInline } from '../components/EmptyState'
+import { ClientsIllustration, NoResultsIllustration } from '../components/Illustrations'
 
 const PAGE_SIZE = 10
 
@@ -85,9 +87,7 @@ function ClientDrawer({ client, onClose }) {
                 </div>
               ))}
               {transactions.length === 0 && (
-                <div style={{ padding: 12, textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
-                  Aucune transaction
-                </div>
+                <EmptyInline message="Aucune transaction enregistrée pour ce client." />
               )}
             </div>
           </div>
@@ -366,9 +366,26 @@ export default function ClientsPage() {
               </tbody>
             </table>
             {filtered.length === 0 && (
-              <div style={{ padding: 40, textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
-                Aucun client ne correspond aux filtres.
-              </div>
+              displayClients.length === 0 ? (
+                <EmptyState
+                  variant="compact"
+                  illustration={<ClientsIllustration />}
+                  title="Aucun client enregistré"
+                  description="Créez votre premier prospect pour commencer à gérer votre portefeuille clients."
+                  actions={
+                    <button className="btn brand" style={{ marginTop: 4 }} onClick={() => setShowNewProspectModal(true)}>
+                      <I.Plus size={13} stroke="white" /> Nouveau client
+                    </button>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  variant="compact"
+                  illustration={<NoResultsIllustration />}
+                  title="Aucun client trouvé"
+                  description="Aucun client ne correspond aux filtres sélectionnés."
+                />
+              )
             )}
             <div className="table-foot">
               <span>
@@ -387,6 +404,32 @@ export default function ClientsPage() {
           </div>
         ) : (
           <div className="card-grid">
+            {filtered.length === 0 && (
+              displayClients.length === 0 ? (
+                <div style={{ gridColumn: '1/-1' }}>
+                  <EmptyState
+                    variant="compact"
+                    illustration={<ClientsIllustration />}
+                    title="Aucun client enregistré"
+                    description="Créez votre premier prospect pour commencer à gérer votre portefeuille clients."
+                    actions={
+                      <button className="btn brand" style={{ marginTop: 4 }} onClick={() => setShowNewProspectModal(true)}>
+                        <I.Plus size={13} stroke="white" /> Nouveau client
+                      </button>
+                    }
+                  />
+                </div>
+              ) : (
+                <div style={{ gridColumn: '1/-1' }}>
+                  <EmptyState
+                    variant="compact"
+                    illustration={<NoResultsIllustration />}
+                    title="Aucun client trouvé"
+                    description="Aucun client ne correspond aux filtres sélectionnés."
+                  />
+                </div>
+              )
+            )}
             {paginated.map(c => (
               <div key={c.id} className="client-card" onClick={() => setOpenClient(c)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
