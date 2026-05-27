@@ -2395,6 +2395,38 @@ textarea.input {
   --brand-softer: oklch(0.97 0.02 340);
 }
 
+/* === Skeleton loading === */
+@keyframes skel-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skel {
+  display: block;
+  border-radius: var(--r-xs);
+  background: linear-gradient(
+    90deg,
+    var(--surface-inset) 25%,
+    var(--border)        50%,
+    var(--surface-inset) 75%
+  );
+  background-size: 800px 100%;
+  animation: skel-shimmer 1.4s ease-in-out infinite;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.skel-pill {
+  border-radius: var(--r-pill);
+}
+.skel-circle {
+  border-radius: 50%;
+}
+
+/* Skeleton table row */
+.skel-row td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
 /* === Auth gate === */
 .auth-gate {
   display: flex;

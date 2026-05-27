@@ -1,20 +1,21 @@
 import { useState } from 'react'
 import { Topbar, QuickActionsCard } from '../components'
 import Novu from '../components/Inbox'
-
-function PendingCard({ label }) {
-  return (
-    <div
-      className="card"
-      style={{ padding: 24, color: 'var(--ink-3)', fontSize: 13, textAlign: 'center' }}
-    >
-      {label} — données en attente
-    </div>
-  )
-}
+import { useCurrentUser } from '../hooks/useCurrentUser'
+import { SkeletonDashboard } from '../components/Skeleton'
 
 export default function DashboardPage() {
   const [online, setOnline] = useState(true)
+  const { isLoaded } = useCurrentUser()
+
+  if (!isLoaded) {
+    return (
+      <>
+        <Topbar online={online} setOnline={setOnline} inbox={<Novu />} />
+        <SkeletonDashboard />
+      </>
+    )
+  }
 
   return (
     <>
@@ -39,5 +40,16 @@ export default function DashboardPage() {
         </div>
       </div>
     </>
+  )
+}
+
+function PendingCard({ label }) {
+  return (
+    <div
+      className="card"
+      style={{ padding: 24, color: 'var(--ink-3)', fontSize: 13, textAlign: 'center' }}
+    >
+      {label} — données en attente
+    </div>
   )
 }
