@@ -1,5 +1,6 @@
-import { mutation, query } from './_generated/server'
+import { mutation, query, internalMutation } from './_generated/server'
 import { v } from 'convex/values'
+import { authz } from './authz'
 
 export const currentUser = query({
   args: {},
@@ -74,5 +75,8 @@ export const onboard = mutation({
       branchId,
       status: 'active',
     })
+
+    // Assign supervisor role so the org creator has full operational permissions
+    await authz.withTenant(branchId).assignRole(ctx, identity.subject, 'supervisor')
   },
 })
