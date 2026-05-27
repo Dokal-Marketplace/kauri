@@ -357,14 +357,16 @@ function NouvelObjectifModal({ onClose, customers }) {
  * The branchId is normally resolved from the authenticated user's profile.
  * Pass it in as a prop or pull it from a context / Zustand store.
  */
-export default function ObjectifsPage({ branchId: branchIdProp, customers }) {
-  const { tenantId } = useCurrentUser()
+export default function ObjectifsPage({ branchId: branchIdProp, customers: customersProp }) {
+  const { tenantId, isLoaded } = useCurrentUser()
   const branchId = branchIdProp ?? tenantId
   // ── Live data ──────────────────────────────────────────────────────────────
-  // useQuery returns undefined while loading; we default to [] for safe rendering.
-  const goalsRaw = useQuery(api.goals.listByBranch, branchId ? { branchId } : 'skip')
+  const goalsRaw = useQuery(api.goals.listByBranch, isLoaded && branchId ? { branchId } : 'skip')
   const goals = goalsRaw ?? []
-  const goalsLoading = branchId && goalsRaw === undefined
+  const goalsLoading = isLoaded && branchId && goalsRaw === undefined
+
+  const customersRaw = useQuery(api.customers.listByBranch, isLoaded && branchId ? { branchId } : 'skip')
+  const customers = customersProp ?? customersRaw ?? []
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [q,          setQ]          = useState('')
@@ -659,7 +661,7 @@ export default function ObjectifsPage({ branchId: branchIdProp, customers }) {
       {showModal && (
         <NouvelObjectifModal
           onClose={() => setShowModal(false)}
-          customers={customers ?? []}
+          customers={customers}
         />
       )}
     </div>

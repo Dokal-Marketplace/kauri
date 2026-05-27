@@ -1,8 +1,6 @@
 // convex/goals.ts
 import { v } from 'convex/values'
 import { query, mutation, internalMutation } from './_generated/server'
-import { internal } from './_generated/api'
-import { cronJobs } from 'convex/server'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -85,6 +83,13 @@ export const create = mutation({
       .unique()
     if (!agent) throw new Error('Agent not found')
 
+    if (args.targetAmount <= 0) throw new Error('targetAmount must be greater than 0')
+
+    const deadlineMs = new Date(args.deadline).getTime()
+    if (isNaN(deadlineMs) || deadlineMs <= Date.now()) {
+      throw new Error('deadline must be a valid date in the future')
+    }
+
     // Verify customer belongs to agent's branch
     const customer = await ctx.db.get(args.customerId)
     if (!customer || customer.branchId !== agent.branchId) {
@@ -126,7 +131,7 @@ export const refreshStatuses = internalMutation({
           .collect()
 
         const currentAmount = txs.reduce((s, t) => s + t.amount, 0)
-        const pct = Math.round((currentAmount / g.targetAmount) * 100)
+        const pct = g.targetAmount > 0 ? Math.round((currentAmount / g.targetAmount) * 100) : 0
         const daysLeft = daysUntil(g.deadline)
         const newStatus = deriveStatus(pct, daysLeft)
 
