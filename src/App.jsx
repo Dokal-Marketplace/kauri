@@ -1,19 +1,43 @@
-import { lazy, Suspense } from 'react'
+import { Component, Suspense } from 'react'
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom'
 import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react'
 import { Sidebar } from './components'
 import AppCommandPalette from './components/CommandPalette'
+import { lazyWithReload } from './utils/lazyWithReload'
 
-const DashboardPage = lazy(() => import('./pages/DashboardPage'))
-const ClientsPage = lazy(() => import('./pages/ClientsPage'))
-const TransactionsPage = lazy(() => import('./pages/TransactionsPage'))
-const AgentsPage = lazy(() => import('./pages/AgentsPage'))
-const ObjectifsPage = lazy(() => import('./pages/ObjectifsPage'))
-const ProductsPage = lazy(() => import('./pages/ProductsPage'))
-const ReconciliationPage = lazy(() => import('./pages/ReconciliationPage'))
-const SettingsPage = lazy(() => import('./pages/SettingsPage'))
-const DisbursementsPage  = lazy(() => import('./pages/DisbursementsPage'))
+const DashboardPage      = lazyWithReload(() => import('./pages/DashboardPage'))
+const ClientsPage        = lazyWithReload(() => import('./pages/ClientsPage'))
+const TransactionsPage   = lazyWithReload(() => import('./pages/TransactionsPage'))
+const AgentsPage         = lazyWithReload(() => import('./pages/AgentsPage'))
+const ObjectifsPage      = lazyWithReload(() => import('./pages/ObjectifsPage'))
+const ProductsPage       = lazyWithReload(() => import('./pages/ProductsPage'))
+const ReconciliationPage = lazyWithReload(() => import('./pages/ReconciliationPage'))
+const SettingsPage       = lazyWithReload(() => import('./pages/SettingsPage'))
+const DisbursementsPage  = lazyWithReload(() => import('./pages/DisbursementsPage'))
 
+// ─── Error boundary ────────────────────────────────────────────────────────────
+class ChunkErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <p>Cette page n'a pas pu se charger.</p>
+          <button onClick={() => window.location.reload()}>Réessayer</button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
+// ─── Layout ────────────────────────────────────────────────────────────────────
 function Layout() {
   return (
     <>
@@ -21,9 +45,11 @@ function Layout() {
         <div className="app">
           <Sidebar />
           <main className="main">
-            <Suspense fallback={null}>
-              <Outlet />
-            </Suspense>
+            <ChunkErrorBoundary>
+              <Suspense fallback={null}>
+                <Outlet />
+              </Suspense>
+            </ChunkErrorBoundary>
           </main>
           <AppCommandPalette />
         </div>
@@ -38,20 +64,21 @@ function Layout() {
   )
 }
 
+// ─── Router ────────────────────────────────────────────────────────────────────
 const router = createBrowserRouter([
   {
     path: '/',
     element: <Layout />,
     children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'clients', element: <ClientsPage /> },
-      { path: 'tx', element: <TransactionsPage /> },
-      { path: 'agents', element: <AgentsPage /> },
-      { path: 'objectifs', element: <ObjectifsPage /> },
-      { path: 'produits', element: <ProductsPage /> },
-      { path: 'reconciliation', element: <ReconciliationPage /> },
-      { path: 'settings', element: <SettingsPage /> },
-      { path: 'decaissements', element: <DisbursementsPage />  },
+      { index: true,              element: <DashboardPage /> },
+      { path: 'clients',          element: <ClientsPage /> },
+      { path: 'tx',               element: <TransactionsPage /> },
+      { path: 'agents',           element: <AgentsPage /> },
+      { path: 'objectifs',        element: <ObjectifsPage /> },
+      { path: 'produits',         element: <ProductsPage /> },
+      { path: 'reconciliation',   element: <ReconciliationPage /> },
+      { path: 'settings',         element: <SettingsPage /> },
+      { path: 'decaissements',    element: <DisbursementsPage /> },
     ],
   },
 ])

@@ -5,6 +5,8 @@ import { I } from '../icons'
 import Novu from '../components/Inbox'
 import { fmt, PageHeader } from '../components'
 import { useCurrentBranch } from '../hooks/useCurrentBranch'
+import { EmptyState } from '../components/EmptyState'
+import { TransactionsIllustration, NoResultsIllustration } from '../components/Illustrations'
 
 const PAGE_SIZE = 10
 
@@ -468,9 +470,21 @@ export default function TransactionsPage() {
             </tbody>
           </table>
           {filtered.length === 0 && (
-            <div style={{ padding: 40, textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
-              Aucun mouvement ne correspond aux filtres.
-            </div>
+            TX_FULL.length === 0 ? (
+              <EmptyState
+                variant="compact"
+                illustration={<TransactionsIllustration />}
+                title="Aucune transaction"
+                description="Les dépôts et retraits enregistrés sur les TPE apparaîtront ici."
+              />
+            ) : (
+              <EmptyState
+                variant="compact"
+                illustration={<NoResultsIllustration />}
+                title="Aucun mouvement trouvé"
+                description="Aucune transaction ne correspond aux filtres ou à la période sélectionnée."
+              />
+            )
           )}
           <div className="table-foot">
             <span>

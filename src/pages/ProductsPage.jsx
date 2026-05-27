@@ -4,6 +4,8 @@ import { api } from '../../convex/_generated/api'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { I } from '../icons'
 import { fmt, KPI, PageHeader } from '../components'
+import { EmptyState } from '../components/EmptyState'
+import { ProductsIllustration, NoResultsIllustration } from '../components/Illustrations'
 
 const PRODUCT_FAMILIES = [
   { k: 'epargne', label: 'Épargne', color: 'var(--brand)', icon: 'Wallet' },
@@ -292,9 +294,11 @@ export default function ProductsPage() {
         </div>
 
         {isLoading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-            Chargement…
-          </div>
+          <EmptyState
+            variant="compact"
+            icon={<I.Wallet size={22} />}
+            title="Chargement des produits…"
+          />
         ) : view === 'cards' ? (
           <div className="prod-grid">
             {filtered.map((p) => (
@@ -307,16 +311,30 @@ export default function ProductsPage() {
               />
             ))}
             {filtered.length === 0 && (
-              <div
-                style={{
-                  padding: 40,
-                  textAlign: 'center',
-                  color: 'var(--ink-3)',
-                  fontSize: 13,
-                  gridColumn: '1/-1',
-                }}
-              >
-                Aucun produit ne correspond aux filtres.
+              <div style={{ gridColumn: '1/-1' }}>
+                {products.length === 0 ? (
+                  <EmptyState
+                    variant="compact"
+                    illustration={<ProductsIllustration />}
+                    title="Aucun produit configuré"
+                    description="Créez votre premier produit financier — épargne, crédit, tontine ou microassurance."
+                    actions={
+                      canManage && (
+                        <button className="btn brand" style={{ marginTop: 4 }}
+                          onClick={() => setEditor({ mode: 'create', product: null })}>
+                          <I.Plus size={13} stroke="white" /> Nouveau produit
+                        </button>
+                      )
+                    }
+                  />
+                ) : (
+                  <EmptyState
+                    variant="compact"
+                    illustration={<NoResultsIllustration />}
+                    title="Aucun produit trouvé"
+                    description="Aucun produit ne correspond aux filtres sélectionnés."
+                  />
+                )}
               </div>
             )}
           </div>
@@ -407,6 +425,31 @@ export default function ProductsPage() {
                 })}
               </tbody>
             </table>
+            {filtered.length === 0 && (
+              products.length === 0 ? (
+                <EmptyState
+                  variant="compact"
+                  illustration={<ProductsIllustration />}
+                  title="Aucun produit configuré"
+                  description="Créez votre premier produit financier — épargne, crédit, tontine ou microassurance."
+                  actions={
+                    canManage && (
+                      <button className="btn brand" style={{ marginTop: 4 }}
+                        onClick={() => setEditor({ mode: 'create', product: null })}>
+                        <I.Plus size={13} stroke="white" /> Nouveau produit
+                      </button>
+                    )
+                  }
+                />
+              ) : (
+                <EmptyState
+                  variant="compact"
+                  illustration={<NoResultsIllustration />}
+                  title="Aucun produit trouvé"
+                  description="Aucun produit ne correspond aux filtres sélectionnés."
+                />
+              )
+            )}
           </div>
         )}
       </div>
