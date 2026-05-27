@@ -416,7 +416,6 @@ export default function ClientsPage() {
               displayClients.length === 0 ? (
                 <div style={{ gridColumn: '1/-1' }}>
                   <EmptyState
-                    variant="compact"
                     illustration={<ClientsIllustration />}
                     title="Aucun client enregistré"
                     description="Créez votre premier prospect pour commencer à gérer votre portefeuille clients."
@@ -430,7 +429,6 @@ export default function ClientsPage() {
               ) : (
                 <div style={{ gridColumn: '1/-1' }}>
                   <EmptyState
-                    variant="compact"
                     illustration={<NoResultsIllustration />}
                     title="Aucun client trouvé"
                     description="Aucun client ne correspond aux filtres sélectionnés."

@@ -373,7 +373,6 @@ export default function AgentsPage() {
             {filtered.length === 0 && (
               AGENTS.length === 0 ? (
                 <EmptyState
-                  variant="compact"
                   illustration={<StaffIllustration />}
                   title="Aucun agent déployé"
                   description="Ajoutez votre premier agent terrain pour commencer à suivre la flotte TPE."
@@ -385,7 +384,6 @@ export default function AgentsPage() {
                 />
               ) : (
                 <EmptyState
-                  variant="compact"
                   illustration={<NoResultsIllustration />}
                   title="Aucun agent trouvé"
                   description="Aucun agent ne correspond aux filtres sélectionnés."
