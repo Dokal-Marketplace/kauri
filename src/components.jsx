@@ -76,8 +76,13 @@ export function Sparkline({ data, color = 'var(--brand)' }) {
   )
 }
 
+function initials(name) {
+  if (!name) return '?'
+  return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+}
+
 export function Sidebar() {
-  const { tenantId: branchId } = useCurrentUser()
+  const { tenantId: branchId, convexUser } = useCurrentUser()
   const pendingDisbursements = useQuery(
     api.disbursements.listPending,
     branchId ? { branchId } : 'skip'
@@ -150,10 +155,12 @@ export function Sidebar() {
         </div>
       ))}
       <div className="sidebar-foot">
-        <div className="avatar">KD</div>
+        <div className="avatar">{initials(convexUser?.fullName)}</div>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div className="user-name">Konaté Djibril</div>
-          <div className="user-role">Administrateur · Bobo-D.</div>
+          <div className="user-name">{convexUser?.fullName ?? '—'}</div>
+          <div className="user-role">
+            {[convexUser?.role, convexUser?.branch?.name].filter(Boolean).join(' · ') || '—'}
+          </div>
         </div>
         <button className="btn ghost sm" title="Notifications" style={{ padding: '5px' }}>
           <I.Bell size={14} />

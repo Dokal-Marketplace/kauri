@@ -2,7 +2,6 @@ import { Component, Suspense } from 'react'
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom'
 import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react'
 import { Sidebar } from './components'
-import AppCommandPalette from './components/CommandPalette'
 import { lazyWithReload } from './utils/lazyWithReload'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { useCurrentUser } from './hooks/useCurrentUser'
@@ -58,7 +57,6 @@ function AppShell() {
             </Suspense>
           </ChunkErrorBoundary>
         </main>
-        <AppCommandPalette />
       </div>
     </TenantsProvider>
   )

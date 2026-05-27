@@ -70,15 +70,16 @@ export const listByBranch = query({
       .withTenant(agent.branchId)
       .require(ctx, identity.subject, 'transactions:audit')
 
-    let rows = await ctx.db
+    const rows = await ctx.db
       .query('transactions')
-      .withIndex('by_branch', (q: any) => q.eq('branchId', agent.branchId))
+      .withIndex('by_branch_timestamp', (q: any) => {
+        let r = q.eq('branchId', agent.branchId)
+        if (args.from) r = r.gte('timestamp', args.from)
+        if (args.to)   r = r.lte('timestamp', args.to)
+        return r
+      })
       .order('desc')
-      .collect()
-
-    // Filtres date en mémoire (Convex ne chaîne pas les range filters sur index composite)
-    if (args.from) rows = rows.filter(t => t.timestamp >= args.from!)
-    if (args.to)   rows = rows.filter(t => t.timestamp <= args.to!)
+      .take(500)
 
     return Promise.all(rows.map(async t => {
       const agentRecord = await ctx.db.get(t.agentId)

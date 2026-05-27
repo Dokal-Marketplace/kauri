@@ -17,11 +17,15 @@ export const currentUser = query({
     const branch = await ctx.db.get(user.branchId)
     const org = branch ? await ctx.db.get(branch.organizationId) : null
 
+    const roles = await authz.withTenant(user.branchId).getUserRoles(ctx, identity.subject)
+    const role = roles[0]?.role ?? null
+
     return {
       ...user,
       branch,
       organization: org,
       tenantId: user.branchId,
+      role,
     }
   },
 })
