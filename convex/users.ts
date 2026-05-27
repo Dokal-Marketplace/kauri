@@ -76,7 +76,7 @@ export const onboard = mutation({
       status: 'active',
     })
 
-    // Assign supervisor role so the org creator has full operational permissions
-    await authz.withTenant(branchId).assignRole(ctx, identity.subject, 'supervisor')
+    // Assign admin role so the org creator has full operational permissions
+    await authz.withTenant(branchId).assignRole(ctx, identity.subject, 'admin')
   },
 })

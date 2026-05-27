@@ -66,6 +66,15 @@ const roles = defineRoles(permissions, {
     customers: ['verify_identity', 'view'],
   },
 
+  // Full-access role — includes all operational and back-office permissions.
+  // Assign to org owners and platform administrators.
+  admin: {
+    includes: ['supervisor'],  // all field + manager permissions
+    kyc: ['register', 'validate'],
+    disbursements: ['request', 'approve', 'execute'],
+    devices: ['bind'],
+  },
+
   // System management
   it_admin: {
     devices: ['bind'],
