@@ -27,10 +27,10 @@ export function TransactionsIllustration() {
     <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="60" cy="108" rx="38" ry="5" fill="var(--brand)" opacity="0.08" />
       {/* central coin stack */}
-      <ellipse cx="60" cy="72" rx="26" ry="7" fill="var(--brand)" opacity="0.12"/>
-      <rect x="34" y="56" width="52" height="16" rx="4" fill="var(--surface-2)" stroke="var(--border-strong)" strokeWidth="1.5"/>
-      <ellipse cx="60" cy="56" rx="26" ry="7" fill="var(--surface-2)" stroke="var(--border-strong)" strokeWidth="1.5"/>
-      <ellipse cx="60" cy="56" rx="16" ry="4" fill="var(--brand)" opacity="0.18"/>
+      <ellipse cx="60" cy="72" rx="26" ry="7" fill="var(--brand)" opacity="0.15"/>
+      <rect x="34" y="56" width="52" height="16" rx="4" fill="var(--brand)" fillOpacity="0.08" stroke="var(--brand)" strokeOpacity="0.3" strokeWidth="1.5"/>
+      <ellipse cx="60" cy="56" rx="26" ry="7" fill="var(--brand)" fillOpacity="0.12" stroke="var(--brand)" strokeOpacity="0.3" strokeWidth="1.5"/>
+      <ellipse cx="60" cy="56" rx="16" ry="4" fill="var(--brand)" opacity="0.22"/>
       <text x="60" y="60" fontSize="9" fill="var(--brand)" textAnchor="middle" fontWeight="700" fontFamily="sans-serif">FCFA</text>
       {/* deposit arrow (left, green) */}
       <circle cx="22" cy="38" r="16" fill="oklch(0.95 0.05 155)" stroke="oklch(0.8 0.1 155)" strokeWidth="1.5"/>
@@ -89,25 +89,25 @@ export function GoalIllustration() {
     <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="60" cy="108" rx="36" ry="5" fill="var(--brand)" opacity="0.08" />
       {/* outer ring */}
-      <circle cx="60" cy="56" r="38" fill="var(--surface-2)" stroke="var(--border-strong)" strokeWidth="1.5"/>
+      <circle cx="60" cy="56" r="38" fill="var(--brand)" fillOpacity="0.06" stroke="var(--brand)" strokeWidth="1.5" strokeOpacity="0.25"/>
       {/* progress arc ~72% */}
       <circle cx="60" cy="56" r="38"
         stroke="var(--brand)" strokeWidth="5" fill="none"
         strokeDasharray="171 67"
         strokeDashoffset="60"
         strokeLinecap="round"
-        opacity="0.7"
+        opacity="0.75"
         transform="rotate(-90 60 56)" />
       {/* middle ring */}
-      <circle cx="60" cy="56" r="26" fill="var(--surface)" stroke="var(--border-strong)" strokeWidth="1.2"/>
+      <circle cx="60" cy="56" r="26" fill="var(--brand)" fillOpacity="0.08" stroke="var(--brand)" strokeWidth="1.2" strokeOpacity="0.2"/>
       {/* inner ring */}
-      <circle cx="60" cy="56" r="14" fill="var(--surface-2)" stroke="var(--border-strong)" strokeWidth="1.2"/>
+      <circle cx="60" cy="56" r="14" fill="var(--brand)" fillOpacity="0.12" stroke="var(--brand)" strokeWidth="1.2" strokeOpacity="0.3"/>
       {/* bullseye */}
-      <circle cx="60" cy="56" r="5" fill="var(--brand)" opacity="0.8"/>
+      <circle cx="60" cy="56" r="5" fill="var(--brand)" opacity="0.85"/>
       {/* dart */}
       <line x1="90" y1="26" x2="65" y2="51" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round"/>
       <polygon points="90,26 84,30 86,24" fill="var(--brand)"/>
-      <line x1="90" y1="26" x2="96" y2="20" stroke="var(--border-strong)" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="90" y1="26" x2="96" y2="20" stroke="var(--brand)" strokeOpacity="0.4" strokeWidth="1.5" strokeLinecap="round"/>
       {/* pct label */}
       <text x="60" y="100" fontSize="11" fill="var(--brand)" textAnchor="middle" fontWeight="700" fontFamily="sans-serif">72%</text>
     </svg>
