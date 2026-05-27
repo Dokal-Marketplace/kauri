@@ -338,10 +338,14 @@ function NouvelObjectifModal({ onClose, customers }) {
  * The branchId is normally resolved from the authenticated user's profile.
  * Pass it in as a prop or pull it from a context / Zustand store.
  */
-export default function ObjectifsPage({ branchId, customers }) {
+export default function ObjectifsPage({ branchId: branchIdProp, customers }) {
+  const { branchId: branchIdCtx } = useCurrentBranch()   // hook existant dans le projet
+  const branchId = branchIdProp ?? branchIdCtx
   // ── Live data ──────────────────────────────────────────────────────────────
   // useQuery returns undefined while loading; we default to [] for safe rendering.
-  const goals = useQuery(api.goals.listByBranch, branchId ? { branchId } : 'skip') ?? []
+  const goalsRaw = useQuery(api.goals.listByBranch, branchId ? { branchId } : 'skip')
+  const isLoading = goalsRaw === undefined
+  const goals = goalsRaw ?? []
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [q,          setQ]          = useState('')
@@ -599,8 +603,10 @@ export default function ObjectifsPage({ branchId, customers }) {
 
           {filtered.length === 0 && (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-              {goals.length === 0
+              {isLoading
                 ? 'Chargement des objectifs…'
+                : goals.length === 0
+                ? 'Aucun objectif sur cette agence.'
                 : 'Aucun objectif ne correspond aux filtres.'}
             </div>
           )}

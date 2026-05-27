@@ -1,3 +1,4 @@
+//pages/DisbursementsPage.jsx
 import { Fragment, useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
@@ -100,6 +101,7 @@ export default function DisbursementsPage() {
   const handleApprove = async (id) => {
     // Prevent concurrent submissions
     if (loadingId) return
+    // Clear any prior fraud/action error, including one left over from a different row
     setFraudError(null)
     setActionError(null)
     setLoadingId(id)
@@ -114,6 +116,7 @@ export default function DisbursementsPage() {
         )
       }
     } finally {
+      // Always stop the spinner — even on the fraud path where we didn't previously reach here
       setLoadingId(null)
     }
   }
@@ -125,11 +128,13 @@ export default function DisbursementsPage() {
   }
 
   const handleRejectConfirm = async () => {
-    if (!rejectModal || !rejectReason.trim() || rejectLoading) return
+    const trimmedReason = rejectReason.trim()
+    if (!rejectModal || !trimmedReason || rejectLoading) return
     setActionError(null)
     setRejectLoading(true)
     try {
-      await rejectMut({ disbursementId: rejectModal, reason: rejectReason })
+      // Send the normalized (trimmed) reason so the backend never receives leading/trailing whitespace
+      await rejectMut({ disbursementId: rejectModal, reason: trimmedReason })
       setRejectModal(null)
       setRejectReason('')
     } catch (err) {

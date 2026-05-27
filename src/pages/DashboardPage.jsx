@@ -249,7 +249,8 @@ export default function DashboardPage() {
   const [online, setOnline] = useState(true)
   const branchId = useCurrentBranch()
 
-  // Convex reactive query — returns undefined while loading, data once ready
+  // Convex reactive query — returns undefined while loading, null when the
+  // branch is missing/skipped, and a data object once ready.
   const summary = useQuery(
     api.dashboard.branchSummary,
     branchId ? { branchId } : 'skip'
@@ -268,10 +269,21 @@ export default function DashboardPage() {
       </div>
 
       {/* ── skeleton while loading ── */}
-      {!summary && <DashboardSkeleton />}
+      {summary === undefined && <DashboardSkeleton />}
+
+      {/* ── branch unavailable / no data ── */}
+      {summary === null && (
+        <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>📭</div>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Données indisponibles</div>
+          <div style={{ fontSize: 13 }}>
+            Aucune donnée trouvée pour cette agence. Vérifiez votre contexte de branche ou réessayez.
+          </div>
+        </div>
+      )}
 
       {/* ── live data ── */}
-      {summary && (
+      {summary != null && (
         <>
           {/* KPIs */}
           <section className="kpi-row">
