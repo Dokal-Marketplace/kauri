@@ -374,7 +374,6 @@ export default function ClientsPage() {
             {!clientsLoading && filtered.length === 0 && (
               displayClients.length === 0 ? (
                 <EmptyState
-                  variant="compact"
                   illustration={<ClientsIllustration />}
                   title="Aucun client enregistré"
                   description="Créez votre premier prospect pour commencer à gérer votre portefeuille clients."

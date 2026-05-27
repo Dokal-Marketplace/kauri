@@ -627,7 +627,6 @@ export default function ObjectifsPage({ branchId: branchIdProp, customers: custo
           {!goalsLoading && filtered.length === 0 && (
             goals.length === 0 ? (
               <EmptyState
-                variant="compact"
                 illustration={<GoalIllustration />}
                 title="Aucun objectif d'épargne"
                 description="Créez le premier objectif d'épargne d'un client pour suivre sa progression."
@@ -639,7 +638,6 @@ export default function ObjectifsPage({ branchId: branchIdProp, customers: custo
               />
             ) : (
               <EmptyState
-                variant="compact"
                 illustration={<NoResultsIllustration />}
                 title="Aucun objectif trouvé"
                 description="Aucun objectif ne correspond aux filtres ou à la recherche en cours."
