@@ -3,6 +3,7 @@ import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
 import { fmt, PageHeader } from '../components'
+import { EmptyState } from '../components/EmptyState'
 import { SkeletonTableRows } from '../components/Skeleton'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -296,9 +297,11 @@ function ReconciliationIndex({ onOpen }) {
             </table>
 
           {records !== undefined && filtered.length === 0 && (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-              Aucune réconciliation ne correspond aux filtres.
-            </div>
+            <EmptyState
+              variant="compact"
+              title="Aucun résultat"
+              description="Aucune réconciliation ne correspond aux filtres."
+            />
           )}
 
           {records !== undefined && (
