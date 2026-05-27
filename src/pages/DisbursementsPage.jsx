@@ -1,3 +1,4 @@
+//pages/DisbursementsPage.jsx
 import { Fragment, useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
@@ -32,7 +33,6 @@ function fmtDate(ts) {
 export default function DisbursementsPage() {
   const { tenantId: branchId } = useCurrentUser()
 
-  // FIX #2 — keep raw query results so isLoading can detect undefined (loading)
   const shouldQuery  = !!branchId
   const pendingQuery = useQuery(api.disbursements.listPending, shouldQuery ? { branchId } : 'skip')
   const historyQuery = useQuery(api.disbursements.listHistory, shouldQuery ? { branchId } : 'skip')
@@ -46,9 +46,12 @@ export default function DisbursementsPage() {
   const rejectMut  = useMutation(api.disbursements.rejectDisbursement)
 
   const [tab, setTab]               = useState('pending')
-  const [rejectModal, setRejectModal] = useState(null)   // disbursementId | null
+  const [rejectModal, setRejectModal] = useState(null)     // disbursementId | null
   const [rejectReason, setRejectReason] = useState('')
-  const [fraudError, setFraudError]   = useState(null)  // disbursementId | null
+  const [fraudError, setFraudError]   = useState(null)    // disbursementId | null
+  const [actionError, setActionError] = useState(null)    // generic error message | null
+  const [loadingId, setLoadingId]     = useState(null)    // disbursementId in-flight | null
+  const [rejectLoading, setRejectLoading] = useState(false)
 
   // KPIs
   const t0 = todayStart()
@@ -96,21 +99,58 @@ export default function DisbursementsPage() {
   ]
 
   const handleApprove = async (id) => {
+    // Prevent concurrent submissions
+    if (loadingId) return
+    // Clear any prior fraud/action error, including one left over from a different row
     setFraudError(null)
+    setActionError(null)
+    setLoadingId(id)
     try {
       await approveMut({ disbursementId: id })
     } catch (err) {
       if (err?.message?.includes('Fraud Prevention')) {
         setFraudError(id)
+      } else {
+        setActionError(
+          err?.message ?? "Une erreur est survenue lors de l'approbation. Veuillez réessayer."
+        )
       }
+    } finally {
+      // Always stop the spinner — even on the fraud path where we didn't previously reach here
+      setLoadingId(null)
     }
   }
 
+  const handleRejectOpen = (id) => {
+    setFraudError(null)
+    setActionError(null)
+    setRejectModal(id)
+  }
+
   const handleRejectConfirm = async () => {
-    if (!rejectModal || !rejectReason.trim()) return
-    await rejectMut({ disbursementId: rejectModal, reason: rejectReason })
+    const trimmedReason = rejectReason.trim()
+    if (!rejectModal || !trimmedReason || rejectLoading) return
+    setActionError(null)
+    setRejectLoading(true)
+    try {
+      // Send the normalized (trimmed) reason so the backend never receives leading/trailing whitespace
+      await rejectMut({ disbursementId: rejectModal, reason: trimmedReason })
+      setRejectModal(null)
+      setRejectReason('')
+    } catch (err) {
+      // Surface the error inside the modal so context isn't lost
+      setActionError(
+        err?.message ?? 'Une erreur est survenue lors du rejet. Veuillez réessayer.'
+      )
+    } finally {
+      setRejectLoading(false)
+    }
+  }
+
+  const handleRejectClose = () => {
     setRejectModal(null)
     setRejectReason('')
+    setActionError(null)
   }
 
   return (
@@ -120,6 +160,35 @@ export default function DisbursementsPage() {
       <section className="kpi-row">
         {kpis.map(k => <KPI key={k.label} k={k} />)}
       </section>
+
+      {/* Generic action error banner (approve failures, non-modal context) */}
+      {actionError && !rejectModal && (
+        <div style={{
+          margin: '0 0 14px',
+          padding: '10px 14px',
+          background: 'oklch(0.97 0.02 20)',
+          border: '1px solid oklch(0.88 0.06 20)',
+          borderRadius: 8,
+          fontSize: 13,
+          color: 'var(--neg)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+        }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <I.Shield size={13} />
+            {actionError}
+          </span>
+          <button
+            className="btn ghost sm"
+            style={{ padding: '2px 6px', fontSize: 11 }}
+            onClick={() => setActionError(null)}
+          >
+            Fermer
+          </button>
+        </div>
+      )}
 
       <div className="card" style={{ marginBottom: 14 }}>
         <div className="filter-bar">
@@ -149,8 +218,9 @@ export default function DisbursementsPage() {
             rows={pending}
             canApprove={canApprove}
             fraudError={fraudError}
+            loadingId={loadingId}
             onApprove={handleApprove}
-            onReject={(id) => { setFraudError(null); setRejectModal(id) }}
+            onReject={handleRejectOpen}
           />
         ) : (
           <HistoryTable rows={history} />
@@ -159,14 +229,14 @@ export default function DisbursementsPage() {
 
       {rejectModal && (
         <>
-          <div className="drawer-scrim" onClick={() => setRejectModal(null)} />
+          <div className="drawer-scrim" onClick={handleRejectClose} />
           <div className="drawer" style={{ maxWidth: 420 }}>
             <div className="drawer-head">
               <div>
                 <div style={{ fontWeight: 600, fontSize: 15 }}>Rejeter la demande</div>
                 <div className="cell-sub">Indiquez le motif de rejet</div>
               </div>
-              <button className="btn ghost sm" onClick={() => setRejectModal(null)}>
+              <button className="btn ghost sm" onClick={handleRejectClose}>
                 <I.Plus size={14} style={{ transform: 'rotate(45deg)' }} />
               </button>
             </div>
@@ -181,18 +251,44 @@ export default function DisbursementsPage() {
                   placeholder="Ex : Pièces justificatives insuffisantes…"
                 />
               </div>
+              {/* Error shown inside modal to preserve the user's typed reason */}
+              {actionError && (
+                <div style={{
+                  marginTop: 10,
+                  padding: '8px 12px',
+                  background: 'oklch(0.97 0.02 20)',
+                  border: '1px solid oklch(0.88 0.06 20)',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  color: 'var(--neg)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}>
+                  <I.Shield size={13} />
+                  {actionError}
+                </div>
+              )}
             </div>
             <div className="drawer-foot">
               <button
                 className="btn brand"
                 style={{ background: 'var(--neg)' }}
-                disabled={!rejectReason.trim()}
+                disabled={!rejectReason.trim() || rejectLoading}
                 onClick={handleRejectConfirm}
               >
-                <I.Check size={14} stroke="white" />
-                Confirmer le rejet
+                {rejectLoading ? (
+                  '…'
+                ) : (
+                  <>
+                    <I.Check size={14} stroke="white" />
+                    Confirmer le rejet
+                  </>
+                )}
               </button>
-              <button className="btn" onClick={() => setRejectModal(null)}>Annuler</button>
+              <button className="btn" onClick={handleRejectClose} disabled={rejectLoading}>
+                Annuler
+              </button>
             </div>
           </div>
         </>
@@ -201,7 +297,7 @@ export default function DisbursementsPage() {
   )
 }
 
-function PendingTable({ rows, canApprove, fraudError, onApprove, onReject }) {
+function PendingTable({ rows, canApprove, fraudError, loadingId, onApprove, onReject }) {
   if (rows.length === 0) {
     return (
       <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
@@ -227,8 +323,8 @@ function PendingTable({ rows, canApprove, fraudError, onApprove, onReject }) {
             const method = METHOD_META[d.payoutMethod] ?? { label: d.payoutMethod, icon: 'Coin' }
             const MIc = I[method.icon]
             const sm = STATUS_META[d.status]
-            const isFraud = fraudError === d._id
-            // FIX #1 — key on Fragment, not on inner <tr> elements
+            const isFraud    = fraudError === d._id
+            const isInFlight = loadingId  === d._id
             return (
               <Fragment key={d._id}>
                 <tr>
@@ -264,13 +360,17 @@ function PendingTable({ rows, canApprove, fraudError, onApprove, onReject }) {
                   {canApprove && (
                     <td>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn sm brand" onClick={() => onApprove(d._id)}>
-                          <I.Check size={12} stroke="white" />
-                          Approuver
+                        <button
+                          className="btn sm brand"
+                          disabled={isInFlight || !!loadingId}
+                          onClick={() => onApprove(d._id)}
+                        >
+                          {isInFlight ? '…' : <><I.Check size={12} stroke="white" />Approuver</>}
                         </button>
                         <button
                           className="btn sm ghost"
                           style={{ color: 'var(--neg)' }}
+                          disabled={isInFlight || !!loadingId}
                           onClick={() => onReject(d._id)}
                         >
                           Rejeter
@@ -335,7 +435,6 @@ function HistoryTable({ rows }) {
             const method = METHOD_META[d.payoutMethod] ?? { label: d.payoutMethod, icon: 'Coin' }
             const MIc = I[method.icon]
             const sm = STATUS_META[d.status] ?? { label: d.status, class: '' }
-            // FIX #3 — show rejection reason, not transactionId
             // Backend stores reason in transactionId as workaround until schema adds rejectionReason
             const rejectionReason = d.reason ?? d.rejectionReason ?? d.transactionId
             return (
