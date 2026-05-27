@@ -42,23 +42,29 @@ const T = {
   
   export function EmptyState(props) {
     if (props.variant === 'compact') {
-      const { icon, iconStyle, title, description, actions, suggestedActions, filterTweaks } = props
+      const { icon, iconStyle, illustration, title, description, actions, suggestedActions, filterTweaks } = props
       return (
         <div style={{
           flex: 1, padding: '36px 24px',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', textAlign: 'center',
         }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: 16,
-            background: 'var(--tofee-cream)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--tofee-orange)',
-            marginBottom: 14,
-            ...iconStyle,
-          }}>
-            <div style={{ display: 'flex' }}>{icon}</div>
-          </div>
+          {illustration ? (
+            <div style={{ width: 96, height: 96, marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {illustration}
+            </div>
+          ) : (
+            <div style={{
+              width: 56, height: 56, borderRadius: 16,
+              background: 'var(--tofee-cream)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--tofee-orange)',
+              marginBottom: 14,
+              ...iconStyle,
+            }}>
+              <div style={{ display: 'flex' }}>{icon}</div>
+            </div>
+          )}
           <div style={T.titleMd}>{title}</div>
           {description && <div style={T.descMd}>{description}</div>}
           {actions}
