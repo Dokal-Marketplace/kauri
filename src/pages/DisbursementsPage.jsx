@@ -435,6 +435,7 @@ function HistoryTable({ rows }) {
             const method = METHOD_META[d.payoutMethod] ?? { label: d.payoutMethod, icon: 'Coin' }
             const MIc = I[method.icon]
             const sm = STATUS_META[d.status] ?? { label: d.status, class: '' }
+            // Backend stores reason in transactionId as workaround until schema adds rejectionReason
             const rejectionReason = d.reason ?? d.rejectionReason ?? d.transactionId
             return (
               <tr key={d._id}>
