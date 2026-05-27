@@ -98,12 +98,6 @@ const TX_FULL_DEMO = [
   { id: "TX-2026-0417", type: "out", client: "Adama Compaoré",       clientInit: "AC", label: "Retrait",    amount: 12000, time: "Hier, 17:55",        agent: "A. Ouédraogo", tpe: "TPE-021", channel: "TPE",    status: "en attente", reference: "RET-B21-0417" },
 ]
 
-const TX_KPIS = [
-  { label: "Volume du jour",  value: "82 000", unit: "FCFA", note: "5 transactions",     icon: "wallet",  delta: "+18%", dir: "up" },
-  { label: "Dépôts (mois)",   value: "215",    unit: "",     note: "4 320 000 FCFA",     icon: "receipt", delta: "+12",  dir: "up" },
-  { label: "Retraits (mois)", value: "103",    unit: "",     note: "1 580 000 FCFA",     icon: "receipt", delta: "+4",   dir: "up" },
-  { label: "En attente",      value: "1",      unit: "",     note: "Validation requise", icon: "cloud",   delta: "−2",   dir: "up" },
-]
 
 const STATUS_STYLE = {
   "validée":    { cls: "actif",   label: "Validée"    },
@@ -278,7 +272,7 @@ export default function TransactionsPage() {
   const [isTxActionLoading, setIsTxActionLoading] = useState(false)
   
   // Convex queries and mutations
-  const dateRange = getDateRangeForPeriod(period)
+  const dateRange = useMemo(() => getDateRangeForPeriod(period), [period])
   const convexRaw = useQuery(
     api.transactions.listByBranch,
     branchId ? {
@@ -288,6 +282,33 @@ export default function TransactionsPage() {
   )
   const convexData = convexRaw ?? []
   const txLoading = branchId && convexRaw === undefined
+
+  // KPI stats — computed from real data, using client-side date checks
+  const kpis = useMemo(() => {
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const monthStart = new Date()
+    monthStart.setDate(1)
+    monthStart.setHours(0, 0, 0, 0)
+    const todayTs  = todayStart.getTime()
+    const monthTs  = monthStart.getTime()
+
+    const todayValidated   = TX_FULL.filter(t => t.status === 'validée' && t._convex.timestamp >= todayTs)
+    const monthDeposits    = TX_FULL.filter(t => t.type === 'in'  && t.status === 'validée' && t._convex.timestamp >= monthTs)
+    const monthWithdrawals = TX_FULL.filter(t => t.type === 'out' && t.status === 'validée' && t._convex.timestamp >= monthTs)
+    const pending          = TX_FULL.filter(t => t.status === 'en attente')
+
+    const todayVolume  = todayValidated.reduce((s, t) => s + t.amount, 0)
+    const monthDepAmt  = monthDeposits.reduce((s, t) => s + t.amount, 0)
+    const monthWitAmt  = monthWithdrawals.reduce((s, t) => s + t.amount, 0)
+
+    return [
+      { label: "Volume du jour",  value: fmt(todayVolume),             unit: "FCFA", note: `${todayValidated.length} transaction${todayValidated.length !== 1 ? 's' : ''}`, icon: "wallet",  },
+      { label: "Dépôts (mois)",   value: String(monthDeposits.length), unit: "",     note: `${fmt(monthDepAmt)} FCFA`,    icon: "receipt", },
+      { label: "Retraits (mois)", value: String(monthWithdrawals.length), unit: "",  note: `${fmt(monthWitAmt)} FCFA`,    icon: "receipt", },
+      { label: "En attente",      value: String(pending.length),       unit: "",     note: "Validation requise",           icon: "cloud",   },
+    ]
+  }, [TX_FULL])
   
   // Map Convex data to UI schema
   const TX_FULL = useMemo(() => convexData.map(mapConvexToUI), [convexData])
@@ -346,7 +367,7 @@ export default function TransactionsPage() {
       </PageHeader>
 
       <section className="kpi-row">
-        {TX_KPIS.map(k => (
+        {kpis.map(k => (
           <div className="kpi" key={k.label}>
             <div className="kpi-label">
               {k.icon === "wallet"  && <I.Wallet/>}

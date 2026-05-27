@@ -4,6 +4,7 @@ import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
 import { fmt, PageHeader } from '../components'
 import { EmptyState } from '../components/EmptyState'
+import { NoResultsIllustration } from '../components/Illustrations'
 import { SkeletonTableRows } from '../components/Skeleton'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -298,9 +299,9 @@ function ReconciliationIndex({ onOpen }) {
 
           {records !== undefined && filtered.length === 0 && (
             <EmptyState
-              variant="compact"
               title="Aucun résultat"
-              description="Aucune réconciliation ne correspond aux filtres."
+              description="Aucune réconciliation ne correspond aux filtres sélectionnés."
+              illustration={<NoResultsIllustration />}
             />
           )}
 
