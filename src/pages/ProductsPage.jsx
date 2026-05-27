@@ -6,6 +6,7 @@ import { I } from '../icons'
 import { fmt, KPI, PageHeader } from '../components'
 import { EmptyState } from '../components/EmptyState'
 import { ProductsIllustration, NoResultsIllustration } from '../components/Illustrations'
+import { Skel, SkeletonTableRows } from '../components/Skeleton'
 
 const PRODUCT_FAMILIES = [
   { k: 'epargne', label: 'Épargne', color: 'var(--brand)', icon: 'Wallet' },
@@ -293,12 +294,49 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {isLoading ? (
-          <EmptyState
-            variant="compact"
-            icon={<I.Wallet size={22} />}
-            title="Chargement des produits…"
-          />
+        {isLoading && view === 'cards' ? (
+          <div className="prod-grid">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="prod-card">
+                <div className="prod-card-head">
+                  <Skel w={32} h={32} r="circle" />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <Skel w="70%" h={14} />
+                    <Skel w="45%" h={11} r="pill" />
+                  </div>
+                  <Skel w={52} h={20} r="pill" />
+                </div>
+                <div style={{ padding: '10px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <Skel w="90%" h={11} r="pill" />
+                  <Skel w="60%" h={11} r="pill" />
+                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                    <Skel w={60} h={26} r="pill" />
+                    <Skel w={80} h={26} r="pill" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : isLoading && view === 'table' ? (
+          <div className="card" style={{ marginTop: 0 }}>
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Produit</th><th>Famille</th>
+                    <th style={{ textAlign: 'right' }}>Taux</th>
+                    <th style={{ textAlign: 'right' }}>Plafond</th>
+                    <th style={{ textAlign: 'right' }}>Clients</th>
+                    <th style={{ textAlign: 'right' }}>Encours</th>
+                    <th>Statut</th><th style={{ width: 30 }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <SkeletonTableRows cols={[160, 100, 70, 90, 60, 100, 70, 30]} rows={6} />
+                </tbody>
+              </table>
+            </div>
+          </div>
         ) : view === 'cards' ? (
           <div className="prod-grid">
             {filtered.map((p) => (

@@ -108,7 +108,7 @@ export function SkeletonDashboard() {
 
       {/* two-col row */}
       <div className="row cols-2" style={{ marginBottom: 14 }}>
-        <SkeletonCard rows={4} />
+        <SkeletonCard rows={5} />
         <SkeletonCard rows={4} />
       </div>
 

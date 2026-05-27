@@ -215,28 +215,23 @@ function ReconciliationIndex({ onOpen }) {
         </div>
 
         <div className="table-wrap">
-          {records === undefined ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-              Chargement…
-            </div>
-          ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Agent</th>
-                  <th style={{ textAlign: 'right' }}>Théorique système</th>
-                  <th style={{ textAlign: 'right' }}>Espèces reçues</th>
-                  <th style={{ textAlign: 'right' }}>Écart</th>
-                  <th>Statut</th>
-                  <th>Vérifié par</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {!records ? (
-                  <SkeletonTableRows cols={[110, 160, 90, 80, 80, 80, 30]} rows={6} />
-                ) : filtered.map(r => {
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Agent</th>
+                <th style={{ textAlign: 'right' }}>Théorique système</th>
+                <th style={{ textAlign: 'right' }}>Espèces reçues</th>
+                <th style={{ textAlign: 'right' }}>Écart</th>
+                <th>Statut</th>
+                <th>Vérifié par</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {records === undefined ? (
+                <SkeletonTableRows cols={[110, 160, 90, 80, 80, 80, 80, 30]} rows={6} />
+              ) : filtered.map(r => {
                   const meta     = STATUS_META[r.status] ?? STATUS_META.pending
                   const variance = r.variance ?? 0
                   return (
@@ -299,7 +294,6 @@ function ReconciliationIndex({ onOpen }) {
                 })}
               </tbody>
             </table>
-          )}
 
           {records !== undefined && filtered.length === 0 && (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
