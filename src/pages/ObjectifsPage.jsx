@@ -1,5 +1,6 @@
 // src/pages/ObjectifsPage.jsx
 import { useState, useMemo } from 'react'
+import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
@@ -339,7 +340,9 @@ function NouvelObjectifModal({ onClose, customers }) {
  * The branchId is normally resolved from the authenticated user's profile.
  * Pass it in as a prop or pull it from a context / Zustand store.
  */
-export default function ObjectifsPage({ branchId, customers }) {
+export default function ObjectifsPage({ branchId: branchIdProp, customers }) {
+  const { tenantId } = useCurrentUser()
+  const branchId = branchIdProp ?? tenantId
   // ── Live data ──────────────────────────────────────────────────────────────
   // useQuery returns undefined while loading; we default to [] for safe rendering.
   const goalsRaw = useQuery(api.goals.listByBranch, branchId ? { branchId } : 'skip')
@@ -604,7 +607,9 @@ export default function ObjectifsPage({ branchId, customers }) {
 
           {!goalsLoading && filtered.length === 0 && (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-              Aucun objectif ne correspond aux filtres.
+              {goals.length === 0
+                ? 'Aucun objectif sur cette agence.'
+                : 'Aucun objectif ne correspond aux filtres.'}
             </div>
           )}
 

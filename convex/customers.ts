@@ -79,6 +79,7 @@ export const createProspect = mutation({
       branchId:    agent.branchId,
       onboardedBy: agent._id,
       status:      'prospect',
+      createdAt:   Date.now(),
     })
   },
 })
