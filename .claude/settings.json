@@ -17,7 +17,8 @@
       "Bash(gh project *)",
       "Bash(gh auth *)",
       "Bash(gh label *)",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Bash(ping -c 2 github.com)"
     ],
     "additionalDirectories": [
       "/Users/serge/Downloads/TontiPro"
