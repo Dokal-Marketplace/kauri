@@ -365,7 +365,7 @@ export default function ObjectifsPage({ branchId: branchIdProp, customers: custo
   const goals = goalsRaw ?? []
   const goalsLoading = isLoaded && branchId && goalsRaw === undefined
 
-  const customersRaw = useQuery(api.customers.listByBranch, isLoaded && branchId ? { branchId } : 'skip')
+  const customersRaw = useQuery(api.customers.listByBranch, isLoaded && branchId ? {} : 'skip')
   const customers = customersProp ?? customersRaw ?? []
 
   // ── UI state ───────────────────────────────────────────────────────────────

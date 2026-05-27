@@ -51,6 +51,7 @@ const roles = defineRoles(permissions, {
     includes: ['field_agent'], // Inherits collection & registration
     transactions: ['collect', 'view_ledger', 'reverse', 'audit'],
     kyc: ['validate'],
+    reconciliation: ['liquidate'],
     customers: ['verify_identity', 'edit_sensitive', 'view'],
     disbursements: ['approve'],
     products: ['manage'],
