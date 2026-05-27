@@ -464,7 +464,6 @@ export default function ProductsPage() {
             {filtered.length === 0 && (
               products.length === 0 ? (
                 <EmptyState
-                  variant="compact"
                   illustration={<ProductsIllustration />}
                   title="Aucun produit configuré"
                   description="Créez votre premier produit financier — épargne, crédit, tontine ou microassurance."
@@ -479,7 +478,6 @@ export default function ProductsPage() {
                 />
               ) : (
                 <EmptyState
-                  variant="compact"
                   illustration={<NoResultsIllustration />}
                   title="Aucun produit trouvé"
                   description="Aucun produit ne correspond aux filtres sélectionnés."
