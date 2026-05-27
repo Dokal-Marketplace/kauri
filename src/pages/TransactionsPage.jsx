@@ -283,6 +283,9 @@ export default function TransactionsPage() {
   const convexData = convexRaw ?? []
   const txLoading = branchId && convexRaw === undefined
 
+  // Map Convex data to UI schema
+  const TX_FULL = useMemo(() => convexData.map(mapConvexToUI), [convexData])
+
   // KPI stats — computed from real data, using client-side date checks
   const kpis = useMemo(() => {
     const todayStart = new Date()
@@ -309,9 +312,6 @@ export default function TransactionsPage() {
       { label: "En attente",      value: String(pending.length),       unit: "",     note: "Validation requise",           icon: "cloud",   },
     ]
   }, [TX_FULL])
-  
-  // Map Convex data to UI schema
-  const TX_FULL = useMemo(() => convexData.map(mapConvexToUI), [convexData])
   
   // Mutations
   const validateTransaction = useMutation(api.transactions.validateTransaction)
