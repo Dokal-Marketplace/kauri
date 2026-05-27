@@ -1,15 +1,23 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
-import { fmt, KPI, PageHeader } from '../components'
+import { fmt, PageHeader } from '../components'
 import Novu from '../components/Inbox'
+import { useCurrentBranch } from '../hooks/useCurrentBranch'
+import { NewProspectModal } from '../components/NewProspectModal'
+
+const PAGE_SIZE = 10
 
 function ClientDrawer({ client, onClose }) {
+  // Fix 1: pass query fn first, "skip" in args position (second arg) only
+  const transactions = useQuery(
+    api.transactions.listByCustomer,
+    client ? { customerId: client._id, limit: 10 } : 'skip'
+  ) ?? []
+
   if (!client) return null
-  const history = CLIENT_TX[client.id] || [
-    { type: "in",  label: "Dépôt",   amount: 10000, time: "il y a 3 j" },
-    { type: "out", label: "Retrait", amount: 5000,  time: "il y a 8 j" },
-    { type: "in",  label: "Dépôt",   amount: 15000, time: "il y a 14 j" },
-  ]
+
   const pct = Math.min(100, Math.round((client.balance / client.goal) * 100))
   return (
     <>
@@ -46,7 +54,7 @@ function ClientDrawer({ client, onClose }) {
           <div className="drawer-section">
             <div className="card-title" style={{ marginBottom: 8 }}>Détails</div>
             <dl className="info-list">
-              <dt>Statut</dt><dd><span className={"tag " + (client.status === "actif" ? "actif" : client.status === "archive" ? "archive" : "attente")}>{client.status === "actif" ? "Actif" : client.status === "archive" ? "Archivé" : "En attente"}</span></dd>
+              <dt>Statut</dt><dd><span className={"tag " + (client.status === "verified" ? "actif" : client.status === "rejected" ? "archive" : "attente")}>{client.status === "verified" ? "Actif" : client.status === "rejected" ? "Archivé" : "En attente"}</span></dd>
               <dt>Produit</dt><dd>{client.product}</dd>
               <dt>Village</dt><dd>{client.village}</dd>
               <dt>Agent référent</dt><dd>{client.agent}</dd>
@@ -60,16 +68,27 @@ function ClientDrawer({ client, onClose }) {
               <span className="card-action" style={{ marginLeft: "auto" }}>Tout voir <I.Arrow size={12}/></span>
             </div>
             <div className="tx-list" style={{ padding: 0 }}>
-              {history.map((t, i) => (
-                <div key={i} className="tx-row">
-                  <div className={"tx-icon " + t.type}>{t.type === "in" ? <I.ArrowDown size={14}/> : <I.ArrowUp size={14}/>}</div>
-                  <div>
-                    <div className="tx-name">{t.label}</div>
-                    <div className="tx-time">{t.time}</div>
+              {transactions.map((t, i) => (
+                <div key={t._id} className="tx-row">
+                  <div className={"tx-icon " + (t.type === "debit" ? "out" : "in")}>
+                    {t.type === "debit" ? <I.ArrowUp size={14}/> : <I.ArrowDown size={14}/>}
                   </div>
-                  <div className={"tx-amount " + t.type}>{t.type === "in" ? "+" : "−"}{fmt(t.amount)}<span className="u">FCFA</span></div>
+                  <div>
+                    <div className="tx-name">{t.reference}</div>
+                    <div className="tx-time">
+                      {new Date(t._creationTime).toLocaleDateString("fr-FR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </div>
+                  <div className={"tx-amount " + (t.type === "debit" ? "out" : "in")}>
+                    {t.type === "debit" ? "−" : "+"}{fmt(t.amount)}<span className="u">FCFA</span>
+                  </div>
                 </div>
               ))}
+              {transactions.length === 0 && (
+                <div style={{ padding: 12, textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>
+                  Aucune transaction
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -85,6 +104,17 @@ function ClientDrawer({ client, onClose }) {
 }
 
 export default function ClientsPage() {
+  const branchId = useCurrentBranch()
+  
+  // Convex hooks
+  const clients = useQuery(
+    api.customers.listByBranch,
+    branchId ? {} : 'skip'
+  ) ?? []
+  
+  const createProspectMutation = useMutation(api.customers.createProspect)
+
+
   const [q, setQ] = useState("")
   const [seg, setSeg] = useState("tous")
   const [sortBy, setSortBy] = useState("balance")
@@ -94,11 +124,49 @@ export default function ClientsPage() {
   const [selected, setSelected] = useState(new Set())
   const [openClient, setOpenClient] = useState(null)
   const [online, setOnline] = useState(true)
+  const [page, setPage] = useState(1)
+  const [showNewProspectModal, setShowNewProspectModal] = useState(false)
+  const [isCreatingProspect, setIsCreatingProspect] = useState(false)
 
-  const agents = useMemo(() => ["tous", ...Array.from(new Set(CLIENTS.map(c => c.agent)))], [])
+
+  // Compute data from real clients
+  const agents = useMemo(() => {
+    const agentNames = Array.from(new Set(clients
+      .map(c => c.agentName)
+      .filter(Boolean)
+    ))
+    return ["tous", ...agentNames]
+  }, [clients])
+
+  // Format clients for display
+  const displayClients = useMemo(() => {
+    return clients.map(c => {
+      const name = c.fullName || 'Client'
+      const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+      return {
+        _id: c._id,
+        id: c._id,
+        name,
+        phone: c.phoneNumber || '',
+        initials,
+        village: c.village || '—',
+        product: c.product || '—',
+        balance: c.balance || 0,
+        goal: c.goal || 100000,
+        monthlyAvg: c.monthlyAvg || 0,
+        txCount: c.txCount || 0,
+        agent: c.agentName || '—',
+        status: c.status || 'prospect',
+        joined: c._creationTime || Date.now(),
+        lastTx: c.lastTransactionAt
+          ? new Date(c.lastTransactionAt).toLocaleDateString("fr-FR", { month: "short", day: "numeric" })
+          : '—',
+      }
+    })
+  }, [clients])
 
   const filtered = useMemo(() => {
-    let r = CLIENTS.filter(c => {
+    let r = displayClients.filter(c => {
       if (seg !== "tous" && c.status !== seg) return false
       if (agent !== "tous" && c.agent !== agent) return false
       if (q && !c.name.toLowerCase().includes(q.toLowerCase()) && !c.phone.includes(q) && !c.village.toLowerCase().includes(q.toLowerCase())) return false
@@ -110,7 +178,43 @@ export default function ClientsPage() {
       return sortDir === "asc" ? cmp : -cmp
     })
     return r
-  }, [q, seg, agent, sortBy, sortDir])
+  }, [q, seg, agent, sortBy, sortDir, displayClients])
+
+  // Fix 2: moved above the early return to respect Rules of Hooks —
+  // hooks must be called unconditionally on every render
+  useEffect(() => { setPage(1) }, [q, seg, agent, sortBy, sortDir])
+
+  const handleCreateProspect = async (data) => {
+    setIsCreatingProspect(true)
+    try {
+      await createProspectMutation(data)
+      setShowNewProspectModal(false)
+    } catch (err) {
+      throw err  // NewProspectModal attrape et affiche l'erreur
+    } finally {
+      setIsCreatingProspect(false)
+    }
+  }
+
+  // Loading state — early return AFTER all hooks
+  if (!branchId) {
+    return (
+      <div className="clients-page">
+        <PageHeader crumbs={["Clients"]} title="Clients" sub="Chargement..." >
+          <Novu />
+        </PageHeader>
+        <div style={{ padding: 40, textAlign: "center", color: "var(--ink-3)" }}>
+          Authentification en cours...
+        </div>
+      </div>
+    )
+  }
+
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  
 
   const toggleSort = (col) => {
     if (sortBy === col) setSortDir(d => d === "asc" ? "desc" : "asc")
@@ -128,10 +232,10 @@ export default function ClientsPage() {
   )
 
   const counts = {
-    tous:    CLIENTS.length,
-    actif:   CLIENTS.filter(c => c.status === "actif").length,
-    attente: CLIENTS.filter(c => c.status === "attente").length,
-    archive: CLIENTS.filter(c => c.status === "archive").length,
+    tous:    displayClients.length,
+    actif:   displayClients.filter(c => c.status === "verified").length,
+    attente: displayClients.filter(c => c.status === "prospect").length,
+    archive: displayClients.filter(c => c.status === "rejected").length,
   }
 
   const toggle = (id) => {
@@ -139,33 +243,36 @@ export default function ClientsPage() {
     n.has(id) ? n.delete(id) : n.add(id)
     setSelected(n)
   }
-  const allOn = filtered.length > 0 && filtered.every(c => selected.has(c.id))
+  const allOn = paginated.length > 0 && paginated.every(c => selected.has(c.id))
   const toggleAll = () => {
-    if (allOn) setSelected(new Set())
-    else setSelected(new Set(filtered.map(c => c.id)))
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (allOn) paginated.forEach(c => next.delete(c.id))
+      else paginated.forEach(c => next.add(c.id))
+      return next
+    })
   }
 
-  const [commandPaletteActive, setCommandPaletteActive] = useState(false)
 
   return (
     <div className="clients-page">
       <PageHeader
         crumbs={["Clients"]}
         title="Clients"
-        sub={`${CLIENTS.length} fiches · ${counts.actif} actives · ${counts.attente} en attente KYC`}
+        sub={`${displayClients.length} fiches · ${counts.actif} actives · ${counts.attente} en attente KYC`}
       >
-          <button className={"status-pill" + (online ? "" : " offline")} onClick={() => setOnline(!online)}>
+        <button className={"status-pill" + (online ? "" : " offline")} onClick={() => setOnline(!online)}>
           <span className="status-dot"></span>{online ? "En ligne · synchronisé" : "Hors ligne · 4 en file"}
         </button>
         <Novu />
       </PageHeader>
 
       <section className="kpi-row">
-        {CLIENT_KPIS.map(k => <KPI key={k.label} k={k}/>)}
+        {/* KPIs will be computed from real data */}
       </section>
       <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <button className="btn"><I.Export size={14}/>Exporter</button>
-        <button className="btn brand"><I.Plus size={14} stroke="white"/>Nouveau client</button>
+        <button className="btn brand" onClick={() => setShowNewProspectModal(true)}><I.Plus size={14} stroke="white"/>Nouveau client</button>
       </div>
 
       <div className="card" style={{ marginBottom: 14 }}>
@@ -173,9 +280,9 @@ export default function ClientsPage() {
           <div className="seg-tabs">
             {[
               { k: "tous",    label: "Tous",        n: counts.tous },
-              { k: "actif",   label: "Actifs",      n: counts.actif },
-              { k: "attente", label: "En attente",  n: counts.attente },
-              { k: "archive", label: "Archivés",    n: counts.archive },
+              { k: "verified",   label: "Actifs",      n: counts.actif },
+              { k: "prospect", label: "En attente",  n: counts.attente },
+              { k: "rejected", label: "Archivés",    n: counts.archive },
             ].map(t => (
               <button key={t.k} className={"seg-tab " + (seg === t.k ? "on" : "")} onClick={() => setSeg(t.k)}>
                 {t.label}<span className="seg-count">{t.n}</span>
@@ -224,7 +331,7 @@ export default function ClientsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(c => (
+                {paginated.map(c => (
                   <tr key={c.id} onClick={() => setOpenClient(c)} className={selected.has(c.id) ? "selected" : ""}>
                     <td onClick={e => e.stopPropagation()}>
                       <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} />
@@ -249,8 +356,8 @@ export default function ClientsPage() {
                     <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: "var(--ink-2)" }}>{c.txCount}</td>
                     <td className="cell-sub">{c.agent}</td>
                     <td>
-                      <span className={"tag " + (c.status === "actif" ? "actif" : c.status === "archive" ? "archive" : "attente")}>
-                        {c.status === "actif" ? "Actif" : c.status === "archive" ? "Archivé" : "En attente"}
+                      <span className={"tag " + (c.status === "verified" ? "actif" : c.status === "rejected" ? "archive" : "attente")}>
+                        {c.status === "verified" ? "Actif" : c.status === "rejected" ? "Archivé" : "En attente"}
                       </span>
                     </td>
                     <td><button className="btn ghost sm" style={{ padding: 4 }} onClick={e => { e.stopPropagation(); setOpenClient(c) }}><I.Arrow size={12}/></button></td>
@@ -264,19 +371,23 @@ export default function ClientsPage() {
               </div>
             )}
             <div className="table-foot">
-              <span>Affichage de {filtered.length} sur {CLIENTS.length} clients</span>
-              <div className="pager">
-                <button className="btn ghost sm" disabled>‹ Précédent</button>
-                <span className="page-num on">1</span>
-                <span className="page-num">2</span>
-                <span className="page-num">3</span>
-                <button className="btn ghost sm">Suivant ›</button>
-              </div>
+              <span>
+                Affichage de {Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(page * PAGE_SIZE, filtered.length)} sur {filtered.length} clients
+              </span>
+              {totalPages > 1 && (
+                <div className="pager">
+                  <button className="btn ghost sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>‹ Précédent</button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                    <span key={p} className={"page-num " + (p === page ? "on" : "")} onClick={() => setPage(p)} style={{ cursor: "pointer" }}>{p}</span>
+                  ))}
+                  <button className="btn ghost sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Suivant ›</button>
+                </div>
+              )}
             </div>
           </div>
         ) : (
           <div className="card-grid">
-            {filtered.map(c => (
+            {paginated.map(c => (
               <div key={c.id} className="client-card" onClick={() => setOpenClient(c)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div className="avatar lg">{c.initials}</div>
@@ -284,8 +395,8 @@ export default function ClientsPage() {
                     <div style={{ fontWeight: 600 }}>{c.name}</div>
                     <div className="cell-sub">{c.phone}</div>
                   </div>
-                  <span className={"tag " + (c.status === "actif" ? "actif" : c.status === "archive" ? "archive" : "attente")}>
-                    {c.status === "actif" ? "Actif" : c.status === "archive" ? "Archivé" : "En attente"}
+                  <span className={"tag " + (c.status === "verified" ? "actif" : c.status === "rejected" ? "archive" : "attente")}>
+                    {c.status === "verified" ? "Actif" : c.status === "rejected" ? "Archivé" : "En attente"}
                   </span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14, fontSize: 12 }}>
@@ -312,6 +423,12 @@ export default function ClientsPage() {
       </div>
 
       <ClientDrawer client={openClient} onClose={() => setOpenClient(null)} />
+      <NewProspectModal
+        isOpen={showNewProspectModal}
+        onClose={() => setShowNewProspectModal(false)}
+        onSubmit={handleCreateProspect}
+        isLoading={isCreatingProspect}
+      />
     </div>
   )
 }

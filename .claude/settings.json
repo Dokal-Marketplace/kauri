@@ -8,7 +8,11 @@
       "Read(//usr/local/**)",
       "Bash(export PATH=\"$PATH:/opt/homebrew/bin:/usr/local/bin\")",
       "Read(//Users/serge/**)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(pnpm build *)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm lint *)",
+      "Bash(gh issue *)"
     ],
     "additionalDirectories": [
       "/Users/serge/Downloads/TontiPro"

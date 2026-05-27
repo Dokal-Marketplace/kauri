@@ -1,5 +1,5 @@
 ---
-title: "[Feature] Bootstrap: wire ConvexProvider and authentication into the app"
+title: '[Feature] Bootstrap: wire ConvexProvider and authentication into the app'
 labels: feature, convex, auth
 priority: critical
 ---
@@ -22,6 +22,7 @@ createRoot(document.getElementById('root')).render(
 ## Tasks
 
 ### 1. Install dependencies
+
 ```bash
 pnpm add @clerk/clerk-react  # or @auth0/auth0-react depending on provider choice
 # convex is already in package.json
@@ -48,6 +49,7 @@ createRoot(document.getElementById('root')).render(
 ```
 
 ### 3. Add required environment variables to `.env`
+
 ```
 VITE_CONVEX_URL=https://your-deployment.convex.cloud
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
@@ -61,9 +63,7 @@ import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
 export default function App() {
   return (
     <>
-      <SignedIn>
-        {/* existing app layout */}
-      </SignedIn>
+      <SignedIn>{/* existing app layout */}</SignedIn>
       <SignedOut>
         <SignInButton />
       </SignedOut>

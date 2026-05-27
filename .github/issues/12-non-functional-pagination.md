@@ -1,5 +1,5 @@
 ---
-title: "[UX] Pagination controls in ClientsPage and TransactionsPage are non-functional"
+title: '[UX] Pagination controls in ClientsPage and TransactionsPage are non-functional'
 labels: bug, ux
 priority: low
 ---
@@ -11,11 +11,13 @@ Both `ClientsPage` and `TransactionsPage` render pagination UI — page number b
 ```jsx
 // src/pages/ClientsPage.jsx:268-276
 <div className="pager">
-  <button className="btn ghost sm" disabled>‹ Précédent</button>
+  <button className="btn ghost sm" disabled>
+    ‹ Précédent
+  </button>
   <span className="page-num on">1</span>
   <span className="page-num">2</span>
   <span className="page-num">3</span>
-  <button className="btn ghost sm">Suivant ›</button>  {/* does nothing */}
+  <button className="btn ghost sm">Suivant ›</button> {/* does nothing */}
 </div>
 ```
 

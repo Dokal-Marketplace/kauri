@@ -1,5 +1,5 @@
 ---
-title: "[Security] Hardcoded tenantId in authz.ts breaks multi-branch isolation"
+title: '[Security] Hardcoded tenantId in authz.ts breaks multi-branch isolation'
 labels: security, bug
 priority: critical
 ---
@@ -13,8 +13,8 @@ The authorization client in `convex/authz.ts` is instantiated with a hardcoded `
 export const authz = new Authz(components.authz, {
   permissions,
   roles,
-  tenantId: "branch-ouaga-01",  // ← hardcoded
-});
+  tenantId: 'branch-ouaga-01', // ← hardcoded
+})
 ```
 
 ## Impact
@@ -32,14 +32,14 @@ Resolve `tenantId` dynamically per mutation from the authenticated user's `branc
 ```ts
 // Inside each mutation handler
 const agent = await ctx.db
-  .query("users")
-  .withIndex("by_token", q => q.eq("tokenIdentifier", identity.subject))
-  .unique();
-if (!agent) throw new Error("Agent not found");
+  .query('users')
+  .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+  .unique()
+if (!agent) throw new Error('Agent not found')
 
-await authz.require(ctx, identity.subject, "transactions:collect", {
+await authz.require(ctx, identity.subject, 'transactions:collect', {
   tenantId: agent.branchId,
-});
+})
 ```
 
 Review `@djpanda/convex-authz` docs for the correct API surface for dynamic tenant context.

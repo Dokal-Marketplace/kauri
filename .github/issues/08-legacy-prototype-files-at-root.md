@@ -1,5 +1,5 @@
 ---
-title: "[Chore] Legacy prototype files at project root should be deleted"
+title: '[Chore] Legacy prototype files at project root should be deleted'
 labels: chore, cleanup
 priority: medium
 ---

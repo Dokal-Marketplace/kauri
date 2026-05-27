@@ -1,5 +1,5 @@
 ---
-title: "[Security] Silent null supervisor leaves audit trail gap in reverseTransaction"
+title: '[Security] Silent null supervisor leaves audit trail gap in reverseTransaction'
 labels: security, bug
 priority: high
 ---
@@ -11,16 +11,16 @@ In `convex/transactions.ts`, the `reverseTransaction` mutation looks up the supe
 ```ts
 // convex/transactions.ts:54-76
 const supervisor = await ctx.db
-  .query("users")
-  .withIndex("by_token", q => q.eq("tokenIdentifier", identity.subject))
-  .unique();
+  .query('users')
+  .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+  .unique()
 
 // supervisor is never null-checked before here:
 return await ctx.db.patch(args.transactionId, {
-  status: "reversed",
+  status: 'reversed',
   reversalReason: args.reason,
-  reversedBy: supervisor?._id,  // ← silently omitted if supervisor is null
-});
+  reversedBy: supervisor?._id, // ← silently omitted if supervisor is null
+})
 ```
 
 ## Impact
@@ -35,14 +35,14 @@ Apply the same guard used in `approveDisbursement`:
 
 ```ts
 const supervisor = await ctx.db
-  .query("users")
-  .withIndex("by_token", q => q.eq("tokenIdentifier", identity.subject))
-  .unique();
-if (!supervisor) throw new Error("User not found");
+  .query('users')
+  .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+  .unique()
+if (!supervisor) throw new Error('User not found')
 
 return await ctx.db.patch(args.transactionId, {
-  status: "reversed",
+  status: 'reversed',
   reversalReason: args.reason,
-  reversedBy: supervisor._id,  // no optional chaining needed
-});
+  reversedBy: supervisor._id, // no optional chaining needed
+})
 ```

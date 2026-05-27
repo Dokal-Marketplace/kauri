@@ -5,65 +5,143 @@ import { authz } from "./authz";
 export const settleDailyCash = mutation({
   args: {
     agentId: v.id("users"),
+    date: v.optional(v.string()),
     physicalAmount: v.number(),
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
-    await authz.require(ctx, identity.subject, "reconciliation:liquidate");
 
-    const today = new Date().toISOString().split('T')[0];
-
-    // 2. Aggregate all 'completed' transactions for this agent today
-    // Note: In production, you'd use a more robust time-range check
-    const transactions = await ctx.db
-      .query("transactions")
-      .withIndex("by_agent_date", (q) => q.eq("agentId", args.agentId))
-      .filter((q) => q.eq(q.field("status"), "completed"))
-      .collect();
-
-    const systemExpected = transactions.reduce((sum, tx) => sum + tx.amount, 0);
-    const variance = args.physicalAmount - systemExpected;
-
-    // 3. Determine status
-    const status = variance === 0 ? "settled" : "discrepancy";
-
-    // 4. Create the reconciliation record
     const verifier = await ctx.db
       .query("users")
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
       .unique();
     if (!verifier) throw new Error("User not found");
 
-    if (!transactions[0]) throw new Error("No transactions found for agent today");
+    await authz
+      .withTenant(verifier.branchId)
+      .require(ctx, identity.subject, "reconciliation:liquidate");
+
+    // Guard: verifier may only settle agents from their own branch
+    const agent = await ctx.db.get(args.agentId);
+    if (!agent || agent.branchId !== verifier.branchId)
+      throw new Error("Unauthorized: Cannot settle an agent from another branch");
+
+    // Use provided date or fall back to today
+    const date = args.date ?? new Date().toISOString().split("T")[0];
+
+    // Guard: prevent duplicate reconciliation for same agent/date
+    const existing = await ctx.db
+      .query("reconciliations")
+      .withIndex("by_agent_date", (q) =>
+        q.eq("agentId", args.agentId).eq("date", date)
+      )
+      .unique();
+    if (existing)
+      throw new Error(
+        `Réconciliation déjà effectuée pour cet agent le ${date}.`
+      );
+
+    const startOfDay = new Date(date + "T00:00:00Z").getTime();
+    const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
+
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_agent_date", (q) => q.eq("agentId", args.agentId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("status"), "completed"),
+          q.gte(q.field("timestamp"), startOfDay),
+          q.lte(q.field("timestamp"), endOfDay)
+        )
+      )
+      .collect();
+
+    if (!transactions[0])
+      throw new Error(
+        "Aucune transaction complétée trouvée pour cet agent à cette date."
+      );
+
+    const systemExpected = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+    const variance = args.physicalAmount - systemExpected;
+    const status = variance === 0 ? "settled" : "discrepancy";
 
     const reconciliationId = await ctx.db.insert("reconciliations", {
       agentId: args.agentId,
       branchId: transactions[0].branchId,
       verifiedBy: verifier._id,
-      date: today,
+      date,                              // ← date argument, not hardcoded today
       systemExpectedAmount: systemExpected,
       physicalCashReceived: args.physicalAmount,
-      variance: variance,
-      status: status,
+      variance,
+      status,
       timestamp: Date.now(),
       notes: args.notes,
     });
 
-    return { reconciliationId, variance };
+    return { reconciliationId, variance, status };
   },
 });
 
+export const listByBranch = query({
+  args: { branchId: v.id("branches"), date: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
 
-// 3. The Reconciliation WorkflowA clean EOD process usually follows these three steps to minimize "mysterious" cash losses:Step A: The Agent's Pre-Check (TPE Side)Before heading to the branch, 
-// the agent runs a "Daily Summary" on the TPE.The TPE displays: "Total Collected: 450,000 CFA".The agent counts their physical cash. If it's 450,000 CFA, they proceed. If it's 445,000 CFA, 
-// they know they have a problem before talking to the accountant.Step B: The Physical HandoverAt the branch, the Accountant uses the settleDailyCash mutation.Case 1: $Variance = 0$. Perfect. 
-// The session is closed.Case 2: $Variance < 0$ (Shortfall). The agent is "short." The system flags a discrepancy. 
-// This usually triggers an internal HR process or a deduction from the agent's 
-// next commission.Case 3: $Variance > 0$ (Overage). Rare, but usually indicates an agent forgot to record a transaction or gave a customer the wrong change.Step C: Locking the TransactionsOnce a reconciliation is settled, 
-// your transactions table should ideally become "read-only" for that date.Implementation Tip: In your reverseTransaction mutation, add a check:If a reconciliation record exists for this agent on this date and is 'settled', block the reversal. 
-// This prevents agents and supervisors from colluding to reverse transactions after the cash has already been accounted for.4. Why Use Math for Variances?Using a simple formula 
-// ensures the Accountant doesn't have to do mental math (where errors happen):$$Variance = V_{physical} - \sum V_{system}$$By storing the $Variance$ as a signed integer, 
-// you can run a monthly report to see which agents are consistently "short," which is a leading indicator of either poor training or potential fraud.Are you planning to generate a PDF or thermal receipt for the agent to keep as proof 
-// that they "dropped" the cash successfully?
+    const caller = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
+      .unique();
+    if (!caller) throw new Error("User not found");
+    if (caller.branchId !== args.branchId)
+      throw new Error("Unauthorized: Cannot view reconciliations for this branch");
+
+    await authz
+      .withTenant(caller.branchId)
+      .require(ctx, identity.subject, "reconciliation:liquidate");
+
+    const records = await ctx.db
+      .query("reconciliations")
+      .withIndex("by_branch_status", (r) => r.eq("branchId", args.branchId))
+      .order("desc")
+      .collect();
+
+    // Enrich with agent and verifier names
+    return Promise.all(
+      records.map(async (r) => {
+        const agent = await ctx.db.get(r.agentId);
+        const verifier = await ctx.db.get(r.verifiedBy);
+        return {
+          ...r,
+          agentName: agent?.fullName ?? agent?.email ?? null,
+          verifierName: verifier?.fullName ?? verifier?.email ?? null,
+        };
+      })
+    );
+  },
+});
+
+export const getAgentDailySummary = query({
+  args: { agentId: v.id("users"), date: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+
+    const startOfDay = new Date(args.date + "T00:00:00Z").getTime();
+    const endOfDay = new Date(args.date + "T23:59:59Z").getTime();
+
+    return ctx.db
+      .query("transactions")
+      .withIndex("by_agent_date", (q) => q.eq("agentId", args.agentId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("status"), "completed"),
+          q.gte(q.field("timestamp"), startOfDay),
+          q.lte(q.field("timestamp"), endOfDay)
+        )
+      )
+      .collect();
+  },
+});

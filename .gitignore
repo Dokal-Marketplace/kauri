@@ -1,8 +1,10 @@
 # gitignore file for the Kauri project
-/node_modules
+/node_modules/*
 /dist
 /build
 
 # Environment variables files
 .env
 .env.local
+node_modules/.bin/convex
+node_modules/.bin/vite

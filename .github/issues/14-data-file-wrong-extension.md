@@ -1,5 +1,5 @@
 ---
-title: "[Chore] src/data.jsx should be renamed to data.js"
+title: '[Chore] src/data.jsx should be renamed to data.js'
 labels: chore, cleanup
 priority: low
 ---

@@ -1,5 +1,5 @@
 ---
-title: "[Feature] Wire TransactionsPage to real Convex queries and mutations"
+title: '[Feature] Wire TransactionsPage to real Convex queries and mutations'
 labels: feature, convex, frontend
 priority: high
 ---

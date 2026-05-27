@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { ConvexReactClient } from 'convex/react'
 import { ClerkProvider, useAuth } from '@clerk/clerk-react'
 import { ConvexProviderWithClerk } from 'convex/react-clerk'
-import '../styles.css'
+import './styles.css'
 import App from './App'
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)

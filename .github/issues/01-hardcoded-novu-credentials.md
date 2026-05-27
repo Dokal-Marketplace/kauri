@@ -1,5 +1,5 @@
 ---
-title: "[Security] Hardcoded Novu credentials and static subscriberId in Inbox.jsx"
+title: '[Security] Hardcoded Novu credentials and static subscriberId in Inbox.jsx'
 labels: security, bug
 priority: critical
 ---
@@ -10,10 +10,7 @@ priority: critical
 
 ```jsx
 // src/components/Inbox.jsx:5-6
-<Inbox
-  applicationIdentifier="mLtXHnJfZNRB"
-  subscriberId="69fa4317aca4539eeabcdc44"
-/>
+<Inbox applicationIdentifier="mLtXHnJfZNRB" subscriberId="69fa4317aca4539eeabcdc44" />
 ```
 
 ## Impact
@@ -30,17 +27,16 @@ priority: critical
 ## Suggested Fix
 
 1. Move `applicationIdentifier` to an environment variable:
+
    ```bash
    # .env
    VITE_NOVU_APP_ID=mLtXHnJfZNRB
    ```
 
 2. Resolve `subscriberId` from the authenticated session:
+
    ```jsx
-   <Inbox
-     applicationIdentifier={import.meta.env.VITE_NOVU_APP_ID}
-     subscriberId={currentUser.id}
-   />
+   <Inbox applicationIdentifier={import.meta.env.VITE_NOVU_APP_ID} subscriberId={currentUser.id} />
    ```
 
 3. **Rotate** the existing `applicationIdentifier` — it is already public in git history.
