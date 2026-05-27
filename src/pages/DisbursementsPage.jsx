@@ -426,7 +426,6 @@ function HistoryTable({ rows }) {
   if (rows.length === 0) {
     return (
       <EmptyState
-        variant="compact"
         illustration={<DisbursementIllustration />}
         title="Aucun historique"
         description="Les décaissements approuvés ou rejetés apparaîtront ici une fois traités."
