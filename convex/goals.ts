@@ -44,8 +44,7 @@ export const listByBranch = query({
         // Fix: use by_customer index — eliminates the full-table scan
         const txs = await ctx.db
           .query('transactions')
-          .withIndex('by_customer', (q) => q.eq('customerId', g.customerId))
-          .filter((q) => q.eq(q.field('status'), 'completed'))
+          .withIndex('by_customer', (q) => q.eq('customerId', g.customerId).eq('status', 'completed'))
           .collect()
 
         const currentAmount = txs.reduce((s, t) => s + t.amount, 0)
