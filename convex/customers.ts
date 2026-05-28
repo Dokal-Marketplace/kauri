@@ -76,15 +76,13 @@ export const createProspect = mutation({
     const existingPhone = await ctx.db
       .query('customers')
       .withIndex('by_phone', q => q.eq('phoneNumber', phoneNumber))
-      .filter(q => q.eq(q.field('branchId'), agent.branchId))
       .first()
     if (existingPhone) throw new Error('Un client avec ce numéro de téléphone existe déjà')
 
-    // Duplicate ID check
+    // Duplicate ID check (organization-wide)
     const existingId = await ctx.db
       .query('customers')
       .withIndex('by_id_number', q => q.eq('idNumber', idNumber))
-      .filter(q => q.eq(q.field('branchId'), agent.branchId))
       .first()
     if (existingId) throw new Error('Un client avec ce numéro de pièce d\'identité existe déjà')
 
