@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useQuery } from 'convex/react'
+import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { I } from '../icons'
@@ -31,7 +31,7 @@ function formatLastSync(ts) {
   return 'hier'
 }
 
-function mapAgent(u, branchName) {
+function mapAgent(u, branchName, agentStats = {}) {
   const words = u.fullName.trim().split(/\s+/)
   const initials =
     words.length >= 2
@@ -71,10 +71,10 @@ function mapAgent(u, branchName) {
     branch: branchName || '—',
     status: u.status === 'active' ? 'en ligne' : 'hors ligne',
     last: formatLastSync(d?.lastSync),
-    collected: 0,
-    target: 0,
-    clients: 0,
-    txMonth: 0,
+    collected: agentStats[u._id]?.collected ?? 0,
+    target:    0,
+    clients:   agentStats[u._id]?.clients   ?? 0,
+    txMonth:   agentStats[u._id]?.txMonth   ?? 0,
     device,
   }
 }
@@ -168,24 +168,35 @@ export default function AgentsPage() {
     isLoaded && tenantId ? { branchId: tenantId } : 'skip',
   )
 
+  const agentStats = useQuery(
+    api.transactions.summarizeByAgent,
+    isLoaded && tenantId ? {} : 'skip',
+  ) ?? {}
+
   const AGENTS = useMemo(
-    () => (rawAgents ?? []).map(u => mapAgent(u, branchName)),
-    [rawAgents, branchName],
+    () => (rawAgents ?? []).map(u => mapAgent(u, branchName, agentStats)),
+    [rawAgents, branchName, agentStats],
   )
 
   const activeDevices = AGENTS.filter(a => a.device.sync !== 'hors service').length
   const queuedTotal   = AGENTS.reduce((s, a) => s + a.device.queued, 0)
   const queuedAgent   = AGENTS.find(a => a.device.queued > 0)
 
+  const totalCollected = AGENTS.reduce((s, a) => s + a.collected, 0)
+  const avgTx = AGENTS.length > 0 ? Math.round(AGENTS.reduce((s, a) => s + a.txMonth, 0) / AGENTS.length) : 0
+
   const AGENT_KPIS = [
-    { label: "TPE en service",    value: String(activeDevices), unit: `/${AGENTS.length} actifs`, note: "Appareils avec sync active",          icon: "users",   delta: `${activeDevices}`,  dir: "up" },
-    { label: "Collecte du mois",  value: "—",                  unit: "FCFA",                     note: "Données transactions requises",       icon: "wallet",  delta: "—",                 dir: "up" },
-    { label: "Tx en file (sync)", value: String(queuedTotal),  unit: "",                         note: queuedAgent ? `${queuedAgent.device.id} · ${queuedAgent.branch}` : "Aucune", icon: "cloud", delta: "—", dir: "up" },
-    { label: "Tx / agent · moy.", value: "—",                  unit: "",                         note: "Données transactions requises",       icon: "receipt", delta: "—",                 dir: "up" },
+    { label: "TPE en service",    value: String(activeDevices), unit: `/${AGENTS.length} actifs`, note: "Appareils avec sync active",    icon: "users",   delta: `${activeDevices}`, dir: "up" },
+    { label: "Collecte du mois",  value: totalCollected > 0 ? fmt(totalCollected) : "—", unit: "FCFA", note: "Transactions complétées ce mois", icon: "wallet", delta: "—", dir: "up" },
+    { label: "Tx en file (sync)", value: String(queuedTotal),  unit: "", note: queuedAgent ? `${queuedAgent.device.id} · ${queuedAgent.branch}` : "Aucune", icon: "cloud", delta: "—", dir: "up" },
+    { label: "Tx / agent · moy.", value: avgTx > 0 ? String(avgTx) : "—", unit: "", note: "Moyenne ce mois", icon: "receipt", delta: "—", dir: "up" },
   ]
 
   const branches = useMemo(() => ["toutes", ...Array.from(new Set(AGENTS.map(a => a.branch)))], [AGENTS])
   const roles    = useMemo(() => ["tous",   ...Array.from(new Set(AGENTS.map(a => a.role)))],   [AGENTS])
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [showNewAgentModal, setShowNewAgentModal] = useState(false)
+  const [menuOpenId, setMenuOpenId] = useState(null)
 
   const filtered = useMemo(() => AGENTS.filter(a => {
     if (branch !== "toutes" && a.branch !== branch) return false
@@ -217,11 +228,11 @@ export default function AgentsPage() {
           marginBottom: 12,
         }}
       >
-        <button className="btn">
+        <button className="btn" onClick={async () => { setIsSyncing(true); await new Promise(r => setTimeout(r, 1500)); setIsSyncing(false) }} disabled={isSyncing}>
           <I.Cloud size={14} />
-          Forcer sync
+          {isSyncing ? 'Sync…' : 'Forcer sync'}
         </button>
-        <button className="btn brand">
+        <button className="btn brand" onClick={() => setShowNewAgentModal(true)}>
           <I.Plus size={14} stroke="white" />
           Nouvel agent
         </button>
@@ -285,6 +296,16 @@ export default function AgentsPage() {
                 </option>
               ))}
             </select>
+          </div>
+          <div className="filter-group">
+            <label className="filter-label">Recherche</label>
+            <input
+              className="filter-select"
+              placeholder="Nom, téléphone, TPE…"
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              style={{ minWidth: 180 }}
+            />
           </div>
         </div>
 
@@ -364,7 +385,18 @@ export default function AgentsPage() {
                           {a.status}
                         </span>
                       </td>
-                      <td><button className="btn ghost sm" style={{ padding: 4 }}><I.More size={14}/></button></td>
+                      <td style={{ position: 'relative' }}>
+                        <button className="btn ghost sm" style={{ padding: 4 }} onClick={() => setMenuOpenId(menuOpenId === a.id ? null : a.id)}>
+                          <I.More size={14}/>
+                        </button>
+                        {menuOpenId === a.id && (
+                          <div style={{ position: 'absolute', right: 0, top: '100%', zIndex: 10, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 0', minWidth: 160, boxShadow: 'var(--shadow-md)' }}>
+                            <button className="dropdown-item" onClick={() => setMenuOpenId(null)}>Voir détails</button>
+                            <button className="dropdown-item" onClick={() => setMenuOpenId(null)}>Désactiver</button>
+                            <button className="dropdown-item" onClick={() => setMenuOpenId(null)}>Réassigner TPE</button>
+                          </div>
+                        )}
+                      </td>
                     </tr>
                   )
                 })}

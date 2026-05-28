@@ -1,3 +1,4 @@
+//convex/transactions.ts
 import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { authz } from './authz'
@@ -123,6 +124,7 @@ export const collectCash = mutation({
     return ctx.db.insert('transactions', {
       amount:     args.amount,
       currency:   args.currency ?? 'XOF',
+      type:       'deposit',
       customerId: args.customerId,
       agentId:    agent._id,
       branchId:   agent.branchId,
@@ -194,5 +196,48 @@ export const reverseTransaction = mutation({
       reversalReason: args.reason,
       reversedBy:     agent._id,
     })
+  },
+})
+
+export const summarizeByAgent = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+
+    const agent = await resolveAgent(ctx, identity.subject)
+
+    await authz
+      .withTenant(agent.branchId)
+      .require(ctx, identity.subject, 'transactions:audit')
+
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+
+    const txs = await ctx.db
+      .query('transactions')
+      .withIndex('by_branch_timestamp', q =>
+        q.eq('branchId', agent.branchId).gte('timestamp', startOfMonth)
+      )
+      .filter(q => q.eq(q.field('status'), 'completed'))
+      .collect()
+
+    // Agréger par agentId
+    const map = new Map<string, { collected: number; txMonth: number; customers: Set<string> }>()
+    for (const tx of txs) {
+      const key = tx.agentId as string
+      if (!map.has(key)) map.set(key, { collected: 0, txMonth: 0, customers: new Set() })
+      const entry = map.get(key)!
+      entry.collected += tx.amount
+      entry.txMonth   += 1
+      entry.customers.add(tx.customerId as string)
+    }
+
+    return Object.fromEntries(
+      [...map.entries()].map(([agentId, v]) => [
+        agentId,
+        { collected: v.collected, txMonth: v.txMonth, clients: v.customers.size },
+      ])
+    )
   },
 })
