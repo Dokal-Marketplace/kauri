@@ -72,6 +72,22 @@ export const createProspect = mutation({
       .withTenant(agent.branchId)
       .require(ctx, identity.subject, 'customers:create_prospect')
 
+    // Duplicate phone check
+    const existingPhone = await ctx.db
+      .query('customers')
+      .withIndex('by_phone', q => q.eq('phoneNumber', phoneNumber))
+      .filter(q => q.eq(q.field('branchId'), agent.branchId))
+      .first()
+    if (existingPhone) throw new Error('Un client avec ce numéro de téléphone existe déjà')
+
+    // Duplicate ID check
+    const existingId = await ctx.db
+      .query('customers')
+      .withIndex('by_id_number', q => q.eq('idNumber', idNumber))
+      .filter(q => q.eq(q.field('branchId'), agent.branchId))
+      .first()
+    if (existingId) throw new Error('Un client avec ce numéro de pièce d\'identité existe déjà')
+
     return ctx.db.insert('customers', {
       fullName,
       phoneNumber,

@@ -51,7 +51,8 @@ export default defineSchema({
     .index('by_phone', ['phoneNumber'])
     .index('by_status', ['status'])
     .index('by_branch', ['branchId'])
-    .index('by_branch_status', ['branchId', 'status']),
+    .index('by_branch_status', ['branchId', 'status'])
+    .index('by_id_number', ['idNumber']),
 
   // 4. DEVICE BINDING (TPE Tracking)
   devices: defineTable({
