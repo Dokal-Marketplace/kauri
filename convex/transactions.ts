@@ -123,6 +123,7 @@ export const collectCash = mutation({
     return ctx.db.insert('transactions', {
       amount:     args.amount,
       currency:   args.currency ?? 'XOF',
+      type:       'deposit',
       customerId: args.customerId,
       agentId:    agent._id,
       branchId:   agent.branchId,
