@@ -211,7 +211,8 @@ export const refreshBranchStatuses = internalMutation({
           .collect()
 
         const currentAmount = txs.reduce((s, t) => s + t.amount, 0)
-        const pct = g.targetAmount > 0 ? Math.round((currentAmount / g.targetAmount) * 100) : 0
+        const pct =
+          g.targetAmount > 0 ? Math.round((currentAmount / g.targetAmount) * 100) : 0
         const daysLeft = daysUntil(g.deadline)
         const newStatus = deriveStatus(pct, daysLeft)
 
