@@ -77,8 +77,21 @@ export const create = mutation({
     if (args.targetAmount <= 0) throw new Error('targetAmount must be greater than 0')
 
     // Fix: deadlineMs was referenced but never declared in the original
-    const deadlineMs = new Date(args.deadline).getTime()
-    if (isNaN(deadlineMs) || deadlineMs <= Date.now()) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(args.deadline)
+    if (!match) {
+      throw new Error('deadline must be a valid date in the future')
+    }
+
+    const [, year, month, day] = match
+    const deadline = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
+    const isExactDate =
+      deadline.getUTCFullYear() === Number(year) &&
+      deadline.getUTCMonth() === Number(month) - 1 &&
+      deadline.getUTCDate() === Number(day)
+
+    const now = new Date()
+    const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    if (!isExactDate || deadline.getTime() <= todayUtc) {
       throw new Error('deadline must be a valid date in the future')
     }
 
