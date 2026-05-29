@@ -2,10 +2,6 @@ import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { authz } from './authz'
 
-/**
- * List all customers for a branch (verified + prospect + rejected),
- * enriched with the onboarding agent's name.
- */
 export const listByBranch = query({
   args: {},
   handler: async (ctx) => {
@@ -72,17 +68,26 @@ export const createProspect = mutation({
       .withTenant(agent.branchId)
       .require(ctx, identity.subject, 'customers:create_prospect')
 
-    // Duplicate phone check
+    // ← Résoudre l'organizationId depuis la branche de l'agent
+    const branch = await ctx.db.get(agent.branchId)
+    if (!branch) throw new Error('Branch not found')
+    const { organizationId } = branch
+
+    // Duplicate phone check (scoped to organization)
     const existingPhone = await ctx.db
       .query('customers')
-      .withIndex('by_phone', q => q.eq('phoneNumber', phoneNumber))
+      .withIndex('by_organization_phone', q =>
+        q.eq('organizationId', organizationId).eq('phoneNumber', phoneNumber)
+      )
       .first()
     if (existingPhone) throw new Error('Un client avec ce numéro de téléphone existe déjà')
 
-    // Duplicate ID check (organization-wide)
+    // Duplicate ID check (scoped to organization)
     const existingId = await ctx.db
       .query('customers')
-      .withIndex('by_id_number', q => q.eq('idNumber', idNumber))
+      .withIndex('by_organization_id_number', q =>
+        q.eq('organizationId', organizationId).eq('idNumber', idNumber)
+      )
       .first()
     if (existingId) throw new Error('Un client avec ce numéro de pièce d\'identité existe déjà')
 
@@ -90,6 +95,7 @@ export const createProspect = mutation({
       fullName,
       phoneNumber,
       idNumber,
+      organizationId,      // ← ajouté
       branchId:    agent.branchId,
       onboardedBy: agent._id,
       status:      'prospect',

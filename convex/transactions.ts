@@ -219,7 +219,14 @@ export const summarizeByAgent = query({
       .withIndex('by_branch_timestamp', q =>
         q.eq('branchId', agent.branchId).gte('timestamp', startOfMonth)
       )
-      .filter(q => q.eq(q.field('status'), 'completed'))
+      // Fix 4: restrict to deposit + completed — prevents reversals, withdrawals,
+      // or any future transaction type from inflating collected/txMonth/clients
+      .filter(q =>
+        q.and(
+          q.eq(q.field('status'), 'completed'),
+          q.eq(q.field('type'),   'deposit'),
+        )
+      )
       .collect()
 
     // Agréger par agentId

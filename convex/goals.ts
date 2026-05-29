@@ -106,8 +106,8 @@ export const create = mutation({
 // ---------------------------------------------------------------------------
 // refreshStatuses — orchestrator action, fans out per branch
 //
-// Called by the daily cron. Fetches all distinct branchIds that have active
-// goals, then schedules one refreshBranchStatuses mutation per branch.
+// Called by the daily cron. Fetches all distinct branchIds from the branches
+// table, then schedules one refreshBranchStatuses mutation per branch.
 // This keeps each mutation well within Convex's per-function read budget.
 //
 // Read-cost estimate (target scale):
@@ -134,43 +134,23 @@ export const refreshStatuses = internalAction({
 // ---------------------------------------------------------------------------
 // listActiveBranchIds — internal query used by the refreshStatuses orchestrator
 //
-// Collects distinct branchIds from non-terminal goals only.
-// 'atteint' goals are excluded — their status will never change.
-// 'enpause' goals are included so their branchId is covered (even though
-//  refreshBranchStatuses will skip them individually).
+// Reads from the branches table (O(branches) ≈ 50 reads) rather than
+// paginating all savingsGoals (O(total goals), grows unboundedly as
+// 'atteint' goals accumulate over time).
 //
-// NOTE: We query by_branch_status with only branchId unbound, which means
-// we do two targeted index scans ('encours' and 'enretard') rather than a
-// full collect — safe at scale because 'atteint' rows are never loaded.
-// The index is ['branchId', 'status'], so we cannot lead with 'status' alone;
-// instead we rely on the by_customer index on savingsGoals to get branchIds.
-// Simplest correct approach: paginate savingsGoals filtered to non-atteint.
+// refreshBranchStatuses already filters to encours/enretard via the
+// by_branch_status index, so branches that have no active goals are a
+// natural no-op — no extra filtering needed here.
+//
+// NOTE: If branches can grow into the thousands, replace .collect() with
+// the same paginate loop pattern and keep everything else unchanged.
 // ---------------------------------------------------------------------------
 
 export const listActiveBranchIds = internalQuery({
   args: {},
   handler: async (ctx): Promise<string[]> => {
-    // Paginate to avoid loading all goals in one shot.
-    // We only need branchId, so the payload is small.
-    const branchIds = new Set<string>()
-    let cursor: string | null = null
-
-    do {
-      const page = await ctx.db
-        .query('savingsGoals')
-        .paginate({ cursor, numItems: 500 })
-
-      for (const g of page.page) {
-        // Skip terminal goals — they will never transition out of 'atteint'
-        if (g.status !== 'atteint') {
-          branchIds.add(g.branchId as string)
-        }
-      }
-
-      cursor = page.isDone ? null : page.continueCursor
-    } while (cursor !== null)
-
-    return Array.from(branchIds)
+    const branches = await ctx.db.query('branches').collect()
+    return branches.map((b) => b._id as string)
   },
 })
 
@@ -253,7 +233,16 @@ export const refreshBranchStatuses = internalMutation({
  *   })
  * })
  *
+ * describe('listActiveBranchIds', () => {
+ *   it('returns all branch IDs regardless of goal distribution', async () => {
+ *     // seed 3 branches (one with only atteint goals, one with encours, one empty)
+ *     // run query → expect all 3 branchIds returned
+ *     // refreshBranchStatuses handles the empty/atteint cases as no-ops
+ *   })
+ * })
+ *
  * Read-cost assertion (documented):
+ *   listActiveBranchIds: O(branches) ≈ 50 reads — fixed, does not grow with history.
  *   200 goals/branch (encours + enretard only) × 50 txs (indexed) = 10,000 reads
  *   50 branches × 10,000 = 500,000 total reads/cron run — under the 1M limit.
  * ---------------------------------------------------------------------------

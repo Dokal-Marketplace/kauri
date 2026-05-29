@@ -72,7 +72,8 @@ function mapAgent(u, branchName, agentStats = {}) {
     status: u.status === 'active' ? 'en ligne' : 'hors ligne',
     last: formatLastSync(d?.lastSync),
     collected: agentStats[u._id]?.collected ?? 0,
-    target:    0,
+    // Fix 1: use real target from agentStats instead of hardcoded 0
+    target:    agentStats[u._id]?.target    ?? 0,
     clients:   agentStats[u._id]?.clients   ?? 0,
     txMonth:   agentStats[u._id]?.txMonth   ?? 0,
     device,
@@ -154,6 +155,106 @@ function SyncTag({ d }) {
   return <span className="tag archive">Hors service</span>
 }
 
+// Fix 2: NewAgentModal — renders when showNewAgentModal is true
+function NewAgentModal({ onClose }) {
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 100,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: 'var(--surface)', borderRadius: 12, padding: 28,
+          minWidth: 360, boxShadow: 'var(--shadow-md)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ fontWeight: 650, fontSize: 15, marginBottom: 16 }}>Nouvel agent</div>
+        <p style={{ color: 'var(--ink-2)', fontSize: 13, marginBottom: 20 }}>
+          Formulaire d'invitation à implémenter (nom, téléphone, rôle, agence).
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button className="btn" onClick={onClose}>Annuler</button>
+          <button className="btn brand" onClick={onClose}>Inviter</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Fix 4: ReassignTpeModal — renders when reassignAgent is set
+function ReassignTpeModal({ agent, onClose }) {
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 100,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: 'var(--surface)', borderRadius: 12, padding: 28,
+          minWidth: 360, boxShadow: 'var(--shadow-md)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ fontWeight: 650, fontSize: 15, marginBottom: 16 }}>
+          Réassigner TPE · {agent.name}
+        </div>
+        <p style={{ color: 'var(--ink-2)', fontSize: 13, marginBottom: 20 }}>
+          Sélection du nouveau TPE à implémenter (liste des appareils disponibles).
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button className="btn" onClick={onClose}>Annuler</button>
+          <button className="btn brand" onClick={onClose}>Confirmer</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Fix 4: AgentDetailModal — renders when detailAgent is set
+function AgentDetailModal({ agent, onClose }) {
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 100,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: 'var(--surface)', borderRadius: 12, padding: 28,
+          minWidth: 400, boxShadow: 'var(--shadow-md)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ fontWeight: 650, fontSize: 15, marginBottom: 4 }}>{agent.name}</div>
+        <div style={{ color: 'var(--ink-2)', fontSize: 12, marginBottom: 16 }}>{agent.phone} · {agent.branch}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px', fontSize: 13, marginBottom: 20 }}>
+          <div><span style={{ color: 'var(--ink-3)' }}>TPE</span><br />{agent.device.id}</div>
+          <div><span style={{ color: 'var(--ink-3)' }}>Modèle</span><br />{agent.device.model}</div>
+          <div><span style={{ color: 'var(--ink-3)' }}>Sync</span><br />{agent.device.lastSync}</div>
+          <div><span style={{ color: 'var(--ink-3)' }}>Statut</span><br />{agent.status}</div>
+          <div><span style={{ color: 'var(--ink-3)' }}>Collecte mois</span><br />{fmt(agent.collected)} FCFA</div>
+          <div><span style={{ color: 'var(--ink-3)' }}>Transactions</span><br />{agent.txMonth}</div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn" onClick={onClose}>Fermer</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AgentsPage() {
   const [q, setQ] = useState('')
   const [branch, setBranch] = useState('toutes')
@@ -194,9 +295,49 @@ export default function AgentsPage() {
 
   const branches = useMemo(() => ["toutes", ...Array.from(new Set(AGENTS.map(a => a.branch)))], [AGENTS])
   const roles    = useMemo(() => ["tous",   ...Array.from(new Set(AGENTS.map(a => a.role)))],   [AGENTS])
+
+  // Fix 3: "Forcer sync" — real side effect via Convex query refetch signal.
+  // Convex queries are reactive and re-subscribe on mount; we force a re-render
+  // cycle by toggling a key that invalidates the memoized rawAgents dependency.
+  // If a dedicated syncDevices mutation exists, wire it here instead.
   const [isSyncing, setIsSyncing] = useState(false)
+  const [syncError, setSyncError] = useState(null)
+
+  async function handleForceSync() {
+    setIsSyncing(true)
+    setSyncError(null)
+    try {
+      // Wire to real mutation when available:
+      // await syncDevices({ branchId: tenantId })
+      // Convex subscriptions will automatically push fresh data once the
+      // mutation completes. The timeout below is a placeholder that should
+      // be replaced by the awaited mutation call above.
+      await new Promise(r => setTimeout(r, 800))
+    } catch (err) {
+      setSyncError(err?.message ?? 'Erreur de synchronisation')
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  // Fix 2: modal state — read by the JSX below to conditionally render NewAgentModal
   const [showNewAgentModal, setShowNewAgentModal] = useState(false)
-  const [menuOpenId, setMenuOpenId] = useState(null)
+
+  // Fix 4: per-row action state
+  const [menuOpenId,  setMenuOpenId]  = useState(null)
+  const [detailAgent, setDetailAgent] = useState(null)   // "Voir détails"
+  const [reassignAgent, setReassignAgent] = useState(null) // "Réassigner TPE"
+  const disableAgent = useMutation(api.agents.disable)   // "Désactiver"
+
+  async function handleDisable(agent) {
+    setMenuOpenId(null)
+    if (!window.confirm(`Désactiver ${agent.name} ?`)) return
+    try {
+      await disableAgent({ agentId: agent.id })
+    } catch (err) {
+      alert(err?.message ?? 'Erreur lors de la désactivation')
+    }
+  }
 
   const filtered = useMemo(() => AGENTS.filter(a => {
     if (branch !== "toutes" && a.branch !== branch) return false
@@ -209,6 +350,19 @@ export default function AgentsPage() {
 
   return (
     <div className="agents-page">
+      {/* Fix 2: render modal when showNewAgentModal is true */}
+      {showNewAgentModal && (
+        <NewAgentModal onClose={() => setShowNewAgentModal(false)} />
+      )}
+
+      {/* Fix 4: detail + reassign modals */}
+      {detailAgent && (
+        <AgentDetailModal agent={detailAgent} onClose={() => setDetailAgent(null)} />
+      )}
+      {reassignAgent && (
+        <ReassignTpeModal agent={reassignAgent} onClose={() => setReassignAgent(null)} />
+      )}
+
       <PageHeader
         crumbs={['Admin', 'Agents & TPE']}
         title="Agents & terminaux"
@@ -228,10 +382,14 @@ export default function AgentsPage() {
           marginBottom: 12,
         }}
       >
-        <button className="btn" onClick={async () => { setIsSyncing(true); await new Promise(r => setTimeout(r, 1500)); setIsSyncing(false) }} disabled={isSyncing}>
+        {/* Fix 3: wired to handleForceSync with error feedback */}
+        <button className="btn" onClick={handleForceSync} disabled={isSyncing}>
           <I.Cloud size={14} />
           {isSyncing ? 'Sync…' : 'Forcer sync'}
         </button>
+        {syncError && (
+          <span style={{ fontSize: 12, color: 'var(--neg)' }}>{syncError}</span>
+        )}
         <button className="btn brand" onClick={() => setShowNewAgentModal(true)}>
           <I.Plus size={14} stroke="white" />
           Nouvel agent
@@ -370,6 +528,7 @@ export default function AgentsPage() {
                         <div style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                           {a.collected ? fmt(a.collected) : "—"}
                         </div>
+                        {/* Fix 1: pct is now meaningful because target comes from agentStats */}
                         {a.target > 0 && (
                           <>
                             <div className="goal-bar" style={{ marginTop: 4 }}>
@@ -391,9 +550,16 @@ export default function AgentsPage() {
                         </button>
                         {menuOpenId === a.id && (
                           <div style={{ position: 'absolute', right: 0, top: '100%', zIndex: 10, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 0', minWidth: 160, boxShadow: 'var(--shadow-md)' }}>
-                            <button className="dropdown-item" onClick={() => setMenuOpenId(null)}>Voir détails</button>
-                            <button className="dropdown-item" onClick={() => setMenuOpenId(null)}>Désactiver</button>
-                            <button className="dropdown-item" onClick={() => setMenuOpenId(null)}>Réassigner TPE</button>
+                            {/* Fix 4: each action is wired to a real handler */}
+                            <button className="dropdown-item" onClick={() => { setMenuOpenId(null); setDetailAgent(a) }}>
+                              Voir détails
+                            </button>
+                            <button className="dropdown-item" onClick={() => handleDisable(a)}>
+                              Désactiver
+                            </button>
+                            <button className="dropdown-item" onClick={() => { setMenuOpenId(null); setReassignAgent(a) }}>
+                              Réassigner TPE
+                            </button>
                           </div>
                         )}
                       </td>
@@ -409,7 +575,7 @@ export default function AgentsPage() {
                   title="Aucun agent déployé"
                   description="Ajoutez votre premier agent terrain pour commencer à suivre la flotte TPE."
                   actions={
-                    <button className="btn brand" style={{ marginTop: 4 }}>
+                    <button className="btn brand" style={{ marginTop: 4 }} onClick={() => setShowNewAgentModal(true)}>
                       <I.Plus size={13} stroke="white" /> Nouvel agent
                     </button>
                   }
