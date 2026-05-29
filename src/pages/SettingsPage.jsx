@@ -179,13 +179,20 @@ function BranchActionsMenu({ branch, onArchive, onClose }) {
 
 function CredentialsDrawer({ integration, onClose, onSave }) {
   const [key, setKey] = useState(integration.apiKey || '')
+  const [webhookUrl, setWebhookUrl] = useState(integration.webhookUrl ?? '')
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
     setSaving(true)
     // TODO: await api.integrations.updateCredentials({ name: integration.n, apiKey: key })
     await new Promise(r => setTimeout(r, 600))
-    onSave({ ...integration, apiKey: key, dot: 'actif', s: 'Connecté' })
+    onSave({
+      ...integration,
+      apiKey: key,
+      ...(integration.webhookUrl !== undefined && { webhookUrl }),
+      dot: 'actif',
+      s: 'Connecté',
+    })
     setSaving(false)
     onClose()
   }
@@ -198,7 +205,7 @@ function CredentialsDrawer({ integration, onClose, onSave }) {
       </Field>
       {integration.webhookUrl !== undefined && (
         <Field label="URL de webhook">
-          <input className="input" value={integration.webhookUrl || ''} onChange={() => {}} placeholder="https://votre-serveur.com/hook" />
+          <input className="input" value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} placeholder="https://votre-serveur.com/hook" />
         </Field>
       )}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
