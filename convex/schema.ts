@@ -49,8 +49,8 @@ export default defineSchema({
     .index('by_branch', ['branchId'])
     .index('by_branch_status', ['branchId', 'status'])
     .index('by_id_number', ['idNumber'])
-    .index('by_organization_phone', ['organizationId', 'phoneNumber'])       // ← ajouté
-    .index('by_organization_id_number', ['organizationId', 'idNumber']),     // ← ajouté
+    .index('by_organization_phone', ['organizationId', 'phoneNumber'])   
+    .index('by_organization_id_number', ['organizationId', 'idNumber']),
 
   devices: defineTable({
     serialNumber: v.string(),
