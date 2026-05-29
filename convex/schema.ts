@@ -3,14 +3,11 @@ import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
 
 export default defineSchema({
-  // 1. ORGANIZATIONAL STRUCTURE
-
-  // Top-level tenant — one MFI licence = one organization
   organizations: defineTable({
-    name: v.string(), // "Kauri Finance S.A."
-    country: v.string(), // ISO-3166 alpha-2, e.g. "BF"
-    currency: v.string(), // ISO-4217, e.g. "XOF"
-    licenseNumber: v.string(), // Regulatory / BCEAO licence ref
+    name: v.string(),
+    country: v.string(),
+    currency: v.string(),
+    licenseNumber: v.string(),
     status: v.union(v.literal('active'), v.literal('suspended')),
     logoUrl: v.optional(v.string()),
   }).index('by_country', ['country']),
@@ -19,65 +16,64 @@ export default defineSchema({
     organizationId: v.id('organizations'),
     name: v.string(),
     location: v.string(),
-    code: v.string(), // e.g., "OUAGA-01"
+    code: v.string(),
   })
     .index('by_code', ['code'])
     .index('by_organization', ['organizationId']),
 
-  // 2. USER MANAGEMENT (Agents, Supervisors)
   users: defineTable({
     fullName: v.string(),
     email: v.string(),
     phoneNumber: v.string(),
-    tokenIdentifier: v.string(), // Clerk/Auth0 ID
+    tokenIdentifier: v.string(),
     branchId: v.id("branches"),
     status: v.union(v.literal("active"), v.literal("suspended")),
   })
     .index("by_token", ["tokenIdentifier"])
     .index("by_branch", ["branchId"]),
 
-  // 3. KYC & CUSTOMERS
   customers: defineTable({
     fullName: v.string(),
     phoneNumber: v.string(),
-    idNumber: v.string(), // National ID / Passport
+    idNumber: v.string(),
+    organizationId: v.id('organizations'), // ← ajouté
     branchId: v.id('branches'),
     onboardedBy: v.id('users'),
     status: v.union(v.literal('prospect'), v.literal('verified'), v.literal('rejected')),
-    metadata: v.optional(v.any()), // Extra KYC info
-    createdAt: v.number(), // Timestamp when customer was created
-    balance: v.optional(v.number()), // Current balance
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    balance: v.optional(v.number()),
   })
     .index('by_phone', ['phoneNumber'])
     .index('by_status', ['status'])
     .index('by_branch', ['branchId'])
     .index('by_branch_status', ['branchId', 'status'])
-    .index('by_id_number', ['idNumber']),
+    .index('by_id_number', ['idNumber'])
+    .index('by_organization_phone', ['organizationId', 'phoneNumber'])   
+    .index('by_organization_id_number', ['organizationId', 'idNumber']),
 
-  // 4. DEVICE BINDING (TPE Tracking)
   devices: defineTable({
-    serialNumber: v.string(), // Hardcoded TPE Serial
+    serialNumber: v.string(),
     model: v.string(),
     assignedTo: v.optional(v.id('users')),
     status: v.union(v.literal('active'), v.literal('maintenance'), v.literal('lost')),
     lastSync: v.number(),
     batteryPct:  v.optional(v.number()),
-    signalLevel: v.optional(v.number()),   // 0–5
+    signalLevel: v.optional(v.number()),
     queuedCount: v.optional(v.number()),
   }).index("by_serial", ["serialNumber"]),
 
-  // 5. CASH COLLECTIONS (Transactions)
   transactions: defineTable({
     amount: v.number(),
-    currency: v.string(), // e.g., "XOF"
+    currency: v.string(),
     customerId: v.id('customers'),
     agentId: v.id('users'),
     branchId: v.id('branches'),
-    tpeId: v.string(), // Serial of the TPE used
-    type: v.union(v.literal('deposit'), v.literal('withdrawal')), // Transaction type
+    tpeId: v.string(),
+    type: v.union(v.literal('deposit'), v.literal('withdrawal')),
     status: v.union(v.literal('pending'), v.literal('completed'), v.literal('reversed')),
     reversalReason: v.optional(v.string()),
-    reversedBy: v.optional(v.id('users')), // Supervisor ID
+    reversedBy: v.optional(v.id('users')),
     timestamp: v.number(),
   })
     .index('by_agent_date', ['agentId'])
@@ -85,13 +81,12 @@ export default defineSchema({
     .index('by_branch_timestamp', ['branchId', 'timestamp'])
     .index('by_customer', ['customerId', 'status']),
 
-  // 6. DISBURSEMENTS (Maker-Checker Workflow)
   disbursements: defineTable({
     amount: v.number(),
     customerId: v.id('customers'),
     branchId: v.id('branches'),
-    initiatedBy: v.id('users'), // The "Maker"
-    approvedBy: v.optional(v.id('users')), // The "Checker"
+    initiatedBy: v.id('users'),
+    approvedBy: v.optional(v.id('users')),
     status: v.union(
       v.literal('pending'),
       v.literal('approved'),
@@ -100,9 +95,9 @@ export default defineSchema({
     ),
     timestamp: v.number(),
     payoutMethod: v.union(v.literal('cash'), v.literal('mobile_money')),
-    transactionId: v.optional(v.string()), // External reference from payment gateway
+    transactionId: v.optional(v.string()),
   }).index('by_status', ['status']),
-  // Add this to your existing schema.ts
+
   reconciliations: defineTable({
     agentId:              v.id("users"),
     branchId:             v.id("branches"),
@@ -116,7 +111,7 @@ export default defineSchema({
     notes:                v.optional(v.string()),
   })
     .index("by_branch_status", ["branchId", "status"])
-    .index("by_agent_date",    ["agentId",  "date"]), 
+    .index("by_agent_date",    ["agentId",  "date"]),
 
   products: defineTable({
     organizationId: v.id('organizations'),
@@ -145,17 +140,14 @@ export default defineSchema({
     .index('by_org', ['organizationId'])
     .index('by_status', ['organizationId', 'status']),
 
-  // 9. SAVINGS GOALS
-  // Progress (currentAmount, pct) is computed at query time by summing completed
-  // transactions for the customer — never stored — so it stays in sync automatically.
   savingsGoals: defineTable({
     customerId: v.id('customers'),
     branchId: v.id('branches'),
-    agentId: v.id('users'), // responsible agent
-    category: v.string(), // "Scolarité", "Mariage", etc.
-    productCode: v.string(), // links to a product
+    agentId: v.id('users'),
+    category: v.string(),
+    productCode: v.string(),
     targetAmount: v.number(),
-    deadline: v.string(), // ISO date YYYY-MM-DD
+    deadline: v.string(),
     status: v.union(
       v.literal('encours'),
       v.literal('atteint'),
