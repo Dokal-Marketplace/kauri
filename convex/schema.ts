@@ -82,7 +82,7 @@ export default defineSchema({
     .index('by_agent_date', ['agentId'])
     .index('by_branch', ['branchId'])
     .index('by_branch_timestamp', ['branchId', 'timestamp'])
-    .index('by_customer', ['customerId']),
+    .index('by_customer', ['customerId', 'status']),
 
   // 6. DISBURSEMENTS (Maker-Checker Workflow)
   disbursements: defineTable({
@@ -163,7 +163,7 @@ export default defineSchema({
     ),
     createdAt: v.number(),
   })
-    .index('by_customer', ['customerId'])
+    .index('by_customer', ['customerId', 'status'])
     .index('by_branch_status', ['branchId', 'status'])
     .index('by_agent', ['agentId']),
 })
