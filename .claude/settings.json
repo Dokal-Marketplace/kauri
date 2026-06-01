@@ -25,7 +25,10 @@
       "Bash(pnpm exec *)",
       "Bash(pnpm prepare *)",
       "Bash(pnpm lint:fix)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(git -C /Users/serge/workspace/kauri rebase --continue)",
+      "Bash(git -C /Users/serge/workspace/kauri diff --name-only --diff-filter=U)",
+      "Bash(git -C /Users/serge/workspace/kauri status --short)"
     ],
     "additionalDirectories": ["/Users/serge/Downloads/TontiPro"]
   }
