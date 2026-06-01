@@ -87,13 +87,18 @@ export const listByBranch = query({
 
     await authz.withTenant(user.branchId).require(ctx, identity.subject, 'reconciliation:liquidate')
 
-    const allRecords = await ctx.db
-      .query('reconciliations')
-      .withIndex('by_branch_status', (r) => r.eq('branchId', args.branchId))
-      .order('desc')
-      .collect()
-
-    const records = args.date ? allRecords.filter((r) => r.date === args.date) : allRecords
+    const { branchId, date } = args
+    const records = date
+      ? await ctx.db
+          .query('reconciliations')
+          .withIndex('by_branch_date', (r) => r.eq('branchId', branchId).eq('date', date))
+          .order('desc')
+          .collect()
+      : await ctx.db
+          .query('reconciliations')
+          .withIndex('by_branch_date', (r) => r.eq('branchId', branchId))
+          .order('desc')
+          .take(90)
 
     // Enrich with agent and verifier names
     return Promise.all(
