@@ -94,6 +94,8 @@ export const listByBranch = query({
       .unique();
     if (!user) throw new Error("User not found");
 
+    if (user.branchId !== args.branchId) throw new Error("Unauthorized");
+
     await authz
       .withTenant(user.branchId)
       .require(ctx, identity.subject, "reconciliation:liquidate");
