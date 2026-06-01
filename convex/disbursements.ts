@@ -115,11 +115,11 @@ export const rejectDisbursement = mutation({
     // Fix #2a (cont): branch-scoped authz, consistent with approveDisbursement
     await authz.withTenant(user.branchId).require(ctx, identity.subject, 'disbursements:approve')
 
-    // reason is stored in transactionId field as a workaround since schema
-    // has no rejectionReason — add it to schema if needed, or store in notes.
-    // Reuse approvedBy as "decidedBy" for audit trail until schema adds rejectedBy
+    if (args.reason.length > 500) throw new Error('Reason too long (max 500 chars)')
     return ctx.db.patch(args.disbursementId, {
       status: 'rejected',
+      rejectionReason: args.reason,
+      rejectedBy: user._id,
       transactionId: args.reason, // temporary: reuse transactionId until schema is updated
       approvedBy: user._id, // temporary: reuse as "decidedBy" until schema adds rejectedBy
     })
