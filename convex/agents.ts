@@ -15,7 +15,7 @@ export const listByBranch = query({
     return Promise.all(users.map(async u => {
       const device = await ctx.db
         .query('devices')
-        .filter(q => q.eq(q.field('assignedTo'), u._id))
+        .withIndex('by_assigned_to', q => q.eq('assignedTo', u._id))
         .first()
       return { ...u, device }
     }))

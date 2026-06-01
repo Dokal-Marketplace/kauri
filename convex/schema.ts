@@ -61,7 +61,8 @@ export default defineSchema({
     batteryPct:  v.optional(v.number()),
     signalLevel: v.optional(v.number()),
     queuedCount: v.optional(v.number()),
-  }).index("by_serial", ["serialNumber"]),
+  }).index("by_serial", ["serialNumber"])
+    .index("by_assigned_to", ["assignedTo"]),
 
   transactions: defineTable({
     amount: v.number(),
