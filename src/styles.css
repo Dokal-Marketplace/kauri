@@ -2337,14 +2337,23 @@ textarea.input {
 
 /* Skeleton loaders */
 .skeleton-bone {
-  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--surface-3) 50%,
+    var(--surface-2) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
 
 @keyframes shimmer {
-  from { background-position: 200% 0 }
-  to { background-position: -200% 0 }
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
 }
 
 .skeleton-card {
@@ -2651,8 +2660,12 @@ textarea.input {
 
 /* === Skeleton loading === */
 @keyframes skel-shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
 }
 .skel {
   display: block;
@@ -2660,7 +2673,7 @@ textarea.input {
   background: linear-gradient(
     90deg,
     var(--surface-inset) 25%,
-    var(--border)        50%,
+    var(--border) 50%,
     var(--surface-inset) 75%
   );
   background-size: 800px 100%;
@@ -2887,7 +2900,9 @@ textarea.input {
   font-size: 13.5px;
   font-family: var(--font-sans);
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   width: 100%;
   box-sizing: border-box;
 }

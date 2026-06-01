@@ -7,6 +7,7 @@ A clean EOD process usually follows these three steps to minimize "mysterious" c
 Before heading to the branch, the agent runs a "Daily Summary" on the TPE.
 
 The TPE displays: "Total Collected: 450,000 CFA". The agent counts their physical cash:
+
 - If it's **450,000 CFA**, they proceed.
 - If it's **445,000 CFA**, they know they have a problem before talking to the accountant.
 
@@ -23,6 +24,7 @@ At the branch, the Accountant uses the `settleDailyCash` mutation.
 Once a reconciliation is settled, your `transactions` table should ideally become "read-only" for that date.
 
 **Implementation Tip:** In your `reverseTransaction` mutation, add a check:
+
 > If a reconciliation record exists for this agent on this date and is `settled`, block the reversal.
 
 This prevents agents and supervisors from colluding to reverse transactions after the cash has already been accounted for.

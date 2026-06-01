@@ -69,7 +69,7 @@ const roles = defineRoles(permissions, {
   // Full-access role — includes all operational and back-office permissions.
   // Assign to org owners and platform administrators.
   admin: {
-    includes: ['supervisor'],  // all field + manager permissions
+    includes: ['supervisor'], // all field + manager permissions
     kyc: ['register', 'validate'],
     disbursements: ['request', 'approve', 'execute'],
     devices: ['bind'],
