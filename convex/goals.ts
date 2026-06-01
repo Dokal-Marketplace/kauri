@@ -1,6 +1,12 @@
 // convex/goals.ts
 import { v } from 'convex/values'
-import { query, mutation, internalMutation, internalAction, internalQuery } from './_generated/server'
+import {
+  query,
+  mutation,
+  internalMutation,
+  internalAction,
+  internalQuery,
+} from './_generated/server'
 import { internal } from './_generated/api'
 
 // ---------------------------------------------------------------------------
@@ -15,10 +21,7 @@ function daysUntil(deadline: string): number {
 }
 
 /** Derive status from progress % and days remaining. */
-function deriveStatus(
-  pct: number,
-  daysLeft: number
-): 'atteint' | 'enretard' | 'encours' {
+function deriveStatus(pct: number, daysLeft: number): 'atteint' | 'enretard' | 'encours' {
   if (pct >= 100) return 'atteint'
   if (daysLeft < 21 && pct < 80) return 'enretard'
   return 'encours'
@@ -44,7 +47,9 @@ export const listByBranch = query({
         // Fix: use by_customer index — eliminates the full-table scan
         const txs = await ctx.db
           .query('transactions')
-          .withIndex('by_customer', (q) => q.eq('customerId', g.customerId).eq('status', 'completed'))
+          .withIndex('by_customer', (q) =>
+            q.eq('customerId', g.customerId).eq('status', 'completed')
+          )
           .collect()
 
         const currentAmount = txs.reduce((s, t) => s + t.amount, 0)
@@ -200,12 +205,13 @@ export const refreshBranchStatuses = internalMutation({
         // Fix: use by_customer index — eliminates the N+1 full-table scan
         const txs = await ctx.db
           .query('transactions')
-          .withIndex('by_customer', (q) => q.eq('customerId', g.customerId).eq('status', 'completed'))
+          .withIndex('by_customer', (q) =>
+            q.eq('customerId', g.customerId).eq('status', 'completed')
+          )
           .collect()
 
         const currentAmount = txs.reduce((s, t) => s + t.amount, 0)
-        const pct =
-          g.targetAmount > 0 ? Math.round((currentAmount / g.targetAmount) * 100) : 0
+        const pct = g.targetAmount > 0 ? Math.round((currentAmount / g.targetAmount) * 100) : 0
         const daysLeft = daysUntil(g.deadline)
         const newStatus = deriveStatus(pct, daysLeft)
 

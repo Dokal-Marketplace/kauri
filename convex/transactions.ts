@@ -8,7 +8,7 @@ import { QueryCtx, MutationCtx } from './_generated/server'
 async function resolveAgent(ctx: QueryCtx | MutationCtx, subject: string) {
   const agent = await ctx.db
     .query('users')
-    .withIndex('by_token', q => q.eq('tokenIdentifier', subject))
+    .withIndex('by_token', (q) => q.eq('tokenIdentifier', subject))
     .unique()
   if (!agent) throw new Error('Agent not found')
   return agent
@@ -18,7 +18,7 @@ async function resolveAgent(ctx: QueryCtx | MutationCtx, subject: string) {
 export const listByCustomer = query({
   args: {
     customerId: v.id('customers'),
-    limit:      v.optional(v.number()),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
@@ -38,13 +38,13 @@ export const listByCustomer = query({
 
     const rows = await ctx.db
       .query('transactions')
-      .withIndex('by_branch', q => q.eq('branchId', agent.branchId))
-      .filter(q => q.eq(q.field('customerId'), args.customerId))
+      .withIndex('by_branch', (q) => q.eq('branchId', agent.branchId))
+      .filter((q) => q.eq(q.field('customerId'), args.customerId))
       .order('desc')
       .take(args.limit ?? 10)
 
     return Promise.all(
-      rows.map(async t => {
+      rows.map(async (t) => {
         const agentRecord = await ctx.db.get(t.agentId)
         return {
           ...t,
@@ -59,7 +59,7 @@ export const listByCustomer = query({
 export const listByBranch = query({
   args: {
     from: v.optional(v.number()),
-    to:   v.optional(v.number()),
+    to: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
@@ -67,30 +67,30 @@ export const listByBranch = query({
 
     const agent = await resolveAgent(ctx, identity.subject)
 
-    await authz
-      .withTenant(agent.branchId)
-      .require(ctx, identity.subject, 'transactions:audit')
+    await authz.withTenant(agent.branchId).require(ctx, identity.subject, 'transactions:audit')
 
     const rows = await ctx.db
       .query('transactions')
       .withIndex('by_branch_timestamp', (q: any) => {
         let r = q.eq('branchId', agent.branchId)
         if (args.from) r = r.gte('timestamp', args.from)
-        if (args.to)   r = r.lte('timestamp', args.to)
+        if (args.to) r = r.lte('timestamp', args.to)
         return r
       })
       .order('desc')
       .take(500)
 
-    return Promise.all(rows.map(async t => {
-      const agentRecord = await ctx.db.get(t.agentId)
-      const customer    = await ctx.db.get(t.customerId)
-      return {
-        ...t,
-        agentName:    agentRecord?.fullName ?? '—',
-        customerName: customer?.fullName    ?? '—',
-      }
-    }))
+    return Promise.all(
+      rows.map(async (t) => {
+        const agentRecord = await ctx.db.get(t.agentId)
+        const customer = await ctx.db.get(t.customerId)
+        return {
+          ...t,
+          agentName: agentRecord?.fullName ?? '—',
+          customerName: customer?.fullName ?? '—',
+        }
+      })
+    )
   },
 })
 
@@ -100,9 +100,9 @@ export const listByBranch = query({
 export const collectCash = mutation({
   args: {
     customerId: v.id('customers'),
-    amount:     v.number(),
-    tpeId:      v.string(),
-    currency:   v.optional(v.string()),
+    amount: v.number(),
+    tpeId: v.string(),
+    currency: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
@@ -110,9 +110,7 @@ export const collectCash = mutation({
 
     const agent = await resolveAgent(ctx, identity.subject)
 
-    await authz
-      .withTenant(agent.branchId)
-      .require(ctx, identity.subject, 'transactions:collect')
+    await authz.withTenant(agent.branchId).require(ctx, identity.subject, 'transactions:collect')
 
     const customer = await ctx.db.get(args.customerId)
     if (!customer) throw new Error('Customer not found')
@@ -122,15 +120,15 @@ export const collectCash = mutation({
     if (args.amount <= 0) throw new Error('Amount must be greater than 0')
 
     return ctx.db.insert('transactions', {
-      amount:     args.amount,
-      currency:   args.currency ?? 'XOF',
-      type:       'deposit',
+      amount: args.amount,
+      currency: args.currency ?? 'XOF',
+      type: 'deposit',
       customerId: args.customerId,
-      agentId:    agent._id,
-      branchId:   agent.branchId,
-      tpeId:      args.tpeId,
-      status:     'pending',
-      timestamp:  Date.now(),
+      agentId: agent._id,
+      branchId: agent.branchId,
+      tpeId: args.tpeId,
+      status: 'pending',
+      timestamp: Date.now(),
     })
   },
 })
@@ -144,9 +142,7 @@ export const validateTransaction = mutation({
 
     const agent = await resolveAgent(ctx, identity.subject)
 
-    await authz
-      .withTenant(agent.branchId)
-      .require(ctx, identity.subject, 'transactions:audit')
+    await authz.withTenant(agent.branchId).require(ctx, identity.subject, 'transactions:audit')
 
     const tx = await ctx.db.get(args.transactionId)
     if (!tx) throw new Error('Transaction not found')
@@ -161,7 +157,7 @@ export const validateTransaction = mutation({
 export const reverseTransaction = mutation({
   args: {
     transactionId: v.id('transactions'),
-    reason:        v.string(),
+    reason: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
@@ -169,9 +165,7 @@ export const reverseTransaction = mutation({
 
     const agent = await resolveAgent(ctx, identity.subject)
 
-    await authz
-      .withTenant(agent.branchId)
-      .require(ctx, identity.subject, 'transactions:reverse')
+    await authz.withTenant(agent.branchId).require(ctx, identity.subject, 'transactions:reverse')
 
     const tx = await ctx.db.get(args.transactionId)
     if (!tx) throw new Error('Transaction not found')
@@ -184,17 +178,15 @@ export const reverseTransaction = mutation({
     const txDate = new Date(tx.timestamp).toISOString().slice(0, 10)
     const reconciled = await ctx.db
       .query('reconciliations')
-      .withIndex('by_agent_date', q =>
-        q.eq('agentId', tx.agentId).eq('date', txDate)
-      )
-      .filter(q => q.eq(q.field('status'), 'settled'))
+      .withIndex('by_agent_date', (q) => q.eq('agentId', tx.agentId).eq('date', txDate))
+      .filter((q) => q.eq(q.field('status'), 'settled'))
       .first()
     if (reconciled) throw new Error('Transaction already reconciled — reversal blocked')
 
     return ctx.db.patch(args.transactionId, {
-      status:         'reversed',
+      status: 'reversed',
       reversalReason: args.reason,
-      reversedBy:     agent._id,
+      reversedBy: agent._id,
     })
   },
 })
@@ -207,26 +199,19 @@ export const summarizeByAgent = query({
 
     const agent = await resolveAgent(ctx, identity.subject)
 
-    await authz
-      .withTenant(agent.branchId)
-      .require(ctx, identity.subject, 'transactions:audit')
+    await authz.withTenant(agent.branchId).require(ctx, identity.subject, 'transactions:audit')
 
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
 
     const txs = await ctx.db
       .query('transactions')
-      .withIndex('by_branch_timestamp', q =>
+      .withIndex('by_branch_timestamp', (q) =>
         q.eq('branchId', agent.branchId).gte('timestamp', startOfMonth)
       )
       // Fix 4: restrict to deposit + completed — prevents reversals, withdrawals,
       // or any future transaction type from inflating collected/txMonth/clients
-      .filter(q =>
-        q.and(
-          q.eq(q.field('status'), 'completed'),
-          q.eq(q.field('type'),   'deposit'),
-        )
-      )
+      .filter((q) => q.and(q.eq(q.field('status'), 'completed'), q.eq(q.field('type'), 'deposit')))
       .collect()
 
     // Agréger par agentId
@@ -236,7 +221,7 @@ export const summarizeByAgent = query({
       if (!map.has(key)) map.set(key, { collected: 0, txMonth: 0, customers: new Set() })
       const entry = map.get(key)!
       entry.collected += tx.amount
-      entry.txMonth   += 1
+      entry.txMonth += 1
       entry.customers.add(tx.customerId as string)
     }
 
