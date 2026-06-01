@@ -28,7 +28,8 @@
       "Bash(grep -v \"^$\")",
       "Bash(git -C /Users/serge/workspace/kauri rebase --continue)",
       "Bash(git -C /Users/serge/workspace/kauri diff --name-only --diff-filter=U)",
-      "Bash(git -C /Users/serge/workspace/kauri status --short)"
+      "Bash(git -C /Users/serge/workspace/kauri status --short)",
+      "Bash(pnpm --version)"
     ],
     "additionalDirectories": ["/Users/serge/Downloads/TontiPro"]
   }
