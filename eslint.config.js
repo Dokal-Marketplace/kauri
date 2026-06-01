@@ -33,7 +33,11 @@ export default [
       'react/no-unescaped-entities': ['error', { forbid: ['>', '}'] }],
       'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-      'prettier/prettier': 'warn',
+      'prettier/prettier': 'error',
+      'prefer-const': 'error',
+      'no-var': 'error',
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
     settings: {
       react: { version: 'detect' },
