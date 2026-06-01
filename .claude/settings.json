@@ -34,7 +34,10 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)"
       "Bash(git push *)",
-      "Bash(pnpm format:check)"
+      "Bash(pnpm format:check)",
+      "Bash(npx prettier *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ],
     "additionalDirectories": ["/Users/serge/Downloads/TontiPro"]
   }
