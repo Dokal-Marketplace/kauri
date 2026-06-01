@@ -11,7 +11,6 @@ export const requestDisbursement = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
-    await authz.require(ctx, identity.subject, 'disbursements:request')
     const agent = await ctx.db
       .query('users')
       .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))

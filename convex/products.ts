@@ -7,6 +7,12 @@ export const list = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+    if (caller.organizationId !== args.organizationId) throw new Error('Unauthorized')
     return ctx.db
       .query('products')
       .withIndex('by_org', (q) => q.eq('organizationId', args.organizationId))
