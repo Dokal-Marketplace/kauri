@@ -19,6 +19,6 @@ export function lazyWithReload(factory) {
         return new Promise(() => {})
       }
       throw err
-    }),
+    })
   )
 }

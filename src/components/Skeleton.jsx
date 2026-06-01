@@ -2,7 +2,11 @@
 export function Skel({ w, h = 14, r, className = '', style }) {
   return (
     <span
-      className={'skel' + (r === 'pill' ? ' skel-pill' : r === 'circle' ? ' skel-circle' : '') + (className ? ' ' + className : '')}
+      className={
+        'skel' +
+        (r === 'pill' ? ' skel-pill' : r === 'circle' ? ' skel-circle' : '') +
+        (className ? ' ' + className : '')
+      }
       style={{ width: w, height: h, ...style }}
     />
   )
@@ -12,8 +16,12 @@ export function Skel({ w, h = 14, r, className = '', style }) {
 export function SkeletonKpi() {
   return (
     <div className="kpi">
-      <div className="kpi-label"><Skel w={90} h={12} r="pill" /></div>
-      <div className="kpi-value" style={{ marginTop: 10 }}><Skel w={120} h={28} /></div>
+      <div className="kpi-label">
+        <Skel w={90} h={12} r="pill" />
+      </div>
+      <div className="kpi-value" style={{ marginTop: 10 }}>
+        <Skel w={120} h={28} />
+      </div>
       <div className="kpi-foot" style={{ marginTop: 12 }}>
         <Skel w={48} h={18} r="pill" />
         <Skel w={80} h={12} r="pill" />
@@ -65,20 +73,19 @@ function SkeletonTableRow({ colWidths }) {
     <tr className="skel-row">
       {colWidths.map((w, i) => (
         <td key={i}>
-          {i === 0
-            ? <Skel w={14} h={14} />
-            : i === 1
-            ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Skel w={26} h={26} r="circle" />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <Skel w={90} h={13} />
-                  <Skel w={68} h={11} r="pill" />
-                </div>
+          {i === 0 ? (
+            <Skel w={14} h={14} />
+          ) : i === 1 ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Skel w={26} h={26} r="circle" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <Skel w={90} h={13} />
+                <Skel w={68} h={11} r="pill" />
               </div>
-            )
-            : <Skel w={w} h={13} r={i === colWidths.length - 2 ? 'pill' : undefined} />
-          }
+            </div>
+          ) : (
+            <Skel w={w} h={13} r={i === colWidths.length - 2 ? 'pill' : undefined} />
+          )}
         </td>
       ))}
     </tr>
@@ -100,8 +107,12 @@ export function SkeletonDashboard() {
   return (
     <>
       {/* heading */}
-      <div style={{ marginBottom: 6 }}><Skel w={220} h={26} /></div>
-      <div style={{ marginBottom: 20 }}><Skel w={320} h={13} r="pill" /></div>
+      <div style={{ marginBottom: 6 }}>
+        <Skel w={220} h={26} />
+      </div>
+      <div style={{ marginBottom: 20 }}>
+        <Skel w={320} h={13} r="pill" />
+      </div>
 
       {/* KPI row */}
       <SkeletonKpiRow />
@@ -126,7 +137,15 @@ export function SkeletonTablePage({ cols, rows = 8 }) {
   return (
     <div className="card" style={{ marginTop: 16 }}>
       {/* filter bar placeholder */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '14px 18px',
+          borderBottom: '1px solid var(--border-subtle)',
+        }}
+      >
         <Skel w={200} h={32} />
         <Skel w={100} h={32} />
         <Skel w={80} h={32} style={{ marginLeft: 'auto' }} />
@@ -138,7 +157,9 @@ export function SkeletonTablePage({ cols, rows = 8 }) {
           <thead>
             <tr>
               {cols.map((w, i) => (
-                <th key={i}><Skel w={i === 0 ? 14 : w * 0.6} h={10} /></th>
+                <th key={i}>
+                  <Skel w={i === 0 ? 14 : w * 0.6} h={10} />
+                </th>
               ))}
             </tr>
           </thead>
@@ -152,7 +173,9 @@ export function SkeletonTablePage({ cols, rows = 8 }) {
       <div className="table-foot">
         <Skel w={180} h={12} r="pill" />
         <div style={{ display: 'flex', gap: 4 }}>
-          {[1,2,3].map(i => <Skel key={i} w={26} h={26} />)}
+          {[1, 2, 3].map((i) => (
+            <Skel key={i} w={26} h={26} />
+          ))}
         </div>
       </div>
     </div>

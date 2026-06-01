@@ -12,7 +12,7 @@ export default [
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 2021,
       globals: globals.browser,
       parserOptions: {
         ecmaFeatures: { jsx: true },
@@ -30,8 +30,14 @@ export default [
       ...eslintConfigPrettier.rules,
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
+      'react/no-unescaped-entities': ['error', { forbid: ['>', '}'] }],
+      'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-      'prettier/prettier': 'warn',
+      'prettier/prettier': 'error',
+      'prefer-const': 'error',
+      'no-var': 'error',
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
     settings: {
       react: { version: 'detect' },

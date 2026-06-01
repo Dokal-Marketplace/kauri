@@ -7,15 +7,15 @@ import { OnboardingWizard } from './components/OnboardingWizard'
 import { useCurrentUser } from './hooks/useCurrentUser'
 import { TenantsProvider } from './components/providers/tenant-provider'
 
-const DashboardPage      = lazyWithReload(() => import('./pages/DashboardPage'))
-const ClientsPage        = lazyWithReload(() => import('./pages/ClientsPage'))
-const TransactionsPage   = lazyWithReload(() => import('./pages/TransactionsPage'))
-const AgentsPage         = lazyWithReload(() => import('./pages/AgentsPage'))
-const ObjectifsPage      = lazyWithReload(() => import('./pages/ObjectifsPage'))
-const ProductsPage       = lazyWithReload(() => import('./pages/ProductsPage'))
+const DashboardPage = lazyWithReload(() => import('./pages/DashboardPage'))
+const ClientsPage = lazyWithReload(() => import('./pages/ClientsPage'))
+const TransactionsPage = lazyWithReload(() => import('./pages/TransactionsPage'))
+const AgentsPage = lazyWithReload(() => import('./pages/AgentsPage'))
+const ObjectifsPage = lazyWithReload(() => import('./pages/ObjectifsPage'))
+const ProductsPage = lazyWithReload(() => import('./pages/ProductsPage'))
 const ReconciliationPage = lazyWithReload(() => import('./pages/ReconciliationPage'))
-const SettingsPage       = lazyWithReload(() => import('./pages/SettingsPage'))
-const DisbursementsPage  = lazyWithReload(() => import('./pages/DisbursementsPage'))
+const SettingsPage = lazyWithReload(() => import('./pages/SettingsPage'))
+const DisbursementsPage = lazyWithReload(() => import('./pages/DisbursementsPage'))
 
 // ─── Error boundary ────────────────────────────────────────────────────────────
 class ChunkErrorBoundary extends Component {
@@ -30,7 +30,7 @@ class ChunkErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div style={{ padding: '2rem', textAlign: 'center' }}>
-          <p>Cette page n'a pas pu se charger.</p>
+          <p>Cette page n&apos;a pas pu se charger.</p>
           <button onClick={() => window.location.reload()}>Réessayer</button>
         </div>
       )
@@ -84,15 +84,15 @@ const router = createBrowserRouter([
     path: '/',
     element: <Layout />,
     children: [
-      { index: true,              element: <DashboardPage /> },
-      { path: 'clients',          element: <ClientsPage /> },
-      { path: 'tx',               element: <TransactionsPage /> },
-      { path: 'agents',           element: <AgentsPage /> },
-      { path: 'objectifs',        element: <ObjectifsPage /> },
-      { path: 'produits',         element: <ProductsPage /> },
-      { path: 'reconciliation',   element: <ReconciliationPage /> },
-      { path: 'settings',         element: <SettingsPage /> },
-      { path: 'decaissements',    element: <DisbursementsPage /> },
+      { index: true, element: <DashboardPage /> },
+      { path: 'clients', element: <ClientsPage /> },
+      { path: 'tx', element: <TransactionsPage /> },
+      { path: 'agents', element: <AgentsPage /> },
+      { path: 'objectifs', element: <ObjectifsPage /> },
+      { path: 'produits', element: <ProductsPage /> },
+      { path: 'reconciliation', element: <ReconciliationPage /> },
+      { path: 'settings', element: <SettingsPage /> },
+      { path: 'decaissements', element: <DisbursementsPage /> },
     ],
   },
 ])

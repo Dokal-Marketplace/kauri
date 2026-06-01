@@ -46,19 +46,15 @@ function CardSkeleton({ rows = 4 }) {
   )
 }
 
+const CHART_SKELETON_HEIGHTS = [65, 80, 45, 90, 55, 70, 95, 40, 75, 60, 85, 50]
+
 function ChartSkeleton() {
   return (
     <div className="card skeleton-card" style={{ padding: 20, height: 220 }}>
       <Bone w="35%" h={14} style={{ marginBottom: 20 }} />
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 140 }}>
-        {Array.from({ length: 12 }).map((_, i) => (
-          <Bone
-            key={i}
-            w="100%"
-            h={`${30 + Math.random() * 70}%`}
-            radius={4}
-            style={{ flex: 1 }}
-          />
+        {CHART_SKELETON_HEIGHTS.map((h, i) => (
+          <Bone key={i} w="100%" h={`${h}%`} radius={4} style={{ flex: 1 }} />
         ))}
       </div>
     </div>
@@ -69,7 +65,9 @@ function DashboardSkeleton() {
   return (
     <>
       <div className="kpi-row">
-        {Array.from({ length: 5 }).map((_, i) => <KpiSkeleton key={i} />)}
+        {Array.from({ length: 5 }).map((_, i) => (
+          <KpiSkeleton key={i} />
+        ))}
       </div>
       <div className="row cols-2" style={{ marginBottom: 14 }}>
         <ChartSkeleton />
@@ -107,23 +105,48 @@ function KPI({ label, value, sub, icon, trend }) {
 // ─── Volume chart (pure CSS bars) ────────────────────────────────────────────
 
 function VolumeChart({ data }) {
-  const maxVal = Math.max(...data.map(d => Math.max(d.in, d.out)), 1)
+  const maxVal = Math.max(...data.map((d) => Math.max(d.in, d.out)), 1)
 
   return (
     <div className="card" style={{ padding: 20 }}>
       <div className="card-title">Volume mensuel</div>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 140, marginTop: 12 }}>
-        {data.map(d => (
-          <div key={d.m} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <div style={{ width: '100%', display: 'flex', alignItems: 'flex-end', gap: 2, height: 120 }}>
+        {data.map((d) => (
+          <div
+            key={d.m}
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 2,
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'flex-end',
+                gap: 2,
+                height: 120,
+              }}
+            >
               <div
                 className="bar-in"
-                style={{ flex: 1, height: `${(d.in / maxVal) * 100}%`, borderRadius: '3px 3px 0 0' }}
+                style={{
+                  flex: 1,
+                  height: `${(d.in / maxVal) * 100}%`,
+                  borderRadius: '3px 3px 0 0',
+                }}
                 title={`Dépôts: ${fmt(d.in)}`}
               />
               <div
                 className="bar-out"
-                style={{ flex: 1, height: `${(d.out / maxVal) * 100}%`, borderRadius: '3px 3px 0 0' }}
+                style={{
+                  flex: 1,
+                  height: `${(d.out / maxVal) * 100}%`,
+                  borderRadius: '3px 3px 0 0',
+                }}
                 title={`Retraits: ${fmt(d.out)}`}
               />
             </div>
@@ -132,8 +155,12 @@ function VolumeChart({ data }) {
         ))}
       </div>
       <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
-        <span style={{ fontSize: 11, color: 'var(--ink-3)' }}><span className="legend-dot in" /> Dépôts</span>
-        <span style={{ fontSize: 11, color: 'var(--ink-3)' }}><span className="legend-dot out" /> Retraits</span>
+        <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+          <span className="legend-dot in" /> Dépôts
+        </span>
+        <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+          <span className="legend-dot out" /> Retraits
+        </span>
       </div>
     </div>
   )
@@ -145,7 +172,7 @@ function ClientsCard({ clients }) {
   return (
     <div className="card" style={{ padding: 20 }}>
       <div className="card-title">Derniers clients</div>
-      {clients.map(c => (
+      {clients.map((c) => (
         <div key={c.id} className="feed-row">
           <div className="avatar">{c.name?.[0] ?? '?'}</div>
           <div className="feed-info">
@@ -166,11 +193,9 @@ function TransactionsCard({ tx }) {
   return (
     <div className="card" style={{ padding: 20 }}>
       <div className="card-title">Transactions récentes</div>
-      {tx.map(t => (
+      {tx.map((t) => (
         <div key={t._id} className="feed-row">
-          <div className={`tx-icon tx-${t.type}`}>
-            {t.type === 'deposit' ? '↓' : '↑'}
-          </div>
+          <div className={`tx-icon tx-${t.type}`}>{t.type === 'deposit' ? '↓' : '↑'}</div>
           <div className="feed-info">
             <div className="feed-name">{t.customerName}</div>
             <div className="feed-sub">{new Date(t.timestamp).toLocaleDateString('fr-FR')}</div>
@@ -189,7 +214,7 @@ function ActivityFeed({ feed }) {
   return (
     <div className="card" style={{ padding: 20 }}>
       <div className="card-title">Activité récente</div>
-      {feed.map(item => (
+      {feed.map((item) => (
         <div key={item.id} className="feed-row">
           <div className={`tx-icon tx-${item.type}`}>
             {item.kind === 'reconciliation' ? '⚖' : item.type === 'deposit' ? '↓' : '↑'}
@@ -197,7 +222,11 @@ function ActivityFeed({ feed }) {
           <div className="feed-info">
             <div className="feed-name">{item.customer}</div>
             <div className="feed-sub">
-              {item.kind === 'reconciliation' ? 'Réconciliation' : item.type === 'deposit' ? 'Dépôt' : 'Retrait'}
+              {item.kind === 'reconciliation'
+                ? 'Réconciliation'
+                : item.type === 'deposit'
+                  ? 'Dépôt'
+                  : 'Retrait'}
               {item.ref ? ` · ${item.ref}` : ''}
             </div>
           </div>
@@ -215,9 +244,16 @@ function GoalsCard({ goals }) {
   return (
     <div className="card" style={{ padding: 20 }}>
       <div className="card-title">Objectifs d'épargne</div>
-      {goals.map(g => (
+      {goals.map((g) => (
         <div key={g._id} style={{ marginBottom: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 13,
+              marginBottom: 4,
+            }}
+          >
             <span>{g.name}</span>
             <span style={{ color: 'var(--ink-3)' }}>{g.pct ?? 0}%</span>
           </div>
@@ -233,11 +269,15 @@ function GoalsCard({ goals }) {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const fmt = (n = 0) =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(n)
+  new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'XOF',
+    maximumFractionDigits: 0,
+  }).format(n)
 
 function timeAgo(ts) {
   const diff = Date.now() - ts
-  if (diff < 60_000)  return 'à l\'instant'
+  if (diff < 60_000) return "à l'instant"
   if (diff < 3600_000) return `${Math.floor(diff / 60_000)} min`
   if (diff < 86400_000) return `${Math.floor(diff / 3600_000)} h`
   return `${Math.floor(diff / 86400_000)} j`
@@ -250,14 +290,7 @@ export default function DashboardPage() {
   const { isLoaded, convexUser } = useCurrentUser()
   const branchId = convexUser?.branchId ?? null
 
-  const summary = useQuery(
-    api.dashboard.branchSummary,
-    branchId ? { branchId } : 'skip'
-  )
-
-  const today = new Date().toLocaleDateString('fr-FR', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  })
+  const summary = useQuery(api.dashboard.branchSummary, branchId ? { branchId } : 'skip')
 
   if (!isLoaded) {
     return (
@@ -281,7 +314,8 @@ export default function DashboardPage() {
           <div style={{ fontSize: 32, marginBottom: 12 }}>📭</div>
           <div style={{ fontWeight: 600, marginBottom: 4 }}>Données indisponibles</div>
           <div style={{ fontSize: 13 }}>
-            Aucune donnée trouvée pour cette agence. Vérifiez votre contexte de branche ou réessayez.
+            Aucune donnée trouvée pour cette agence. Vérifiez votre contexte de branche ou
+            réessayez.
           </div>
         </div>
       )}
@@ -303,17 +337,8 @@ export default function DashboardPage() {
               sub="dépôts ce mois"
               icon="💰"
             />
-            <KPI
-              label="Retraits"
-              value={fmt(summary.totalWithdrawals)}
-              sub="ce mois"
-              icon="📤"
-            />
-            <KPI
-              label="Transactions en attente"
-              value={summary.pendingTx}
-              icon="⏳"
-            />
+            <KPI label="Retraits" value={fmt(summary.totalWithdrawals)} sub="ce mois" icon="📤" />
+            <KPI label="Transactions en attente" value={summary.pendingTx} icon="⏳" />
           </section>
 
           {/* Volume chart + quick actions */}

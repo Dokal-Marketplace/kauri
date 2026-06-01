@@ -192,7 +192,12 @@ export default function ProductsPage() {
   }
 
   const onDuplicate = (p) => {
-    upsert(toConvexArgs({ ...p, id: null, code: p.code + '-2', name: p.name + ' (copie)', status: 'brouillon' }, orgId))
+    upsert(
+      toConvexArgs(
+        { ...p, id: null, code: p.code + '-2', name: p.name + ' (copie)', status: 'brouillon' },
+        orgId
+      )
+    )
   }
 
   return (
@@ -306,7 +311,14 @@ export default function ProductsPage() {
                   </div>
                   <Skel w={52} h={20} r="pill" />
                 </div>
-                <div style={{ padding: '10px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div
+                  style={{
+                    padding: '10px 14px 14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                  }}
+                >
                   <Skel w="90%" h={11} r="pill" />
                   <Skel w="60%" h={11} r="pill" />
                   <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
@@ -323,12 +335,14 @@ export default function ProductsPage() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Produit</th><th>Famille</th>
+                    <th>Produit</th>
+                    <th>Famille</th>
                     <th style={{ textAlign: 'right' }}>Taux</th>
                     <th style={{ textAlign: 'right' }}>Plafond</th>
                     <th style={{ textAlign: 'right' }}>Clients</th>
                     <th style={{ textAlign: 'right' }}>Encours</th>
-                    <th>Statut</th><th style={{ width: 30 }}></th>
+                    <th>Statut</th>
+                    <th style={{ width: 30 }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -357,8 +371,11 @@ export default function ProductsPage() {
                     description="Créez votre premier produit financier — épargne, crédit, tontine ou microassurance."
                     actions={
                       canManage && (
-                        <button className="btn brand" style={{ marginTop: 4 }}
-                          onClick={() => setEditor({ mode: 'create', product: null })}>
+                        <button
+                          className="btn brand"
+                          style={{ marginTop: 4 }}
+                          onClick={() => setEditor({ mode: 'create', product: null })}
+                        >
                           <I.Plus size={13} stroke="white" /> Nouveau produit
                         </button>
                       )
@@ -395,7 +412,10 @@ export default function ProductsPage() {
                   const sm = STATUS_META[p.status]
                   const Ic = I[f.icon]
                   return (
-                    <tr key={p.id} onClick={() => canManage && setEditor({ mode: 'edit', product: p })}>
+                    <tr
+                      key={p.id}
+                      onClick={() => canManage && setEditor({ mode: 'edit', product: p })}
+                    >
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span className="prod-glyph" style={{ background: f.color }}>
@@ -461,16 +481,19 @@ export default function ProductsPage() {
                 })}
               </tbody>
             </table>
-            {filtered.length === 0 && (
-              products.length === 0 ? (
+            {filtered.length === 0 &&
+              (products.length === 0 ? (
                 <EmptyState
                   illustration={<ProductsIllustration />}
                   title="Aucun produit configuré"
                   description="Créez votre premier produit financier — épargne, crédit, tontine ou microassurance."
                   actions={
                     canManage && (
-                      <button className="btn brand" style={{ marginTop: 4 }}
-                        onClick={() => setEditor({ mode: 'create', product: null })}>
+                      <button
+                        className="btn brand"
+                        style={{ marginTop: 4 }}
+                        onClick={() => setEditor({ mode: 'create', product: null })}
+                      >
                         <I.Plus size={13} stroke="white" /> Nouveau produit
                       </button>
                     )
@@ -482,8 +505,7 @@ export default function ProductsPage() {
                   title="Aucun produit trouvé"
                   description="Aucun produit ne correspond aux filtres sélectionnés."
                 />
-              )
-            )}
+              ))}
           </div>
         )}
       </div>

@@ -26,7 +26,10 @@ import Novu from '../components/Inbox'
 function SetCard({ title, sub, children }) {
   return (
     <div className="card">
-      <div className="card-head" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+      <div
+        className="card-head"
+        style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}
+      >
         <div className="card-title">{title}</div>
         {sub && <div className="card-sub">{sub}</div>}
       </div>
@@ -40,7 +43,11 @@ function Field({ label, sub, children }) {
     <div className="field">
       <label className="field-label">
         {label}
-        {sub && <span className="cell-sub" style={{ fontWeight: 400, marginLeft: 6 }}>· {sub}</span>}
+        {sub && (
+          <span className="cell-sub" style={{ fontWeight: 400, marginLeft: 6 }}>
+            · {sub}
+          </span>
+        )}
       </label>
       {children}
     </div>
@@ -67,14 +74,23 @@ function Toggle({ label, sub, value, onChange }) {
 
 function Modal({ title, onClose, children }) {
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-    }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,.45)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+      }}
+    >
       <div className="card" style={{ width: 420, maxWidth: '90vw', padding: 0 }}>
         <div className="card-head" style={{ justifyContent: 'space-between' }}>
           <div className="card-title">{title}</div>
-          <button className="btn ghost sm" onClick={onClose}><I.Close size={14} /></button>
+          <button className="btn ghost sm" onClick={onClose}>
+            <I.Close size={14} />
+          </button>
         </div>
         <div style={{ padding: '0 20px 20px' }}>{children}</div>
       </div>
@@ -84,14 +100,40 @@ function Modal({ title, onClose, children }) {
 
 function Drawer({ title, onClose, children }) {
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)',
-      display: 'flex', justifyContent: 'flex-end', zIndex: 1000,
-    }}>
-      <div className="card" style={{ width: 380, height: '100%', borderRadius: '12px 0 0 12px', overflow: 'auto', padding: 0 }}>
-        <div className="card-head" style={{ justifyContent: 'space-between', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,.45)',
+        display: 'flex',
+        justifyContent: 'flex-end',
+        zIndex: 1000,
+      }}
+    >
+      <div
+        className="card"
+        style={{
+          width: 380,
+          height: '100%',
+          borderRadius: '12px 0 0 12px',
+          overflow: 'auto',
+          padding: 0,
+        }}
+      >
+        <div
+          className="card-head"
+          style={{
+            justifyContent: 'space-between',
+            position: 'sticky',
+            top: 0,
+            background: 'var(--surface)',
+            zIndex: 1,
+          }}
+        >
           <div className="card-title">{title}</div>
-          <button className="btn ghost sm" onClick={onClose}><I.Close size={14} /></button>
+          <button className="btn ghost sm" onClick={onClose}>
+            <I.Close size={14} />
+          </button>
         </div>
         <div style={{ padding: '0 20px 20px' }}>{children}</div>
       </div>
@@ -108,7 +150,9 @@ function ConfirmDialog({ message, confirmLabel = 'Confirmer', onConfirm, onCance
     <Modal title="Confirmation" onClose={onCancel}>
       <p style={{ fontSize: 14, marginBottom: 20, color: 'var(--text-2)' }}>{message}</p>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <button className="btn" onClick={onCancel} disabled={loading}>Annuler</button>
+        <button className="btn" onClick={onCancel} disabled={loading}>
+          Annuler
+        </button>
         <button className="btn brand" onClick={onConfirm} disabled={loading}>
           {loading ? 'En cours…' : confirmLabel}
         </button>
@@ -130,7 +174,7 @@ function AddBranchModal({ onClose, onAdd }) {
     if (!name.trim() || !code.trim()) return
     setSaving(true)
     // TODO: replace with await api.branches.create({ name, code })
-    await new Promise(r => setTimeout(r, 600))
+    await new Promise((r) => setTimeout(r, 600))
     onAdd({ id: Date.now(), n: name.trim(), c: code.trim().toUpperCase(), a: 0 })
     setSaving(false)
     onClose()
@@ -139,13 +183,27 @@ function AddBranchModal({ onClose, onAdd }) {
   return (
     <Modal title="Ajouter une agence" onClose={onClose}>
       <Field label="Nom de l'agence">
-        <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="ex. Ouagadougou Centre" />
+        <input
+          className="input"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="ex. Ouagadougou Centre"
+        />
       </Field>
       <Field label="Code">
-        <input className="input" value={code} onChange={e => setCode(e.target.value)} placeholder="ex. OUA" maxLength={5} style={{ textTransform: 'uppercase' }} />
+        <input
+          className="input"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="ex. OUA"
+          maxLength={5}
+          style={{ textTransform: 'uppercase' }}
+        />
       </Field>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
-        <button className="btn" onClick={onClose}>Annuler</button>
+        <button className="btn" onClick={onClose}>
+          Annuler
+        </button>
         <button className="btn brand" onClick={handleSubmit} disabled={saving || !name || !code}>
           {saving ? 'Enregistrement…' : 'Ajouter'}
         </button>
@@ -160,15 +218,48 @@ function AddBranchModal({ onClose, onAdd }) {
 
 function BranchActionsMenu({ branch, onArchive, onClose }) {
   return (
-    <div style={{
-      position: 'absolute', right: 0, top: 28, background: 'var(--surface)',
-      border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,.1)',
-      zIndex: 100, minWidth: 160, padding: '4px 0',
-    }}>
-      <button className="btn ghost sm" style={{ width: '100%', justifyContent: 'flex-start', borderRadius: 0, padding: '8px 14px' }}
-        onClick={onClose}>Modifier</button>
-      <button className="btn ghost sm" style={{ width: '100%', justifyContent: 'flex-start', borderRadius: 0, padding: '8px 14px', color: 'var(--danger)' }}
-        onClick={() => { onArchive(branch.c); onClose() }}>Archiver</button>
+    <div
+      style={{
+        position: 'absolute',
+        right: 0,
+        top: 28,
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 8,
+        boxShadow: '0 4px 16px rgba(0,0,0,.1)',
+        zIndex: 100,
+        minWidth: 160,
+        padding: '4px 0',
+      }}
+    >
+      <button
+        className="btn ghost sm"
+        style={{
+          width: '100%',
+          justifyContent: 'flex-start',
+          borderRadius: 0,
+          padding: '8px 14px',
+        }}
+        onClick={onClose}
+      >
+        Modifier
+      </button>
+      <button
+        className="btn ghost sm"
+        style={{
+          width: '100%',
+          justifyContent: 'flex-start',
+          borderRadius: 0,
+          padding: '8px 14px',
+          color: 'var(--danger)',
+        }}
+        onClick={() => {
+          onArchive(branch.c)
+          onClose()
+        }}
+      >
+        Archiver
+      </button>
     </div>
   )
 }
@@ -185,7 +276,7 @@ function CredentialsDrawer({ integration, onClose, onSave }) {
   async function handleSave() {
     setSaving(true)
     // TODO: await api.integrations.updateCredentials({ name: integration.n, apiKey: key })
-    await new Promise(r => setTimeout(r, 600))
+    await new Promise((r) => setTimeout(r, 600))
     onSave({
       ...integration,
       apiKey: key,
@@ -201,15 +292,28 @@ function CredentialsDrawer({ integration, onClose, onSave }) {
     <Drawer title={`Configurer · ${integration.n}`} onClose={onClose}>
       <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 16 }}>{integration.d}</p>
       <Field label="Clé API / Token">
-        <input className="input" type="password" value={key} onChange={e => setKey(e.target.value)} placeholder="sk-…" />
+        <input
+          className="input"
+          type="password"
+          value={key}
+          onChange={(e) => setKey(e.target.value)}
+          placeholder="sk-…"
+        />
       </Field>
       {integration.webhookUrl !== undefined && (
         <Field label="URL de webhook">
-          <input className="input" value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} placeholder="https://votre-serveur.com/hook" />
+          <input
+            className="input"
+            value={webhookUrl}
+            onChange={(e) => setWebhookUrl(e.target.value)}
+            placeholder="https://votre-serveur.com/hook"
+          />
         </Field>
       )}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-        <button className="btn" onClick={onClose}>Annuler</button>
+        <button className="btn" onClick={onClose}>
+          Annuler
+        </button>
         <button className="btn brand" onClick={handleSave} disabled={saving || !key}>
           {saving ? 'Enregistrement…' : 'Enregistrer'}
         </button>
@@ -253,7 +357,7 @@ export default function SettingsPage() {
   const defaultTpe = {
     bgSync: true,
     offlineDays: 3,
-    blockWithdrawals: true,   // was hard-coded no-op
+    blockWithdrawals: true, // was hard-coded no-op
     maxDeposit: '500 000',
     maxWithdrawal: '200 000',
     maxTontine: '50 000',
@@ -269,20 +373,26 @@ export default function SettingsPage() {
     autoLock: 5,
     pinPolicy: '6 chiffres · rotation 90 j',
     logRetention: '36 mois',
-    autoExport: true,         // was hard-coded no-op
+    autoExport: true, // was hard-coded no-op
   }
   const [security, setSecurity] = useState(defaultSecurity)
   const [savedSecurity, setSavedSecurity] = useState(defaultSecurity)
 
   // ── Notifications ────────────────────────────────────────────────────────
-  const defaultNotif = { deposit: true, withdraw: true, lowBattery: true, syncFail: true, weekly: false }
+  const defaultNotif = {
+    deposit: true,
+    withdraw: true,
+    lowBattery: true,
+    syncFail: true,
+    weekly: false,
+  }
   const [notif, setNotif] = useState(defaultNotif)
   const [savedNotif, setSavedNotif] = useState(defaultNotif)
 
   // ── Billing (state-driven, not hard-coded strings) ───────────────────────
   const [plan] = useState({
     name: 'Croissance',
-    desc: 'Jusqu\'à 5 TPE · 200 clients par agent · sync illimitée',
+    desc: "Jusqu'à 5 TPE · 200 clients par agent · sync illimitée",
     price: '240 000',
     renewal: '14 août 2026',
   })
@@ -290,11 +400,36 @@ export default function SettingsPage() {
 
   // ── Integrations (state-driven) ──────────────────────────────────────────
   const [integrations, setIntegrations] = useState([
-    { id: 'orange',   n: 'Orange Money',         s: 'Connecté',      dot: 'actif',    d: 'Encaissements MoMo en temps réel' },
-    { id: 'moov',     n: 'Moov Africa',           s: 'Connecté',      dot: 'actif',    d: 'Encaissements MoMo en temps réel' },
-    { id: 'sms',      n: 'SMS Gateway',           s: 'Connecté',      dot: 'actif',    d: 'Confirmations client par SMS' },
-    { id: 'sage',     n: 'Comptabilité Sage',     s: 'Non connecté',  dot: 'archive',  d: 'Export automatique du grand livre' },
-    { id: 'webhook',  n: 'Webhook personnalisé',  s: 'Non connecté',  dot: 'archive',  d: 'POST sur événements clés', webhookUrl: '' },
+    {
+      id: 'orange',
+      n: 'Orange Money',
+      s: 'Connecté',
+      dot: 'actif',
+      d: 'Encaissements MoMo en temps réel',
+    },
+    {
+      id: 'moov',
+      n: 'Moov Africa',
+      s: 'Connecté',
+      dot: 'actif',
+      d: 'Encaissements MoMo en temps réel',
+    },
+    { id: 'sms', n: 'SMS Gateway', s: 'Connecté', dot: 'actif', d: 'Confirmations client par SMS' },
+    {
+      id: 'sage',
+      n: 'Comptabilité Sage',
+      s: 'Non connecté',
+      dot: 'archive',
+      d: 'Export automatique du grand livre',
+    },
+    {
+      id: 'webhook',
+      n: 'Webhook personnalisé',
+      s: 'Non connecté',
+      dot: 'archive',
+      d: 'POST sur événements clés',
+      webhookUrl: '',
+    },
   ])
   const [configDrawer, setConfigDrawer] = useState(null) // integration id
   const [connectingId, setConnectingId] = useState(null)
@@ -307,7 +442,7 @@ export default function SettingsPage() {
     //   await api.tpe.updateSettings(tpe)
     //   await api.security.updateSettings(security)
     //   await api.notifications.updateSettings(notif)
-    await new Promise(r => setTimeout(r, 800))
+    await new Promise((r) => setTimeout(r, 800))
     setSavedIdentity(identity)
     setSavedTpe(tpe)
     setSavedSecurity(security)
@@ -328,7 +463,7 @@ export default function SettingsPage() {
   async function handleDeploy() {
     setDeploying(true)
     // TODO: await api.tpe.deployFirmware({ version: '4.2.1' })
-    await new Promise(r => setTimeout(r, 1200))
+    await new Promise((r) => setTimeout(r, 1200))
     setDeploying(false)
     setDeployConfirm(false)
   }
@@ -351,28 +486,28 @@ export default function SettingsPage() {
   async function handleConnect(id) {
     setConnectingId(id)
     // TODO: launch OAuth / credentials flow for `id`
-    await new Promise(r => setTimeout(r, 800))
-    setIntegrations(prev => prev.map(it =>
-      it.id === id ? { ...it, s: 'Connecté', dot: 'actif' } : it
-    ))
+    await new Promise((r) => setTimeout(r, 800))
+    setIntegrations((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, s: 'Connecté', dot: 'actif' } : it))
+    )
     setConnectingId(null)
   }
 
   function handleIntegrationSave(updated) {
-    setIntegrations(prev => prev.map(it => it.id === updated.id ? updated : it))
+    setIntegrations((prev) => prev.map((it) => (it.id === updated.id ? updated : it)))
   }
 
   // ── Nav sections ─────────────────────────────────────────────────────────
   const sections = [
-    { k: 'agence',        label: 'Agence',        icon: <I.Pin /> },
-    { k: 'tpe',           label: 'Terminaux TPE',  icon: <I.Wifi /> },
-    { k: 'securite',      label: 'Sécurité',       icon: <I.Shield /> },
-    { k: 'notifications', label: 'Notifications',  icon: <I.Bell /> },
-    { k: 'facturation',   label: 'Facturation',    icon: <I.Wallet /> },
-    { k: 'integrations',  label: 'Intégrations',   icon: <I.Cloud /> },
+    { k: 'agence', label: 'Agence', icon: <I.Pin /> },
+    { k: 'tpe', label: 'Terminaux TPE', icon: <I.Wifi /> },
+    { k: 'securite', label: 'Sécurité', icon: <I.Shield /> },
+    { k: 'notifications', label: 'Notifications', icon: <I.Bell /> },
+    { k: 'facturation', label: 'Facturation', icon: <I.Wallet /> },
+    { k: 'integrations', label: 'Intégrations', icon: <I.Cloud /> },
   ]
 
-  const configIntegration = configDrawer ? integrations.find(i => i.id === configDrawer) : null
+  const configIntegration = configDrawer ? integrations.find((i) => i.id === configDrawer) : null
 
   return (
     <div className="settings-page">
@@ -383,12 +518,16 @@ export default function SettingsPage() {
       >
         {isEditing ? (
           <>
-            <button className="btn" onClick={handleCancel} disabled={saving}>Annuler</button>
+            <button className="btn" onClick={handleCancel} disabled={saving}>
+              Annuler
+            </button>
             <button className="btn brand" onClick={handleSave} disabled={saving}>
               {saving ? (
                 'Enregistrement…'
               ) : (
-                <><I.Check size={14} stroke="white" /> Enregistrer</>
+                <>
+                  <I.Check size={14} stroke="white" /> Enregistrer
+                </>
               )}
             </button>
           </>
@@ -412,7 +551,7 @@ export default function SettingsPage() {
 
       <div className="settings-grid">
         <aside className="settings-nav">
-          {sections.map(s => (
+          {sections.map((s) => (
             <button
               key={s.k}
               className={'settings-nav-item ' + (section === s.k ? 'on' : '')}
@@ -425,7 +564,6 @@ export default function SettingsPage() {
         </aside>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
-
           {/* ── AGENCE ───────────────────────────────────────────────────── */}
           {section === 'agence' && (
             <>
@@ -438,7 +576,7 @@ export default function SettingsPage() {
                   <input
                     className="input"
                     value={identity.orgName}
-                    onChange={e => setIdentity(p => ({ ...p, orgName: e.target.value }))}
+                    onChange={(e) => setIdentity((p) => ({ ...p, orgName: e.target.value }))}
                     disabled={!isEditing}
                   />
                 </Field>
@@ -447,7 +585,7 @@ export default function SettingsPage() {
                   <input
                     className="input"
                     value={identity.agrement}
-                    onChange={e => setIdentity(p => ({ ...p, agrement: e.target.value }))}
+                    onChange={(e) => setIdentity((p) => ({ ...p, agrement: e.target.value }))}
                     disabled={!isEditing}
                   />
                 </Field>
@@ -455,7 +593,7 @@ export default function SettingsPage() {
                   <select
                     className="input"
                     value={identity.currency}
-                    onChange={e => setIdentity(p => ({ ...p, currency: e.target.value }))}
+                    onChange={(e) => setIdentity((p) => ({ ...p, currency: e.target.value }))}
                     disabled={!isEditing}
                   >
                     <option>FCFA (XOF)</option>
@@ -468,7 +606,7 @@ export default function SettingsPage() {
                   <select
                     className="input"
                     value={identity.timezone}
-                    onChange={e => setIdentity(p => ({ ...p, timezone: e.target.value }))}
+                    onChange={(e) => setIdentity((p) => ({ ...p, timezone: e.target.value }))}
                     disabled={!isEditing}
                   >
                     <option>GMT+0 · Ouagadougou</option>
@@ -508,12 +646,16 @@ export default function SettingsPage() {
                   </thead>
                   <tbody>
                     {/* ✅ FIX: driven by `branches` state, not static literals */}
-                    {branches.map(b => (
+                    {branches.map((b) => (
                       <tr key={b.c}>
                         <td style={{ fontWeight: 550 }}>{b.n}</td>
-                        <td className="cell-sub" style={{ fontFamily: 'var(--font-mono)' }}>{b.c}</td>
+                        <td className="cell-sub" style={{ fontFamily: 'var(--font-mono)' }}>
+                          {b.c}
+                        </td>
                         <td>{b.a}</td>
-                        <td><span className="tag actif">Actif</span></td>
+                        <td>
+                          <span className="tag actif">Actif</span>
+                        </td>
                         <td style={{ position: 'relative' }}>
                           {/* ✅ FIX: ⋯ button with real onClick + popover menu */}
                           <button
@@ -527,7 +669,9 @@ export default function SettingsPage() {
                             <BranchActionsMenu
                               branch={b}
                               onClose={() => setBranchMenu(null)}
-                              onArchive={code => setBranches(prev => prev.filter(x => x.c !== code))}
+                              onArchive={(code) =>
+                                setBranches((prev) => prev.filter((x) => x.c !== code))
+                              }
                             />
                           )}
                         </td>
@@ -548,18 +692,26 @@ export default function SettingsPage() {
           {/* ── TPE ──────────────────────────────────────────────────────── */}
           {section === 'tpe' && (
             <>
-              <SetCard title="Mode hors-ligne" sub="Comportement des TPE quand le réseau n'est pas disponible.">
+              <SetCard
+                title="Mode hors-ligne"
+                sub="Comportement des TPE quand le réseau n'est pas disponible."
+              >
                 <Toggle
                   label="Synchronisation automatique en arrière-plan"
                   sub="Les TPE retentent toutes les 5 minutes."
                   value={tpe.bgSync}
-                  onChange={v => setTpe(p => ({ ...p, bgSync: v }))}
+                  onChange={(v) => setTpe((p) => ({ ...p, bgSync: v }))}
                 />
-                <Field label={`Durée maximale hors-ligne · ${tpe.offlineDays} jours`} sub="Au-delà, le TPE refuse de nouveaux mouvements jusqu'à sync.">
+                <Field
+                  label={`Durée maximale hors-ligne · ${tpe.offlineDays} jours`}
+                  sub="Au-delà, le TPE refuse de nouveaux mouvements jusqu'à sync."
+                >
                   <input
-                    type="range" min={1} max={14}
+                    type="range"
+                    min={1}
+                    max={14}
                     value={tpe.offlineDays}
-                    onChange={e => setTpe(p => ({ ...p, offlineDays: +e.target.value }))}
+                    onChange={(e) => setTpe((p) => ({ ...p, offlineDays: +e.target.value }))}
                     style={{ width: '100%' }}
                   />
                 </Field>
@@ -568,18 +720,21 @@ export default function SettingsPage() {
                   label="Bloquer les retraits hors-ligne"
                   sub="Recommandé. Les dépôts restent autorisés."
                   value={tpe.blockWithdrawals}
-                  onChange={v => setTpe(p => ({ ...p, blockWithdrawals: v }))}
+                  onChange={(v) => setTpe((p) => ({ ...p, blockWithdrawals: v }))}
                 />
               </SetCard>
 
-              <SetCard title="Plafonds par transaction" sub="Limites appliquées au TPE; les superviseurs peuvent valider au-delà.">
+              <SetCard
+                title="Plafonds par transaction"
+                sub="Limites appliquées au TPE; les superviseurs peuvent valider au-delà."
+              >
                 <Field label="Dépôt maximum">
                   <div className="input-row">
                     {/* ✅ FIX: controlled input */}
                     <input
                       className="input"
                       value={tpe.maxDeposit}
-                      onChange={e => setTpe(p => ({ ...p, maxDeposit: e.target.value }))}
+                      onChange={(e) => setTpe((p) => ({ ...p, maxDeposit: e.target.value }))}
                       disabled={!isEditing}
                     />
                     <span className="cell-sub">FCFA</span>
@@ -590,7 +745,7 @@ export default function SettingsPage() {
                     <input
                       className="input"
                       value={tpe.maxWithdrawal}
-                      onChange={e => setTpe(p => ({ ...p, maxWithdrawal: e.target.value }))}
+                      onChange={(e) => setTpe((p) => ({ ...p, maxWithdrawal: e.target.value }))}
                       disabled={!isEditing}
                     />
                     <span className="cell-sub">FCFA</span>
@@ -601,7 +756,7 @@ export default function SettingsPage() {
                     <input
                       className="input"
                       value={tpe.maxTontine}
-                      onChange={e => setTpe(p => ({ ...p, maxTontine: e.target.value }))}
+                      onChange={(e) => setTpe((p) => ({ ...p, maxTontine: e.target.value }))}
                       disabled={!isEditing}
                     />
                     <span className="cell-sub">FCFA</span>
@@ -609,13 +764,28 @@ export default function SettingsPage() {
                 </Field>
               </SetCard>
 
-              <SetCard title="Mises à jour TPE" sub="Version 4.2.1 disponible. 5 / 6 terminaux à jour.">
+              <SetCard
+                title="Mises à jour TPE"
+                sub="Version 4.2.1 disponible. 5 / 6 terminaux à jour."
+              >
                 <div className="upload">
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--info-soft)', display: 'grid', placeItems: 'center', color: 'var(--info)' }}>
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 8,
+                      background: 'var(--info-soft)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      color: 'var(--info)',
+                    }}
+                  >
                     <I.Cloud size={18} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 550, fontSize: 13 }}>Kauri TPE 4.2.1 · 4 mai 2026</div>
+                    <div style={{ fontWeight: 550, fontSize: 13 }}>
+                      Kauri TPE 4.2.1 · 4 mai 2026
+                    </div>
                     <div className="cell-sub">Corrige le délai de sync sur réseau 2G.</div>
                   </div>
                   {/* ✅ FIX: "Déployer" opens confirm dialog */}
@@ -634,18 +804,26 @@ export default function SettingsPage() {
           {/* ── SÉCURITÉ ─────────────────────────────────────────────────── */}
           {section === 'securite' && (
             <>
-              <SetCard title="Authentification" sub="Connexion des agents et accès au tableau d'administration.">
+              <SetCard
+                title="Authentification"
+                sub="Connexion des agents et accès au tableau d'administration."
+              >
                 <Toggle
                   label="Vérification en deux étapes (SMS)"
                   sub="Code à 6 chiffres envoyé au numéro de l'agent."
                   value={security.twoFA}
-                  onChange={v => setSecurity(p => ({ ...p, twoFA: v }))}
+                  onChange={(v) => setSecurity((p) => ({ ...p, twoFA: v }))}
                 />
-                <Field label={`Verrouillage automatique · ${security.autoLock} min`} sub="Le TPE se verrouille après inactivité.">
+                <Field
+                  label={`Verrouillage automatique · ${security.autoLock} min`}
+                  sub="Le TPE se verrouille après inactivité."
+                >
                   <input
-                    type="range" min={1} max={30}
+                    type="range"
+                    min={1}
+                    max={30}
                     value={security.autoLock}
-                    onChange={e => setSecurity(p => ({ ...p, autoLock: +e.target.value }))}
+                    onChange={(e) => setSecurity((p) => ({ ...p, autoLock: +e.target.value }))}
                     style={{ width: '100%' }}
                   />
                 </Field>
@@ -654,7 +832,7 @@ export default function SettingsPage() {
                   <select
                     className="input"
                     value={security.pinPolicy}
-                    onChange={e => setSecurity(p => ({ ...p, pinPolicy: e.target.value }))}
+                    onChange={(e) => setSecurity((p) => ({ ...p, pinPolicy: e.target.value }))}
                     disabled={!isEditing}
                   >
                     <option>4 chiffres · rotation 180 j</option>
@@ -670,7 +848,7 @@ export default function SettingsPage() {
                   <select
                     className="input"
                     value={security.logRetention}
-                    onChange={e => setSecurity(p => ({ ...p, logRetention: e.target.value }))}
+                    onChange={(e) => setSecurity((p) => ({ ...p, logRetention: e.target.value }))}
                     disabled={!isEditing}
                   >
                     <option>12 mois</option>
@@ -684,7 +862,7 @@ export default function SettingsPage() {
                   label="Exporter automatiquement vers le coffre"
                   sub="Sauvegarde chiffrée chaque dimanche à 02:00."
                   value={security.autoExport}
-                  onChange={v => setSecurity(p => ({ ...p, autoExport: v }))}
+                  onChange={(v) => setSecurity((p) => ({ ...p, autoExport: v }))}
                 />
               </SetCard>
             </>
@@ -692,17 +870,40 @@ export default function SettingsPage() {
 
           {/* ── NOTIFICATIONS ────────────────────────────────────────────── */}
           {section === 'notifications' && (
-            <SetCard title="Alertes" sub="Choisissez ce que vous recevez par e-mail et sur le tableau de bord.">
-              <Toggle label="Nouveau dépôt" sub="Au-dessus de 100 000 FCFA"
-                value={notif.deposit} onChange={v => setNotif(p => ({ ...p, deposit: v }))} />
-              <Toggle label="Nouveau retrait" sub="Toujours notifier"
-                value={notif.withdraw} onChange={v => setNotif(p => ({ ...p, withdraw: v }))} />
-              <Toggle label="Batterie TPE faible" sub="Sous 20%"
-                value={notif.lowBattery} onChange={v => setNotif(p => ({ ...p, lowBattery: v }))} />
-              <Toggle label="Échec de synchronisation" sub="Si > 1 h hors-ligne"
-                value={notif.syncFail} onChange={v => setNotif(p => ({ ...p, syncFail: v }))} />
-              <Toggle label="Rapport hebdomadaire" sub="Tous les lundis à 07:00"
-                value={notif.weekly} onChange={v => setNotif(p => ({ ...p, weekly: v }))} />
+            <SetCard
+              title="Alertes"
+              sub="Choisissez ce que vous recevez par e-mail et sur le tableau de bord."
+            >
+              <Toggle
+                label="Nouveau dépôt"
+                sub="Au-dessus de 100 000 FCFA"
+                value={notif.deposit}
+                onChange={(v) => setNotif((p) => ({ ...p, deposit: v }))}
+              />
+              <Toggle
+                label="Nouveau retrait"
+                sub="Toujours notifier"
+                value={notif.withdraw}
+                onChange={(v) => setNotif((p) => ({ ...p, withdraw: v }))}
+              />
+              <Toggle
+                label="Batterie TPE faible"
+                sub="Sous 20%"
+                value={notif.lowBattery}
+                onChange={(v) => setNotif((p) => ({ ...p, lowBattery: v }))}
+              />
+              <Toggle
+                label="Échec de synchronisation"
+                sub="Si > 1 h hors-ligne"
+                value={notif.syncFail}
+                onChange={(v) => setNotif((p) => ({ ...p, syncFail: v }))}
+              />
+              <Toggle
+                label="Rapport hebdomadaire"
+                sub="Tous les lundis à 07:00"
+                value={notif.weekly}
+                onChange={(v) => setNotif((p) => ({ ...p, weekly: v }))}
+              />
             </SetCard>
           )}
 
@@ -717,30 +918,52 @@ export default function SettingsPage() {
                     <div className="cell-sub">{plan.desc}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 600, fontSize: 18, fontVariantNumeric: 'tabular-nums' }}>
+                    <div
+                      style={{ fontWeight: 600, fontSize: 18, fontVariantNumeric: 'tabular-nums' }}
+                    >
                       {plan.price}
-                      <span className="cell-sub" style={{ marginLeft: 4 }}>FCFA / an</span>
+                      <span className="cell-sub" style={{ marginLeft: 4 }}>
+                        FCFA / an
+                      </span>
                     </div>
                     <div className="cell-sub">Renouvellement le {plan.renewal}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, padding: '12px 16px' }}>
-                  <button className="btn sm" onClick={handleChangePlan}>Changer de forfait</button>
-                  <button className="btn ghost sm" onClick={handleDownloadInvoices}>Télécharger les factures</button>
+                  <button className="btn sm" onClick={handleChangePlan}>
+                    Changer de forfait
+                  </button>
+                  <button className="btn ghost sm" onClick={handleDownloadInvoices}>
+                    Télécharger les factures
+                  </button>
                 </div>
               </SetCard>
 
               <SetCard title="Méthode de paiement">
                 {/* ✅ FIX: payment data from state; "Modifier" has handler */}
                 <div className="upload">
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--brand-softer)', display: 'grid', placeItems: 'center', color: 'var(--brand-ink)' }}>
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 8,
+                      background: 'var(--brand-softer)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      color: 'var(--brand-ink)',
+                    }}
+                  >
                     <I.Wallet size={18} />
                   </div>
                   <div>
                     <div style={{ fontWeight: 550, fontSize: 13 }}>{payment.label}</div>
                     <div className="cell-sub">{payment.masked}</div>
                   </div>
-                  <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={handleEditPayment}>
+                  <button
+                    className="btn sm"
+                    style={{ marginLeft: 'auto' }}
+                    onClick={handleEditPayment}
+                  >
                     Modifier
                   </button>
                 </div>
@@ -752,28 +975,44 @@ export default function SettingsPage() {
           {section === 'integrations' && (
             <SetCard title="Intégrations" sub="Connectez Kauri à vos outils existants.">
               {/* ✅ FIX: driven by integrations state; "Configurer" opens drawer; "Connecter" calls handleConnect */}
-              {integrations.map(it => (
+              {integrations.map((it) => (
                 <div key={it.id} className="upload">
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--surface-inset)', display: 'grid', placeItems: 'center' }}>
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      background: 'var(--surface-inset)',
+                      display: 'grid',
+                      placeItems: 'center',
+                    }}
+                  >
                     <I.Cloud size={16} />
                   </div>
                   <div>
                     <div style={{ fontWeight: 550, fontSize: 13 }}>{it.n}</div>
                     <div className="cell-sub">{it.d}</div>
                   </div>
-                  <span className={'tag ' + it.dot} style={{ marginLeft: 'auto' }}>{it.s}</span>
+                  <span className={'tag ' + it.dot} style={{ marginLeft: 'auto' }}>
+                    {it.s}
+                  </span>
                   <button
                     className="btn sm"
                     disabled={connectingId === it.id}
-                    onClick={() => it.dot === 'actif' ? setConfigDrawer(it.id) : handleConnect(it.id)}
+                    onClick={() =>
+                      it.dot === 'actif' ? setConfigDrawer(it.id) : handleConnect(it.id)
+                    }
                   >
-                    {connectingId === it.id ? 'Connexion…' : it.dot === 'actif' ? 'Configurer' : 'Connecter'}
+                    {connectingId === it.id
+                      ? 'Connexion…'
+                      : it.dot === 'actif'
+                        ? 'Configurer'
+                        : 'Connecter'}
                   </button>
                 </div>
               ))}
             </SetCard>
           )}
-
         </div>
       </div>
 
@@ -782,7 +1021,7 @@ export default function SettingsPage() {
       {showAddBranch && (
         <AddBranchModal
           onClose={() => setShowAddBranch(false)}
-          onAdd={branch => setBranches(prev => [...prev, branch])}
+          onAdd={(branch) => setBranches((prev) => [...prev, branch])}
         />
       )}
 
