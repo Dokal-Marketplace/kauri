@@ -9,7 +9,7 @@ export const list = query({
     if (!identity) throw new Error('Unauthenticated')
     const caller = await ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!caller) throw new Error('User not found')
     if (caller.organizationId !== args.organizationId) throw new Error('Unauthorized')
