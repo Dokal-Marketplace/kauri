@@ -26,11 +26,11 @@ export default defineSchema({
     email: v.string(),
     phoneNumber: v.string(),
     tokenIdentifier: v.string(),
-    branchId: v.id("branches"),
-    status: v.union(v.literal("active"), v.literal("suspended")),
+    branchId: v.id('branches'),
+    status: v.union(v.literal('active'), v.literal('suspended')),
   })
-    .index("by_token", ["tokenIdentifier"])
-    .index("by_branch", ["branchId"]),
+    .index('by_token', ['tokenIdentifier'])
+    .index('by_branch', ['branchId']),
 
   customers: defineTable({
     fullName: v.string(),
@@ -49,7 +49,7 @@ export default defineSchema({
     .index('by_branch', ['branchId'])
     .index('by_branch_status', ['branchId', 'status'])
     .index('by_id_number', ['idNumber'])
-    .index('by_organization_phone', ['organizationId', 'phoneNumber'])   
+    .index('by_organization_phone', ['organizationId', 'phoneNumber'])
     .index('by_organization_id_number', ['organizationId', 'idNumber']),
 
   devices: defineTable({
@@ -58,11 +58,12 @@ export default defineSchema({
     assignedTo: v.optional(v.id('users')),
     status: v.union(v.literal('active'), v.literal('maintenance'), v.literal('lost')),
     lastSync: v.number(),
-    batteryPct:  v.optional(v.number()),
+    batteryPct: v.optional(v.number()),
     signalLevel: v.optional(v.number()),
     queuedCount: v.optional(v.number()),
-  }).index("by_serial", ["serialNumber"])
-    .index("by_assigned_to", ["assignedTo"]),
+  })
+    .index('by_serial', ['serialNumber'])
+    .index('by_assigned_to', ['assignedTo']),
 
   transactions: defineTable({
     amount: v.number(),
@@ -102,19 +103,19 @@ export default defineSchema({
   }).index('by_status', ['status']),
 
   reconciliations: defineTable({
-    agentId:              v.id("users"),
-    branchId:             v.id("branches"),
-    verifiedBy:           v.id("users"),
-    date:                 v.string(),
+    agentId: v.id('users'),
+    branchId: v.id('branches'),
+    verifiedBy: v.id('users'),
+    date: v.string(),
     systemExpectedAmount: v.number(),
     physicalCashReceived: v.number(),
-    variance:             v.number(),
-    status:               v.union(v.literal("settled"), v.literal("discrepancy"), v.literal("pending")),
-    timestamp:            v.number(),
-    notes:                v.optional(v.string()),
+    variance: v.number(),
+    status: v.union(v.literal('settled'), v.literal('discrepancy'), v.literal('pending')),
+    timestamp: v.number(),
+    notes: v.optional(v.string()),
   })
-    .index("by_branch_status", ["branchId", "status"])
-    .index("by_agent_date",    ["agentId",  "date"]),
+    .index('by_branch_status', ['branchId', 'status'])
+    .index('by_agent_date', ['agentId', 'date']),
 
   products: defineTable({
     organizationId: v.id('organizations'),

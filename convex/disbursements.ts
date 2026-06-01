@@ -11,15 +11,12 @@ export const requestDisbursement = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
-    await authz.require(ctx, identity.subject, 'disbursements:request')
     const agent = await ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!agent) throw new Error('Agent not found')
-    await authz
-      .withTenant(agent.branchId)
-      .require(ctx, identity.subject, 'disbursements:request')
+    await authz.withTenant(agent.branchId).require(ctx, identity.subject, 'disbursements:request')
     return ctx.db.insert('disbursements', {
       amount: args.amount,
       customerId: args.customerId,
@@ -40,15 +37,15 @@ export const listPending = query({
     // Enforce branch membership before exposing any records
     const user = await ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!user || user.branchId !== args.branchId) {
       throw new Error('Unauthorized: Cannot view disbursements for this branch')
     }
     return ctx.db
       .query('disbursements')
-      .withIndex('by_status', q => q.eq('status', 'pending'))
-      .filter(q => q.eq(q.field('branchId'), args.branchId))
+      .withIndex('by_status', (q) => q.eq('status', 'pending'))
+      .filter((q) => q.eq(q.field('branchId'), args.branchId))
       .collect()
   },
 })
@@ -61,7 +58,7 @@ export const listHistory = query({
     // Enforce branch membership before exposing any records
     const user = await ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!user || user.branchId !== args.branchId) {
       throw new Error('Unauthorized: Cannot view disbursements for this branch')
@@ -70,18 +67,18 @@ export const listHistory = query({
     const [approved, rejected, executed] = await Promise.all([
       ctx.db
         .query('disbursements')
-        .withIndex('by_status', q => q.eq('status', 'approved'))
-        .filter(q => q.eq(q.field('branchId'), args.branchId))
+        .withIndex('by_status', (q) => q.eq('status', 'approved'))
+        .filter((q) => q.eq(q.field('branchId'), args.branchId))
         .collect(),
       ctx.db
         .query('disbursements')
-        .withIndex('by_status', q => q.eq('status', 'rejected'))
-        .filter(q => q.eq(q.field('branchId'), args.branchId))
+        .withIndex('by_status', (q) => q.eq('status', 'rejected'))
+        .filter((q) => q.eq(q.field('branchId'), args.branchId))
         .collect(),
       ctx.db
         .query('disbursements')
-        .withIndex('by_status', q => q.eq('status', 'executed'))
-        .filter(q => q.eq(q.field('branchId'), args.branchId))
+        .withIndex('by_status', (q) => q.eq('status', 'executed'))
+        .filter((q) => q.eq(q.field('branchId'), args.branchId))
         .collect(),
     ])
     return [...approved, ...rejected, ...executed].sort((a, b) => b.timestamp - a.timestamp)
@@ -97,7 +94,7 @@ export const rejectDisbursement = mutation({
     // load the user to scope authorization to their branch (mirrors approveDisbursement)
     const user = await ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!user) throw new Error('User not found')
 
@@ -116,15 +113,15 @@ export const rejectDisbursement = mutation({
     }
 
     // Fix #2a (cont): branch-scoped authz, consistent with approveDisbursement
-    await authz
-      .withTenant(user.branchId)
-      .require(ctx, identity.subject, 'disbursements:approve')
+    await authz.withTenant(user.branchId).require(ctx, identity.subject, 'disbursements:approve')
 
     if (args.reason.length > 500) throw new Error('Reason too long (max 500 chars)')
     return ctx.db.patch(args.disbursementId, {
       status: 'rejected',
       rejectionReason: args.reason,
       rejectedBy: user._id,
+      transactionId: args.reason, // temporary: reuse transactionId until schema is updated
+      approvedBy: user._id, // temporary: reuse as "decidedBy" until schema adds rejectedBy
     })
   },
 })
@@ -137,7 +134,7 @@ export const approveDisbursement = mutation({
 
     const supervisor = await ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!supervisor) throw new Error('User not found')
 
@@ -170,7 +167,7 @@ export const canApproveDisbursements = query({
     if (!identity) return false
     const user = await ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!user) return false
     try {

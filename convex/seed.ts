@@ -185,19 +185,19 @@ export const seedDatabase = mutation({
       tpeId: 'TPE-BF-0042',
       status: 'completed',
       timestamp: daysAgo(0) - 1000 * 60 * 150,
-    });
+    })
     // Transaction en attente de validation
-    await ctx.db.insert("transactions", {
+    await ctx.db.insert('transactions', {
       amount: 45_000,
-      currency: "XOF",
+      currency: 'XOF',
       customerId: customer3,
       agentId: agent2,
       branchId: branchOuaga,
-      tpeId: "TPE-BF-0042",
-      status: "pending",
+      tpeId: 'TPE-BF-0042',
+      status: 'pending',
       timestamp: daysAgo(0) - 1000 * 60 * 45,
-    });
-    await ctx.db.insert("transactions", {
+    })
+    await ctx.db.insert('transactions', {
       amount: 60_000,
       currency: 'XOF',
       customerId: customer5,

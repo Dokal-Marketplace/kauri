@@ -33,17 +33,17 @@ export const currentUser = query({
 export const onboard = mutation({
   args: {
     // Organisation
-    orgName:       v.string(),
-    country:       v.string(),
-    currency:      v.string(),
+    orgName: v.string(),
+    country: v.string(),
+    currency: v.string(),
     licenseNumber: v.string(),
     // Branch
-    branchName:    v.string(),
-    branchLocation:v.string(),
-    branchCode:    v.string(),
+    branchName: v.string(),
+    branchLocation: v.string(),
+    branchCode: v.string(),
     // User
-    fullName:      v.string(),
-    phoneNumber:   v.string(),
+    fullName: v.string(),
+    phoneNumber: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()

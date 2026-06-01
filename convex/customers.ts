@@ -10,27 +10,25 @@ export const listByBranch = query({
 
     const agent = await ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!agent) throw new Error('Agent not found')
 
-    await authz
-      .withTenant(agent.branchId)
-      .require(ctx, identity.subject, 'customers:view')
+    await authz.withTenant(agent.branchId).require(ctx, identity.subject, 'customers:view')
 
     const customers = await ctx.db
       .query('customers')
-      .withIndex('by_branch', q => q.eq('branchId', agent.branchId))
+      .withIndex('by_branch', (q) => q.eq('branchId', agent.branchId))
       .collect()
 
     const branchUsers = await ctx.db
       .query('users')
-      .withIndex('by_branch', q => q.eq('branchId', agent.branchId))
+      .withIndex('by_branch', (q) => q.eq('branchId', agent.branchId))
       .collect()
 
-    const userMap = new Map(branchUsers.map(u => [u._id, u.fullName]))
+    const userMap = new Map(branchUsers.map((u) => [u._id, u.fullName]))
 
-    return customers.map(c => {
+    return customers.map((c) => {
       const { idNumber, metadata, ...safeCustomer } = c
       return {
         ...safeCustomer,
@@ -40,12 +38,11 @@ export const listByBranch = query({
   },
 })
 
-
 export const createProspect = mutation({
   args: {
-    fullName:    v.string(),
+    fullName: v.string(),
     phoneNumber: v.string(),
-    idNumber:    v.string(),
+    idNumber: v.string(),
   },
   handler: async (ctx, args) => {
     const fullName = args.fullName.trim()
@@ -63,7 +60,7 @@ export const createProspect = mutation({
 
     const agent = await ctx.db
       .query('users')
-      .withIndex('by_token', q => q.eq('tokenIdentifier', identity.subject))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!agent) throw new Error('Agent not found')
 
@@ -78,7 +75,7 @@ export const createProspect = mutation({
     // Duplicate phone check (scoped to organization)
     const existingPhone = await ctx.db
       .query('customers')
-      .withIndex('by_organization_phone', q =>
+      .withIndex('by_organization_phone', (q) =>
         q.eq('organizationId', organizationId).eq('phoneNumber', phoneNumber)
       )
       .first()
@@ -87,21 +84,21 @@ export const createProspect = mutation({
     // Duplicate ID check (scoped to organization)
     const existingId = await ctx.db
       .query('customers')
-      .withIndex('by_organization_id_number', q =>
+      .withIndex('by_organization_id_number', (q) =>
         q.eq('organizationId', organizationId).eq('idNumber', idNumber)
       )
       .first()
-    if (existingId) throw new Error('Un client avec ce numéro de pièce d\'identité existe déjà')
+    if (existingId) throw new Error("Un client avec ce numéro de pièce d'identité existe déjà")
 
     return ctx.db.insert('customers', {
       fullName,
       phoneNumber,
       idNumber,
-      organizationId,      // ← ajouté
-      branchId:    agent.branchId,
+      organizationId, // ← ajouté
+      branchId: agent.branchId,
       onboardedBy: agent._id,
-      status:      'prospect',
-      createdAt:   Date.now(),
+      status: 'prospect',
+      createdAt: Date.now(),
     })
   },
 })
