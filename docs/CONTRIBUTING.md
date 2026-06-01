@@ -311,6 +311,7 @@ Checklist:
 - [ ] Loading skeleton while data is fetching
 - [ ] Empty state when there is no data
 - [ ] All user-facing strings in French
+- [ ] Screnshots or Screen Capture of the feature
 
 ---
 
