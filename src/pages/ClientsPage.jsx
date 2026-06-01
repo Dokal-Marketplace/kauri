@@ -269,7 +269,7 @@ export default function ClientsPage() {
   }, [clients])
 
   const filtered = useMemo(() => {
-    let r = displayClients.filter((c) => {
+    const r = displayClients.filter((c) => {
       if (seg !== 'tous' && c.status !== seg) return false
       if (agent !== 'tous' && c.agent !== agent) return false
       if (

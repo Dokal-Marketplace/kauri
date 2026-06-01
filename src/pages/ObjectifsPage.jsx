@@ -338,7 +338,7 @@ export default function ObjectifsPage({ branchId: branchIdProp, customers: custo
   )
 
   const filtered = useMemo(() => {
-    let r = goals.filter((g) => {
+    const r = goals.filter((g) => {
       if (seg === 'encours' && (g.status === 'atteint' || g.status === 'enpause')) return false
       if (seg === 'atteints' && g.status !== 'atteint') return false
       if (seg === 'enretard' && g.status !== 'enretard') return false
