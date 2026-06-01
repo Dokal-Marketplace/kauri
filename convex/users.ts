@@ -73,7 +73,7 @@ export const onboard = mutation({
 
     await ctx.db.insert('users', {
       fullName: args.fullName,
-      email: identity.email ?? '',
+      email: (identity.email ?? '').toLowerCase(),
       phoneNumber: args.phoneNumber,
       tokenIdentifier: identity.subject,
       branchId,
