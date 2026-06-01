@@ -10,14 +10,14 @@ import { EmptyState } from '../components/EmptyState'
 import { DisbursementIllustration } from '../components/Illustrations'
 
 const STATUS_META = {
-  pending:  { label: 'En attente', class: 'attente'  },
-  approved: { label: 'Approuvé',   class: 'actif'    },
-  rejected: { label: 'Rejeté',     class: 'archive'  },
-  executed: { label: 'Exécuté',    class: 'actif'    },
+  pending: { label: 'En attente', class: 'attente' },
+  approved: { label: 'Approuvé', class: 'actif' },
+  rejected: { label: 'Rejeté', class: 'archive' },
+  executed: { label: 'Exécuté', class: 'actif' },
 }
 
 const METHOD_META = {
-  cash:         { label: 'Espèces',      icon: 'Coin'   },
+  cash: { label: 'Espèces', icon: 'Coin' },
   mobile_money: { label: 'Mobile Money', icon: 'Wallet' },
 }
 
@@ -29,38 +29,41 @@ function todayStart() {
 
 function fmtDate(ts) {
   return new Date(ts).toLocaleString('fr-FR', {
-    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
   })
 }
 
 export default function DisbursementsPage() {
   const { tenantId: branchId } = useCurrentUser()
 
-  const shouldQuery  = !!branchId
+  const shouldQuery = !!branchId
   const pendingQuery = useQuery(api.disbursements.listPending, shouldQuery ? { branchId } : 'skip')
   const historyQuery = useQuery(api.disbursements.listHistory, shouldQuery ? { branchId } : 'skip')
-  const canApprove   = useQuery(api.disbursements.canApproveDisbursements) ?? false
+  const canApprove = useQuery(api.disbursements.canApproveDisbursements) ?? false
 
   const isLoading = shouldQuery && (pendingQuery === undefined || historyQuery === undefined)
-  const pending   = pendingQuery ?? []
-  const history   = historyQuery ?? []
+  const pending = pendingQuery ?? []
+  const history = historyQuery ?? []
 
   const approveMut = useMutation(api.disbursements.approveDisbursement)
-  const rejectMut  = useMutation(api.disbursements.rejectDisbursement)
+  const rejectMut = useMutation(api.disbursements.rejectDisbursement)
 
-  const [tab, setTab]               = useState('pending')
-  const [rejectModal, setRejectModal] = useState(null)     // disbursementId | null
+  const [tab, setTab] = useState('pending')
+  const [rejectModal, setRejectModal] = useState(null) // disbursementId | null
   const [rejectReason, setRejectReason] = useState('')
-  const [fraudError, setFraudError]   = useState(null)    // disbursementId | null
-  const [actionError, setActionError] = useState(null)    // generic error message | null
-  const [loadingId, setLoadingId]     = useState(null)    // disbursementId in-flight | null
+  const [fraudError, setFraudError] = useState(null) // disbursementId | null
+  const [actionError, setActionError] = useState(null) // generic error message | null
+  const [loadingId, setLoadingId] = useState(null) // disbursementId in-flight | null
   const [rejectLoading, setRejectLoading] = useState(false)
 
   // KPIs
   const t0 = todayStart()
-  const totalPending  = pending.reduce((s, d) => s + d.amount, 0)
-  const approvedToday = history.filter(d => d.status === 'approved' && d.timestamp >= t0).length
-  const rejectedToday = history.filter(d => d.status === 'rejected' && d.timestamp >= t0).length
+  const totalPending = pending.reduce((s, d) => s + d.amount, 0)
+  const approvedToday = history.filter((d) => d.status === 'approved' && d.timestamp >= t0).length
+  const rejectedToday = history.filter((d) => d.status === 'rejected' && d.timestamp >= t0).length
 
   const kpis = [
     {
@@ -142,9 +145,7 @@ export default function DisbursementsPage() {
       setRejectReason('')
     } catch (err) {
       // Surface the error inside the modal so context isn't lost
-      setActionError(
-        err?.message ?? 'Une erreur est survenue lors du rejet. Veuillez réessayer.'
-      )
+      setActionError(err?.message ?? 'Une erreur est survenue lors du rejet. Veuillez réessayer.')
     } finally {
       setRejectLoading(false)
     }
@@ -161,24 +162,28 @@ export default function DisbursementsPage() {
       <PageHeader crumbs={['Décaissements']} title="Décaissements" />
 
       <section className="kpi-row">
-        {kpis.map(k => <KPI key={k.label} k={k} />)}
+        {kpis.map((k) => (
+          <KPI key={k.label} k={k} />
+        ))}
       </section>
 
       {/* Generic action error banner (approve failures, non-modal context) */}
       {actionError && !rejectModal && (
-        <div style={{
-          margin: '0 0 14px',
-          padding: '10px 14px',
-          background: 'oklch(0.97 0.02 20)',
-          border: '1px solid oklch(0.88 0.06 20)',
-          borderRadius: 8,
-          fontSize: 13,
-          color: 'var(--neg)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 10,
-        }}>
+        <div
+          style={{
+            margin: '0 0 14px',
+            padding: '10px 14px',
+            background: 'oklch(0.97 0.02 20)',
+            border: '1px solid oklch(0.88 0.06 20)',
+            borderRadius: 8,
+            fontSize: 13,
+            color: 'var(--neg)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+          }}
+        >
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <I.Shield size={13} />
             {actionError}
@@ -198,8 +203,8 @@ export default function DisbursementsPage() {
           <div className="seg-tabs">
             {[
               { k: 'pending', label: 'En attente', n: pending.length },
-              { k: 'history', label: 'Historique',  n: history.length  },
-            ].map(t => (
+              { k: 'history', label: 'Historique', n: history.length },
+            ].map((t) => (
               <button
                 key={t.k}
                 className={'seg-tab ' + (tab === t.k ? 'on' : '')}
@@ -254,24 +259,26 @@ export default function DisbursementsPage() {
                   className="input"
                   rows={4}
                   value={rejectReason}
-                  onChange={e => setRejectReason(e.target.value)}
+                  onChange={(e) => setRejectReason(e.target.value)}
                   placeholder="Ex : Pièces justificatives insuffisantes…"
                 />
               </div>
               {/* Error shown inside modal to preserve the user's typed reason */}
               {actionError && (
-                <div style={{
-                  marginTop: 10,
-                  padding: '8px 12px',
-                  background: 'oklch(0.97 0.02 20)',
-                  border: '1px solid oklch(0.88 0.06 20)',
-                  borderRadius: 6,
-                  fontSize: 12,
-                  color: 'var(--neg)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}>
+                <div
+                  style={{
+                    marginTop: 10,
+                    padding: '8px 12px',
+                    background: 'oklch(0.97 0.02 20)',
+                    border: '1px solid oklch(0.88 0.06 20)',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    color: 'var(--neg)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
                   <I.Shield size={13} />
                   {actionError}
                 </div>
@@ -314,7 +321,10 @@ function PendingTable({ rows, canApprove, fraudError, loadingId, onApprove, onRe
         eyebrowColor="var(--pos)"
         title="Tout est traité"
         description="Aucun décaissement en attente de validation. Revenez plus tard ou attendez une nouvelle demande."
-        celebrationStyle={{ background: 'linear-gradient(135deg, var(--tofee-success-bg, oklch(0.96 0.04 155)), oklch(0.96 0.03 155))' }}
+        celebrationStyle={{
+          background:
+            'linear-gradient(135deg, var(--tofee-success-bg, oklch(0.96 0.04 155)), oklch(0.96 0.03 155))',
+        }}
       />
     )
   }
@@ -332,12 +342,12 @@ function PendingTable({ rows, canApprove, fraudError, loadingId, onApprove, onRe
           </tr>
         </thead>
         <tbody>
-          {rows.map(d => {
+          {rows.map((d) => {
             const method = METHOD_META[d.payoutMethod] ?? { label: d.payoutMethod, icon: 'Coin' }
             const MIc = I[method.icon]
             const sm = STATUS_META[d.status]
-            const isFraud    = fraudError === d._id
-            const isInFlight = loadingId  === d._id
+            const isFraud = fraudError === d._id
+            const isInFlight = loadingId === d._id
             return (
               <Fragment key={d._id}>
                 <tr>
@@ -355,18 +365,27 @@ function PendingTable({ rows, canApprove, fraudError, loadingId, onApprove, onRe
                     </div>
                   </td>
                   <td>
-                    <span className="chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span
+                      className="chip"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    >
                       <MIc size={11} />
                       {method.label}
                     </span>
                   </td>
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 550 }}>
+                  <td
+                    style={{
+                      textAlign: 'right',
+                      fontVariantNumeric: 'tabular-nums',
+                      fontWeight: 550,
+                    }}
+                  >
                     {fmt(d.amount)}
-                    <span className="cell-sub" style={{ marginLeft: 4 }}>FCFA</span>
+                    <span className="cell-sub" style={{ marginLeft: 4 }}>
+                      FCFA
+                    </span>
                   </td>
-                  <td style={{ color: 'var(--ink-2)', fontSize: 12 }}>
-                    {fmtDate(d.timestamp)}
-                  </td>
+                  <td style={{ color: 'var(--ink-2)', fontSize: 12 }}>{fmtDate(d.timestamp)}</td>
                   <td>
                     <span className={'tag ' + sm.class}>{sm.label}</span>
                   </td>
@@ -378,7 +397,14 @@ function PendingTable({ rows, canApprove, fraudError, loadingId, onApprove, onRe
                           disabled={isInFlight || !!loadingId}
                           onClick={() => onApprove(d._id)}
                         >
-                          {isInFlight ? '…' : <><I.Check size={12} stroke="white" />Approuver</>}
+                          {isInFlight ? (
+                            '…'
+                          ) : (
+                            <>
+                              <I.Check size={12} stroke="white" />
+                              Approuver
+                            </>
+                          )}
                         </button>
                         <button
                           className="btn sm ghost"
@@ -395,18 +421,20 @@ function PendingTable({ rows, canApprove, fraudError, loadingId, onApprove, onRe
                 {isFraud && (
                   <tr>
                     <td colSpan={canApprove ? 6 : 5} style={{ padding: '0 16px 10px' }}>
-                      <div style={{
-                        background: 'oklch(0.97 0.02 20)',
-                        border: '1px solid oklch(0.88 0.06 20)',
-                        borderRadius: 6,
-                        padding: '8px 12px',
-                        fontSize: 12,
-                        color: 'var(--neg)',
-                        fontWeight: 500,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                      }}>
+                      <div
+                        style={{
+                          background: 'oklch(0.97 0.02 20)',
+                          border: '1px solid oklch(0.88 0.06 20)',
+                          borderRadius: 6,
+                          padding: '8px 12px',
+                          fontSize: 12,
+                          color: 'var(--neg)',
+                          fontWeight: 500,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
                         <I.Shield size={13} />
                         Prévention fraude : vous ne pouvez pas approuver votre propre demande.
                       </div>
@@ -446,7 +474,7 @@ function HistoryTable({ rows }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map(d => {
+          {rows.map((d) => {
             const method = METHOD_META[d.payoutMethod] ?? { label: d.payoutMethod, icon: 'Coin' }
             const MIc = I[method.icon]
             const sm = STATUS_META[d.status] ?? { label: d.status, class: '' }
@@ -468,28 +496,42 @@ function HistoryTable({ rows }) {
                   </div>
                 </td>
                 <td>
-                  <span className="chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span
+                    className="chip"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                  >
                     <MIc size={11} />
                     {method.label}
                   </span>
                 </td>
-                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 550 }}>
+                <td
+                  style={{
+                    textAlign: 'right',
+                    fontVariantNumeric: 'tabular-nums',
+                    fontWeight: 550,
+                  }}
+                >
                   {fmt(d.amount)}
-                  <span className="cell-sub" style={{ marginLeft: 4 }}>FCFA</span>
+                  <span className="cell-sub" style={{ marginLeft: 4 }}>
+                    FCFA
+                  </span>
                 </td>
-                <td style={{ color: 'var(--ink-2)', fontSize: 12 }}>
-                  {fmtDate(d.timestamp)}
-                </td>
+                <td style={{ color: 'var(--ink-2)', fontSize: 12 }}>{fmtDate(d.timestamp)}</td>
                 <td>
                   <span className={'tag ' + sm.class}>{sm.label}</span>
                 </td>
                 <td style={{ fontSize: 12, maxWidth: 220 }}>
-                  {d.status === 'rejected'
-                    ? <span style={{ color: 'var(--neg)' }}>{rejectionReason || 'Motif non renseigné'}</span>
-                    : d.approvedBy
-                    ? <span style={{ color: 'var(--ink-2)' }}>Approuvé · {String(d.approvedBy).slice(-6)}</span>
-                    : <span style={{ color: 'var(--ink-3)' }}>—</span>
-                  }
+                  {d.status === 'rejected' ? (
+                    <span style={{ color: 'var(--neg)' }}>
+                      {rejectionReason || 'Motif non renseigné'}
+                    </span>
+                  ) : d.approvedBy ? (
+                    <span style={{ color: 'var(--ink-2)' }}>
+                      Approuvé · {String(d.approvedBy).slice(-6)}
+                    </span>
+                  ) : (
+                    <span style={{ color: 'var(--ink-3)' }}>—</span>
+                  )}
                 </td>
               </tr>
             )

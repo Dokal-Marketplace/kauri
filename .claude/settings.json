@@ -19,10 +19,14 @@
       "Bash(gh label *)",
       "Bash(wait)",
       "Bash(ping -c 2 github.com)",
-      "Bash(gh pr *)"
+      "Bash(gh pr *)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(npm install *)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm prepare *)",
+      "Bash(pnpm lint:fix)",
+      "Bash(grep -v \"^$\")"
     ],
-    "additionalDirectories": [
-      "/Users/serge/Downloads/TontiPro"
-    ]
+    "additionalDirectories": ["/Users/serge/Downloads/TontiPro"]
   }
 }

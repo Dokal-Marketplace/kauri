@@ -1,32 +1,32 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext } from 'react'
 
 // ============================================================================
 // Contexts
 // ============================================================================
 
-export const TenantsDataContext = createContext(null);
-export const TenantsActionsContext = createContext(null);
+export const TenantsDataContext = createContext(null)
+export const TenantsActionsContext = createContext(null)
 
 export function useTenantsData() {
-  const context = useContext(TenantsDataContext);
+  const context = useContext(TenantsDataContext)
   if (!context) {
     throw new Error(
-      "useTenantsData must be used within a TenantsProvider. " +
-        "Wrap your app with <TenantsProvider api={...}>...</TenantsProvider>"
-    );
+      'useTenantsData must be used within a TenantsProvider. ' +
+        'Wrap your app with <TenantsProvider api={...}>...</TenantsProvider>'
+    )
   }
-  return context;
+  return context
 }
 
 export function useTenantsActions() {
-  const context = useContext(TenantsActionsContext);
+  const context = useContext(TenantsActionsContext)
   if (!context) {
     throw new Error(
-      "useTenantsActions must be used within a TenantsProvider. " +
-        "Wrap your app with <TenantsProvider api={...}>...</TenantsProvider>"
-    );
+      'useTenantsActions must be used within a TenantsProvider. ' +
+        'Wrap your app with <TenantsProvider api={...}>...</TenantsProvider>'
+    )
   }
-  return context;
+  return context
 }
 
 /**
@@ -42,7 +42,7 @@ export function useTenantsActions() {
  *   createTeam, deleteTeam, addTeamMember, removeTeamMember, onToast? }
  */
 export function useTenants() {
-  const data = useTenantsData();
-  const actions = useTenantsActions();
-  return { ...data, ...actions };
+  const data = useTenantsData()
+  const actions = useTenantsActions()
+  return { ...data, ...actions }
 }

@@ -6,8 +6,8 @@ import { useCurrentUser } from './useCurrentUser'
  */
 export function useCurrentBranch() {
   const { isLoaded, convexUser } = useCurrentUser()
-  
+
   if (!isLoaded || !convexUser) return null
-  
+
   return convexUser.branchId
 }

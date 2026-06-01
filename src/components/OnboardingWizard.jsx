@@ -22,9 +22,9 @@ const CURRENCIES = [
 ]
 
 const STEPS = [
-  { id: 'org',    title: 'Organisation',  sub: 'Informations sur votre institution' },
-  { id: 'branch', title: 'Agence',        sub: 'Votre première agence opérationnelle' },
-  { id: 'user',   title: 'Votre profil',  sub: 'Comment vous identifier dans le système' },
+  { id: 'org', title: 'Organisation', sub: 'Informations sur votre institution' },
+  { id: 'branch', title: 'Agence', sub: 'Votre première agence opérationnelle' },
+  { id: 'user', title: 'Votre profil', sub: 'Comment vous identifier dans le système' },
 ]
 
 function Field({ label, error, children }) {
@@ -56,20 +56,28 @@ function StepOrg({ data, onChange, errors }) {
         <Input
           placeholder="ex. Kauri Finance S.A."
           value={data.orgName}
-          onChange={e => onChange('orgName', e.target.value)}
+          onChange={(e) => onChange('orgName', e.target.value)}
         />
       </Field>
       <div className="ob-row">
         <Field label="Pays" error={errors.country}>
-          <Select value={data.country} onChange={e => onChange('country', e.target.value)}>
+          <Select value={data.country} onChange={(e) => onChange('country', e.target.value)}>
             <option value="">Sélectionner…</option>
-            {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.label}
+              </option>
+            ))}
           </Select>
         </Field>
         <Field label="Devise" error={errors.currency}>
-          <Select value={data.currency} onChange={e => onChange('currency', e.target.value)}>
+          <Select value={data.currency} onChange={(e) => onChange('currency', e.target.value)}>
             <option value="">Sélectionner…</option>
-            {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.label}
+              </option>
+            ))}
           </Select>
         </Field>
       </div>
@@ -77,7 +85,7 @@ function StepOrg({ data, onChange, errors }) {
         <Input
           placeholder="ex. BCEAO/2024/0042"
           value={data.licenseNumber}
-          onChange={e => onChange('licenseNumber', e.target.value)}
+          onChange={(e) => onChange('licenseNumber', e.target.value)}
         />
       </Field>
     </div>
@@ -91,22 +99,26 @@ function StepBranch({ data, onChange, errors }) {
         <Input
           placeholder="ex. Agence Centrale Ouagadougou"
           value={data.branchName}
-          onChange={e => onChange('branchName', e.target.value)}
+          onChange={(e) => onChange('branchName', e.target.value)}
         />
       </Field>
       <Field label="Localisation" error={errors.branchLocation}>
         <Input
           placeholder="ex. Secteur 15, Ouagadougou"
           value={data.branchLocation}
-          onChange={e => onChange('branchLocation', e.target.value)}
+          onChange={(e) => onChange('branchLocation', e.target.value)}
         />
       </Field>
       <Field label="Code agence" error={errors.branchCode}>
         <Input
           placeholder="ex. OUAGA-01"
           value={data.branchCode}
-          style={{ textTransform: 'uppercase', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}
-          onChange={e => onChange('branchCode', e.target.value.toUpperCase())}
+          style={{
+            textTransform: 'uppercase',
+            fontFamily: 'var(--font-mono)',
+            letterSpacing: '0.04em',
+          }}
+          onChange={(e) => onChange('branchCode', e.target.value.toUpperCase())}
         />
       </Field>
     </div>
@@ -120,7 +132,7 @@ function StepUser({ data, onChange, errors, clerkEmail }) {
         <Input
           placeholder="ex. Djibril Ouédraogo"
           value={data.fullName}
-          onChange={e => onChange('fullName', e.target.value)}
+          onChange={(e) => onChange('fullName', e.target.value)}
         />
       </Field>
       <Field label="Adresse e-mail">
@@ -130,7 +142,7 @@ function StepUser({ data, onChange, errors, clerkEmail }) {
         <Input
           placeholder="ex. +226 70 00 00 00"
           value={data.phoneNumber}
-          onChange={e => onChange('phoneNumber', e.target.value)}
+          onChange={(e) => onChange('phoneNumber', e.target.value)}
         />
       </Field>
     </div>
@@ -140,17 +152,17 @@ function StepUser({ data, onChange, errors, clerkEmail }) {
 function validateStep(step, data) {
   const errors = {}
   if (step === 0) {
-    if (!data.orgName.trim())      errors.orgName = 'Champ obligatoire'
-    if (!data.country)             errors.country = 'Champ obligatoire'
-    if (!data.currency)            errors.currency = 'Champ obligatoire'
+    if (!data.orgName.trim()) errors.orgName = 'Champ obligatoire'
+    if (!data.country) errors.country = 'Champ obligatoire'
+    if (!data.currency) errors.currency = 'Champ obligatoire'
     if (!data.licenseNumber.trim()) errors.licenseNumber = 'Champ obligatoire'
   } else if (step === 1) {
-    if (!data.branchName.trim())    errors.branchName = 'Champ obligatoire'
+    if (!data.branchName.trim()) errors.branchName = 'Champ obligatoire'
     if (!data.branchLocation.trim()) errors.branchLocation = 'Champ obligatoire'
-    if (!data.branchCode.trim())    errors.branchCode = 'Champ obligatoire'
+    if (!data.branchCode.trim()) errors.branchCode = 'Champ obligatoire'
   } else if (step === 2) {
-    if (!data.fullName.trim())     errors.fullName = 'Champ obligatoire'
-    if (!data.phoneNumber.trim())  errors.phoneNumber = 'Champ obligatoire'
+    if (!data.fullName.trim()) errors.fullName = 'Champ obligatoire'
+    if (!data.phoneNumber.trim()) errors.phoneNumber = 'Champ obligatoire'
   }
   return errors
 }
@@ -178,17 +190,25 @@ export function OnboardingWizard() {
   })
 
   const onChange = (key, val) => {
-    setData(prev => ({ ...prev, [key]: val }))
-    if (errors[key]) setErrors(prev => { const n = { ...prev }; delete n[key]; return n })
+    setData((prev) => ({ ...prev, [key]: val }))
+    if (errors[key])
+      setErrors((prev) => {
+        const n = { ...prev }
+        delete n[key]
+        return n
+      })
   }
 
   const advance = async () => {
     const stepErrors = validateStep(step, data)
-    if (Object.keys(stepErrors).length) { setErrors(stepErrors); return }
+    if (Object.keys(stepErrors).length) {
+      setErrors(stepErrors)
+      return
+    }
     setErrors({})
 
     if (step < STEPS.length - 1) {
-      setStep(s => s + 1)
+      setStep((s) => s + 1)
       return
     }
 
@@ -197,15 +217,15 @@ export function OnboardingWizard() {
     setServerError(null)
     try {
       await onboard({
-        orgName:        data.orgName,
-        country:        data.country,
-        currency:       data.currency,
-        licenseNumber:  data.licenseNumber,
-        branchName:     data.branchName,
+        orgName: data.orgName,
+        country: data.country,
+        currency: data.currency,
+        licenseNumber: data.licenseNumber,
+        branchName: data.branchName,
         branchLocation: data.branchLocation,
-        branchCode:     data.branchCode,
-        fullName:       data.fullName,
-        phoneNumber:    data.phoneNumber,
+        branchCode: data.branchCode,
+        fullName: data.fullName,
+        phoneNumber: data.phoneNumber,
       })
       setDone(true)
     } catch (err) {
@@ -215,7 +235,10 @@ export function OnboardingWizard() {
     }
   }
 
-  const back = () => { setErrors({}); setStep(s => s - 1) }
+  const back = () => {
+    setErrors({})
+    setStep((s) => s - 1)
+  }
 
   const pct = ((step + (done ? 1 : 0)) / STEPS.length) * 100
 
@@ -260,8 +283,8 @@ export function OnboardingWizard() {
               </div>
               <h2 className="ob-done-title">Tout est prêt !</h2>
               <p className="ob-done-sub">
-                Votre organisation, votre agence et votre profil ont été créés avec succès.
-                La page va se recharger automatiquement.
+                Votre organisation, votre agence et votre profil ont été créés avec succès. La page
+                va se recharger automatiquement.
               </p>
               <button
                 className="btn brand"
@@ -274,18 +297,25 @@ export function OnboardingWizard() {
           ) : (
             <>
               <div className="ob-step-head">
-                <p className="ob-step-n">Étape {step + 1} sur {STEPS.length}</p>
+                <p className="ob-step-n">
+                  Étape {step + 1} sur {STEPS.length}
+                </p>
                 <h2 className="ob-step-title">{STEPS[step].title}</h2>
                 <p className="ob-step-sub">{STEPS[step].sub}</p>
               </div>
 
-              {step === 0 && <StepOrg    data={data} onChange={onChange} errors={errors} />}
+              {step === 0 && <StepOrg data={data} onChange={onChange} errors={errors} />}
               {step === 1 && <StepBranch data={data} onChange={onChange} errors={errors} />}
-              {step === 2 && <StepUser   data={data} onChange={onChange} errors={errors} clerkEmail={clerkUser?.primaryEmailAddress?.emailAddress ?? ''} />}
-
-              {serverError && (
-                <div className="ob-server-error">{serverError}</div>
+              {step === 2 && (
+                <StepUser
+                  data={data}
+                  onChange={onChange}
+                  errors={errors}
+                  clerkEmail={clerkUser?.primaryEmailAddress?.emailAddress ?? ''}
+                />
               )}
+
+              {serverError && <div className="ob-server-error">{serverError}</div>}
 
               <div className="ob-actions">
                 {step > 0 && (
@@ -299,7 +329,11 @@ export function OnboardingWizard() {
                   onClick={advance}
                   disabled={submitting}
                 >
-                  {submitting ? 'Enregistrement…' : step < STEPS.length - 1 ? 'Continuer' : 'Terminer la configuration'}
+                  {submitting
+                    ? 'Enregistrement…'
+                    : step < STEPS.length - 1
+                      ? 'Continuer'
+                      : 'Terminer la configuration'}
                   {!submitting && <I.Arrow size={14} />}
                 </button>
               </div>

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { I } from '../icons'
 
 /**
  * Modal for creating a new prospect customer.
@@ -26,7 +25,7 @@ export function NewProspectModal({ isOpen, onClose, onSubmit, isLoading }) {
         phoneNumber: phoneNumber.trim(),
         idNumber: idNumber.trim(),
       })
-      
+
       // Reset form
       setFullName('')
       setPhoneNumber('')
@@ -44,77 +43,83 @@ export function NewProspectModal({ isOpen, onClose, onSubmit, isLoading }) {
       <div className="modal">
         <div className="modal-head">
           <h2>Nouveau prospect</h2>
-          <button className="btn ghost sm" onClick={onClose} disabled={isLoading} style={{ padding: 6 }}>✕</button>
+          <button
+            className="btn ghost sm"
+            onClick={onClose}
+            disabled={isLoading}
+            style={{ padding: 6 }}
+          >
+            ✕
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-body">
           {error && (
-            <div style={{
-              padding: 12,
-              marginBottom: 16,
-              backgroundColor: 'var(--red-1)',
-              border: '1px solid var(--red-2)',
-              borderRadius: 6,
-              fontSize: 13,
-              color: 'var(--red-6)',
-            }}>
+            <div
+              style={{
+                padding: 12,
+                marginBottom: 16,
+                backgroundColor: 'var(--red-1)',
+                border: '1px solid var(--red-2)',
+                borderRadius: 6,
+                fontSize: 13,
+                color: 'var(--red-6)',
+              }}
+            >
               {error}
             </div>
           )}
 
           <div className="form-group">
-            <label className="form-label" htmlFor="prospect-full-name">Nom complet</label>
+            <label className="form-label" htmlFor="prospect-full-name">
+              Nom complet
+            </label>
             <input
               id="prospect-full-name"
               type="text"
               className="form-input"
               value={fullName}
-              onChange={e => setFullName(e.target.value)}
+              onChange={(e) => setFullName(e.target.value)}
               placeholder="Prénom et Nom"
               disabled={isLoading}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="prospect-phone-number">Numéro de téléphone</label>
+            <label className="form-label" htmlFor="prospect-phone-number">
+              Numéro de téléphone
+            </label>
             <input
               id="prospect-phone-number"
               type="tel"
               className="form-input"
               value={phoneNumber}
-              onChange={e => setPhoneNumber(e.target.value)}
+              onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+226 XX XX XX XX"
               disabled={isLoading}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="prospect-id-number">Numéro d'identité</label>
+            <label className="form-label" htmlFor="prospect-id-number">
+              Numéro d&apos;identité
+            </label>
             <input
               id="prospect-id-number"
               type="text"
               className="form-input"
               value={idNumber}
-              onChange={e => setIdNumber(e.target.value)}
+              onChange={(e) => setIdNumber(e.target.value)}
               placeholder="CNIB, Passeport, etc."
               disabled={isLoading}
             />
           </div>
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              className="btn"
-              onClick={onClose}
-              disabled={isLoading}
-            >
+            <button type="button" className="btn" onClick={onClose} disabled={isLoading}>
               Annuler
             </button>
-            <button
-              type="submit"
-              className="btn brand"
-              disabled={isLoading}
-            >
+            <button type="submit" className="btn brand" disabled={isLoading}>
               {isLoading ? 'Création...' : 'Créer prospect'}
             </button>
           </div>

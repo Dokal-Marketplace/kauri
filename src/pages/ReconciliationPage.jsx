@@ -10,9 +10,9 @@ import { SkeletonTableRows } from '../components/Skeleton'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_META = {
-  settled:     { label: 'Équilibrée',  cls: 'rec-status signed'   },
-  discrepancy: { label: 'Écart',       cls: 'rec-status variance' },
-  pending:     { label: 'En cours',    cls: 'rec-status open'     },
+  settled: { label: 'Équilibrée', cls: 'rec-status signed' },
+  discrepancy: { label: 'Écart', cls: 'rec-status variance' },
+  pending: { label: 'En cours', cls: 'rec-status open' },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -24,7 +24,20 @@ function todayISO() {
 function formatDate(isoDate) {
   if (!isoDate) return '—'
   const [y, m, d] = isoDate.split('-')
-  const months = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.']
+  const months = [
+    'jan.',
+    'fév.',
+    'mars',
+    'avr.',
+    'mai',
+    'juin',
+    'juil.',
+    'août',
+    'sept.',
+    'oct.',
+    'nov.',
+    'déc.',
+  ]
   return `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`
 }
 
@@ -47,32 +60,29 @@ export default function ReconciliationPage() {
 // ─── Index list ───────────────────────────────────────────────────────────────
 
 function ReconciliationIndex({ onOpen }) {
-  const [seg, setSeg]     = useState('tous')
+  const [seg, setSeg] = useState('tous')
   const [agent, setAgent] = useState('tous')
-  const [q, setQ]         = useState('')
+  const [q, setQ] = useState('')
   const [showForm, setShowForm] = useState(false)
 
   // Pull current user's branch via identity (adjust query name to your actual query)
   const me = useQuery(api.users.currentUser)
   const branchId = me?.branchId
 
-  const records = useQuery(
-    api.reconciliation.listByBranch,
-    branchId ? { branchId } : 'skip'
-  )
+  const records = useQuery(api.reconciliation.listByBranch, branchId ? { branchId } : 'skip')
 
   const agents = useMemo(() => {
     if (!records) return ['tous']
-    const names = Array.from(new Set(records.map(r => r.agentName).filter(Boolean)))
+    const names = Array.from(new Set(records.map((r) => r.agentName).filter(Boolean)))
     return ['tous', ...names]
   }, [records])
 
   const filtered = useMemo(() => {
     if (!records) return []
-    return records.filter(r => {
-      if (seg === 'equilibrees' && r.status !== 'settled')     return false
-      if (seg === 'ecarts'      && r.status !== 'discrepancy') return false
-      if (agent !== 'tous' && r.agentName !== agent)           return false
+    return records.filter((r) => {
+      if (seg === 'equilibrees' && r.status !== 'settled') return false
+      if (seg === 'ecarts' && r.status !== 'discrepancy') return false
+      if (agent !== 'tous' && r.agentName !== agent) return false
       if (q) {
         const blob = [r._id, r.agentName, r.date, r.notes].join(' ').toLowerCase()
         if (!blob.includes(q.toLowerCase())) return false
@@ -81,15 +91,18 @@ function ReconciliationIndex({ onOpen }) {
     })
   }, [records, seg, agent, q])
 
-  const counts = useMemo(() => ({
-    tous:         (records ?? []).length,
-    equilibrees:  (records ?? []).filter(r => r.status === 'settled').length,
-    ecarts:       (records ?? []).filter(r => r.status === 'discrepancy').length,
-  }), [records])
+  const counts = useMemo(
+    () => ({
+      tous: (records ?? []).length,
+      equilibrees: (records ?? []).filter((r) => r.status === 'settled').length,
+      ecarts: (records ?? []).filter((r) => r.status === 'discrepancy').length,
+    }),
+    [records]
+  )
 
   const totalVarianceAbs = (records ?? []).reduce((s, r) => s + Math.abs(r.variance ?? 0), 0)
-  const ecartCount       = counts.ecarts
-  const settledCount     = counts.equilibrees
+  const ecartCount = counts.ecarts
+  const settledCount = counts.equilibrees
 
   const kpis = [
     {
@@ -130,9 +143,13 @@ function ReconciliationIndex({ onOpen }) {
   return (
     <div className="recon-page">
       <PageHeader crumbs={['Réconciliation']} title="Réconciliation de caisse">
-        <button className="btn"><I.Export size={14} />Exporter</button>
+        <button className="btn">
+          <I.Export size={14} />
+          Exporter
+        </button>
         <button className="btn brand" onClick={() => setShowForm(true)}>
-          <I.Plus size={14} stroke="white" />Nouveau rapprochement
+          <I.Plus size={14} stroke="white" />
+          Nouveau rapprochement
         </button>
       </PageHeader>
 
@@ -145,19 +162,19 @@ function ReconciliationIndex({ onOpen }) {
           <input
             placeholder="Agent, date, notes…"
             value={q}
-            onChange={e => setQ(e.target.value)}
+            onChange={(e) => setQ(e.target.value)}
           />
         </div>
       </div>
 
       <section className="kpi-row">
-        {kpis.map(k => (
+        {kpis.map((k) => (
           <div className="kpi" key={k.label}>
             <div className="kpi-label">
               {k.icon === 'wallet' && <I.Wallet />}
-              {k.icon === 'coin'   && <I.Coin />}
-              {k.icon === 'check'  && <I.Check />}
-              {k.icon === 'alert'  && <I.Bell />}
+              {k.icon === 'coin' && <I.Coin />}
+              {k.icon === 'check' && <I.Check />}
+              {k.icon === 'alert' && <I.Bell />}
               {k.label}
             </div>
             <div className="kpi-value">
@@ -166,9 +183,11 @@ function ReconciliationIndex({ onOpen }) {
             </div>
             <div className="kpi-foot">
               <span className={'delta ' + (k.dir === 'up' ? 'up' : 'down')}>
-                {k.dir === 'up'
-                  ? <I.ArrowUR size={10} stroke="currentColor" />
-                  : <I.ArrowDR size={10} stroke="currentColor" />}
+                {k.dir === 'up' ? (
+                  <I.ArrowUR size={10} stroke="currentColor" />
+                ) : (
+                  <I.ArrowDR size={10} stroke="currentColor" />
+                )}
                 {k.delta}
               </span>
               <span>{k.note}</span>
@@ -177,27 +196,23 @@ function ReconciliationIndex({ onOpen }) {
         ))}
       </section>
 
-      {showForm && (
-        <NewReconciliationForm
-          branchId={branchId}
-          onClose={() => setShowForm(false)}
-        />
-      )}
+      {showForm && <NewReconciliationForm branchId={branchId} onClose={() => setShowForm(false)} />}
 
       <div className="card">
         <div className="filter-bar">
           <div className="seg-tabs">
             {[
-              { k: 'tous',        label: 'Toutes',       n: counts.tous        },
-              { k: 'equilibrees', label: 'Équilibrées',  n: counts.equilibrees },
-              { k: 'ecarts',      label: 'Écarts',       n: counts.ecarts      },
-            ].map(t => (
+              { k: 'tous', label: 'Toutes', n: counts.tous },
+              { k: 'equilibrees', label: 'Équilibrées', n: counts.equilibrees },
+              { k: 'ecarts', label: 'Écarts', n: counts.ecarts },
+            ].map((t) => (
               <button
                 key={t.k}
                 className={'seg-tab ' + (seg === t.k ? 'on' : '')}
                 onClick={() => setSeg(t.k)}
               >
-                {t.label}<span className="seg-count">{t.n}</span>
+                {t.label}
+                <span className="seg-count">{t.n}</span>
               </button>
             ))}
           </div>
@@ -207,10 +222,12 @@ function ReconciliationIndex({ onOpen }) {
             <select
               className="filter-select"
               value={agent}
-              onChange={e => setAgent(e.target.value)}
+              onChange={(e) => setAgent(e.target.value)}
             >
-              {agents.map(a => (
-                <option key={a} value={a}>{a === 'tous' ? 'Tous' : a}</option>
+              {agents.map((a) => (
+                <option key={a} value={a}>
+                  {a === 'tous' ? 'Tous' : a}
+                </option>
               ))}
             </select>
           </div>
@@ -233,8 +250,9 @@ function ReconciliationIndex({ onOpen }) {
             <tbody>
               {records === undefined ? (
                 <SkeletonTableRows cols={[110, 160, 90, 80, 80, 80, 80, 30]} rows={6} />
-              ) : filtered.map(r => {
-                  const meta     = STATUS_META[r.status] ?? STATUS_META.pending
+              ) : (
+                filtered.map((r) => {
+                  const meta = STATUS_META[r.status] ?? STATUS_META.pending
                   const variance = r.variance ?? 0
                   return (
                     <tr key={r._id} onClick={() => onOpen(r._id)}>
@@ -247,7 +265,12 @@ function ReconciliationIndex({ onOpen }) {
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div className="avatar sm">
-                            {(r.agentName ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                            {(r.agentName ?? '?')
+                              .split(' ')
+                              .map((w) => w[0])
+                              .join('')
+                              .slice(0, 2)
+                              .toUpperCase()}
                           </div>
                           <div>
                             <div style={{ fontWeight: 550 }}>{r.agentName ?? '—'}</div>
@@ -257,20 +280,29 @@ function ReconciliationIndex({ onOpen }) {
                       </td>
                       <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                         {fmt(r.systemExpectedAmount)}
-                        <span className="cell-sub" style={{ marginLeft: 4 }}>FCFA</span>
+                        <span className="cell-sub" style={{ marginLeft: 4 }}>
+                          FCFA
+                        </span>
                       </td>
                       <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                         {fmt(r.physicalCashReceived)}
-                        <span className="cell-sub" style={{ marginLeft: 4 }}>FCFA</span>
+                        <span className="cell-sub" style={{ marginLeft: 4 }}>
+                          FCFA
+                        </span>
                       </td>
-                      <td style={{
-                        textAlign: 'right',
-                        fontVariantNumeric: 'tabular-nums',
-                        fontWeight: 600,
-                        color: variance === 0
-                          ? 'var(--ink-3)'
-                          : variance > 0 ? 'var(--pos)' : 'var(--neg)',
-                      }}>
+                      <td
+                        style={{
+                          textAlign: 'right',
+                          fontVariantNumeric: 'tabular-nums',
+                          fontWeight: 600,
+                          color:
+                            variance === 0
+                              ? 'var(--ink-3)'
+                              : variance > 0
+                                ? 'var(--pos)'
+                                : 'var(--neg)',
+                        }}
+                      >
                         {variance === 0
                           ? '—'
                           : (variance > 0 ? '+' : '−') + fmt(Math.abs(variance))}
@@ -286,16 +318,20 @@ function ReconciliationIndex({ onOpen }) {
                         <button
                           className="btn ghost sm"
                           style={{ padding: 4 }}
-                          onClick={e => { e.stopPropagation(); onOpen(r._id) }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onOpen(r._id)
+                          }}
                         >
                           <I.Arrow size={12} />
                         </button>
                       </td>
                     </tr>
                   )
-                })}
-              </tbody>
-            </table>
+                })
+              )}
+            </tbody>
+          </table>
 
           {records !== undefined && filtered.length === 0 && (
             <EmptyState
@@ -307,7 +343,9 @@ function ReconciliationIndex({ onOpen }) {
 
           {records !== undefined && (
             <div className="table-foot">
-              <span>{filtered.length} sur {(records ?? []).length} sessions</span>
+              <span>
+                {filtered.length} sur {(records ?? []).length} sessions
+              </span>
             </div>
           )}
         </div>
@@ -319,19 +357,16 @@ function ReconciliationIndex({ onOpen }) {
 // ─── New reconciliation form ───────────────────────────────────────────────────
 
 function NewReconciliationForm({ branchId, onClose }) {
-  const [agentId, setAgentId]           = useState('')
-  const [date, setDate]                 = useState(todayISO())
-  const [physicalAmount, setPhysical]   = useState('')
-  const [notes, setNotes]               = useState('')
-  const [submitting, setSubmitting]     = useState(false)
-  const [error, setError]               = useState(null)
-  const [success, setSuccess]           = useState(null)
+  const [agentId, setAgentId] = useState('')
+  const [date, setDate] = useState(todayISO())
+  const [physicalAmount, setPhysical] = useState('')
+  const [notes, setNotes] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState(null)
+  const [success, setSuccess] = useState(null)
 
   // Load branch agents
-  const agents = useQuery(
-    api.users.listByBranch,
-    branchId ? { branchId } : 'skip'
-  )
+  const agents = useQuery(api.users.listByBranch, branchId ? { branchId } : 'skip')
 
   // Load agent daily summary for pre-check
   const summary = useQuery(
@@ -373,15 +408,19 @@ function NewReconciliationForm({ branchId, onClose }) {
   if (success) {
     const v = success.variance
     return (
-      <div className="recon-banner" style={{
-        marginBottom: 18,
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        gap: 10,
-        background: v === 0
-          ? 'color-mix(in oklch, var(--pos) 10%, var(--surface))'
-          : 'color-mix(in oklch, var(--neg) 10%, var(--surface))',
-      }}>
+      <div
+        className="recon-banner"
+        style={{
+          marginBottom: 18,
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: 10,
+          background:
+            v === 0
+              ? 'color-mix(in oklch, var(--pos) 10%, var(--surface))'
+              : 'color-mix(in oklch, var(--neg) 10%, var(--surface))',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
           <div className="recon-banner-icon">
             {v === 0 ? <I.Check size={18} /> : <I.Bell size={18} />}
@@ -396,11 +435,13 @@ function NewReconciliationForm({ branchId, onClose }) {
               {v === 0
                 ? 'Les espèces reçues correspondent exactement au total système.'
                 : v > 0
-                  ? 'Surplus en caisse — vérifiez s\'il y a un dépôt non saisi.'
+                  ? "Surplus en caisse — vérifiez s'il y a un dépôt non saisi."
                   : 'Manque en caisse — vérifiez les retraits ou billets manquants.'}
             </div>
           </div>
-          <button className="btn" onClick={onClose}>Fermer</button>
+          <button className="btn" onClick={onClose}>
+            Fermer
+          </button>
         </div>
       </div>
     )
@@ -413,14 +454,14 @@ function NewReconciliationForm({ branchId, onClose }) {
           <div className="card-title">Nouveau rapprochement de caisse</div>
           <div className="card-sub">Saisir le montant physique remis par l'agent</div>
         </div>
-        <button
-          className="btn ghost sm"
-          style={{ marginLeft: 'auto' }}
-          onClick={onClose}
-        >✕</button>
+        <button className="btn ghost sm" style={{ marginLeft: 'auto' }} onClick={onClose}>
+          ✕
+        </button>
       </div>
 
-      <div style={{ padding: '0 14px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div
+        style={{ padding: '0 14px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}
+      >
         {/* Agent selector */}
         <div className="form-field">
           <label className="filter-label">Agent</label>
@@ -428,10 +469,10 @@ function NewReconciliationForm({ branchId, onClose }) {
             className="filter-select"
             style={{ width: '100%', marginTop: 4 }}
             value={agentId}
-            onChange={e => setAgentId(e.target.value)}
+            onChange={(e) => setAgentId(e.target.value)}
           >
             <option value="">— Sélectionner un agent —</option>
-            {(agents ?? []).map(a => (
+            {(agents ?? []).map((a) => (
               <option key={a._id} value={a._id}>
                 {a.name ?? a.email}
               </option>
@@ -448,23 +489,32 @@ function NewReconciliationForm({ branchId, onClose }) {
             style={{ width: '100%', marginTop: 4 }}
             value={date}
             max={todayISO()}
-            onChange={e => setDate(e.target.value)}
+            onChange={(e) => setDate(e.target.value)}
           />
         </div>
       </div>
 
       {/* Pre-check panel */}
       {agentId && date && (
-        <div style={{ margin: '0 14px 14px', borderRadius: 8, border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <div style={{
-            padding: '10px 14px',
-            background: 'var(--surface-2)',
-            fontSize: 11,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            color: 'var(--ink-3)',
-          }}>
+        <div
+          style={{
+            margin: '0 14px 14px',
+            borderRadius: 8,
+            border: '1px solid var(--border)',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              padding: '10px 14px',
+              background: 'var(--surface-2)',
+              fontSize: 11,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              color: 'var(--ink-3)',
+            }}
+          >
             Pré-vérification — Total système
           </div>
           {summary === undefined ? (
@@ -475,24 +525,36 @@ function NewReconciliationForm({ branchId, onClose }) {
             </div>
           ) : (
             <div style={{ padding: '10px 14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  marginBottom: 8,
+                }}
+              >
                 <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>
-                  {summary.length} transaction{summary.length !== 1 ? 's' : ''} complétée{summary.length !== 1 ? 's' : ''}
+                  {summary.length} transaction{summary.length !== 1 ? 's' : ''} complétée
+                  {summary.length !== 1 ? 's' : ''}
                 </span>
                 <span style={{ fontSize: 18, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                  {fmt(systemExpected)} <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 500 }}>FCFA</span>
+                  {fmt(systemExpected)}{' '}
+                  <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 500 }}>FCFA</span>
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {summary.slice(0, 5).map(tx => (
-                  <div key={tx._id} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontSize: 12,
-                    color: 'var(--ink-2)',
-                    padding: '3px 0',
-                    borderBottom: '1px solid var(--border)',
-                  }}>
+                {summary.slice(0, 5).map((tx) => (
+                  <div
+                    key={tx._id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      fontSize: 12,
+                      color: 'var(--ink-2)',
+                      padding: '3px 0',
+                      borderBottom: '1px solid var(--border)',
+                    }}
+                  >
                     <span style={{ color: 'var(--ink-3)' }}>{formatTs(tx.timestamp)}</span>
                     <span>{tx.type ?? tx.transactionType ?? '—'}</span>
                     <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 550 }}>
@@ -501,7 +563,14 @@ function NewReconciliationForm({ branchId, onClose }) {
                   </div>
                 ))}
                 {summary.length > 5 && (
-                  <div style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center', paddingTop: 4 }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--ink-3)',
+                      textAlign: 'center',
+                      paddingTop: 4,
+                    }}
+                  >
                     + {summary.length - 5} autres transactions
                   </div>
                 )}
@@ -514,16 +583,18 @@ function NewReconciliationForm({ branchId, onClose }) {
       {/* Physical amount input */}
       <div style={{ padding: '0 14px 14px' }}>
         <label className="filter-label">Espèces physiques reçues (FCFA)</label>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          marginTop: 6,
-          border: '1px solid var(--border)',
-          borderRadius: 8,
-          padding: '6px 12px',
-          background: 'var(--surface)',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            marginTop: 6,
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            padding: '6px 12px',
+            background: 'var(--surface)',
+          }}
+        >
           <I.Coin />
           <input
             type="text"
@@ -539,7 +610,7 @@ function NewReconciliationForm({ branchId, onClose }) {
               outline: 'none',
               color: 'var(--ink)',
             }}
-            onChange={e => {
+            onChange={(e) => {
               const raw = e.target.value.replace(/\D/g, '')
               setPhysical(raw ? fmt(parseInt(raw, 10)) : '')
             }}
@@ -549,25 +620,30 @@ function NewReconciliationForm({ branchId, onClose }) {
 
         {/* Live variance preview */}
         {variance !== null && physical > 0 && (
-          <div style={{
-            marginTop: 10,
-            padding: '8px 12px',
-            borderRadius: 8,
-            background: variance === 0
-              ? 'color-mix(in oklch, var(--pos) 12%, var(--surface))'
-              : 'color-mix(in oklch, var(--neg) 12%, var(--surface))',
-            border: `1px solid ${variance === 0 ? 'color-mix(in oklch, var(--pos) 30%, transparent)' : 'color-mix(in oklch, var(--neg) 30%, transparent)'}`,
-          }}>
+          <div
+            style={{
+              marginTop: 10,
+              padding: '8px 12px',
+              borderRadius: 8,
+              background:
+                variance === 0
+                  ? 'color-mix(in oklch, var(--pos) 12%, var(--surface))'
+                  : 'color-mix(in oklch, var(--neg) 12%, var(--surface))',
+              border: `1px solid ${variance === 0 ? 'color-mix(in oklch, var(--pos) 30%, transparent)' : 'color-mix(in oklch, var(--neg) 30%, transparent)'}`,
+            }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>
                 Écart prévu (physique − système)
               </span>
-              <span style={{
-                fontWeight: 700,
-                fontVariantNumeric: 'tabular-nums',
-                fontSize: 15,
-                color: variance === 0 ? 'var(--pos)' : 'var(--neg)',
-              }}>
+              <span
+                style={{
+                  fontWeight: 700,
+                  fontVariantNumeric: 'tabular-nums',
+                  fontSize: 15,
+                  color: variance === 0 ? 'var(--pos)' : 'var(--neg)',
+                }}
+              >
                 {variance === 0
                   ? '✓ Équilibrée'
                   : (variance > 0 ? '+' : '−') + fmt(Math.abs(variance)) + ' FCFA'}
@@ -591,26 +667,30 @@ function NewReconciliationForm({ branchId, onClose }) {
           className="recon-notes"
           style={{ marginTop: 6 }}
           value={notes}
-          onChange={e => setNotes(e.target.value)}
+          onChange={(e) => setNotes(e.target.value)}
           placeholder="Justification, observations de l'agent, etc."
         />
       </div>
 
       {error && (
-        <div style={{
-          margin: '0 14px 14px',
-          padding: '8px 12px',
-          borderRadius: 8,
-          background: 'color-mix(in oklch, var(--neg) 12%, var(--surface))',
-          fontSize: 13,
-          color: 'var(--neg)',
-        }}>
+        <div
+          style={{
+            margin: '0 14px 14px',
+            padding: '8px 12px',
+            borderRadius: 8,
+            background: 'color-mix(in oklch, var(--neg) 12%, var(--surface))',
+            fontSize: 13,
+            color: 'var(--neg)',
+          }}
+        >
           {error}
         </div>
       )}
 
       <div className="recon-foot">
-        <button className="btn ghost" onClick={onClose}>Annuler</button>
+        <button className="btn ghost" onClick={onClose}>
+          Annuler
+        </button>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           <button
             className="btn brand"
@@ -618,7 +698,7 @@ function NewReconciliationForm({ branchId, onClose }) {
             disabled={submitting || !agentId || !physicalAmount}
           >
             <I.Check size={14} stroke="white" />
-            {submitting ? 'Envoi…' : variance === 0 ? 'Valider (équilibrée)' : 'Soumettre l\'écart'}
+            {submitting ? 'Envoi…' : variance === 0 ? 'Valider (équilibrée)' : "Soumettre l'écart"}
           </button>
         </div>
       </div>
@@ -630,13 +710,10 @@ function NewReconciliationForm({ branchId, onClose }) {
 
 function ReconciliationDetail({ reconciliationId, onBack }) {
   // All hooks MUST be at the top — no conditional calls (React rules of hooks)
-  const me       = useQuery(api.users.currentUser)
+  const me = useQuery(api.users.currentUser)
   const branchId = me?.branchId
-  const records  = useQuery(
-    api.reconciliation.listByBranch,
-    branchId ? { branchId } : 'skip'
-  )
-  const record = records?.find(r => r._id === reconciliationId)
+  const records = useQuery(api.reconciliation.listByBranch, branchId ? { branchId } : 'skip')
+  const record = records?.find((r) => r._id === reconciliationId)
 
   // summary hook always called — 'skip' when record not ready
   const summary = useQuery(
@@ -649,7 +726,9 @@ function ReconciliationDetail({ reconciliationId, onBack }) {
     return (
       <div className="recon-page">
         <PageHeader crumbs={['Réconciliation', '…']} title={null}>
-          <button className="btn ghost sm" onClick={onBack}>← Toutes les sessions</button>
+          <button className="btn ghost sm" onClick={onBack}>
+            ← Toutes les sessions
+          </button>
         </PageHeader>
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)' }}>
           {records === undefined ? 'Chargement…' : 'Session introuvable.'}
@@ -658,25 +737,35 @@ function ReconciliationDetail({ reconciliationId, onBack }) {
     )
   }
 
-  const meta     = STATUS_META[record.status] ?? STATUS_META.pending
+  const meta = STATUS_META[record.status] ?? STATUS_META.pending
   const variance = record.variance ?? 0
 
   return (
     <div className="recon-page">
       <PageHeader crumbs={['Réconciliation', record.date]} title={null}>
-        <button className="btn ghost sm" onClick={onBack}>← Toutes les sessions</button>
-        <button className="btn"><I.Export size={14} />Exporter PDF</button>
+        <button className="btn ghost sm" onClick={onBack}>
+          ← Toutes les sessions
+        </button>
+        <button className="btn">
+          <I.Export size={14} />
+          Exporter PDF
+        </button>
       </PageHeader>
 
       <div style={{ marginBottom: 14 }}>
-        <h1 className="h1" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 2 }}>
+        <h1
+          className="h1"
+          style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 2 }}
+        >
           Session {record.date} · {record.agentName ?? '—'}
           <span className={meta.cls} style={{ fontSize: 12 }}>
-            <span className="rec-status-dot" />{meta.label}
+            <span className="rec-status-dot" />
+            {meta.label}
           </span>
         </h1>
         <div className="h1-sub">
-          {record.agentName} · {formatTs(record.timestamp)} · Vérifié par {record.verifierName ?? '—'}
+          {record.agentName} · {formatTs(record.timestamp)} · Vérifié par{' '}
+          {record.verifierName ?? '—'}
         </div>
       </div>
 
@@ -685,34 +774,46 @@ function ReconciliationDetail({ reconciliationId, onBack }) {
         <div>
           <div className="recon-meta-l">Théorique (système)</div>
           <div className="recon-meta-v" style={{ fontVariantNumeric: 'tabular-nums' }}>
-            {fmt(record.systemExpectedAmount)} <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 500 }}>FCFA</span>
+            {fmt(record.systemExpectedAmount)}{' '}
+            <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 500 }}>FCFA</span>
           </div>
         </div>
         <div>
           <div className="recon-meta-l">Espèces reçues</div>
           <div className="recon-meta-v" style={{ fontVariantNumeric: 'tabular-nums' }}>
-            {fmt(record.physicalCashReceived)} <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 500 }}>FCFA</span>
+            {fmt(record.physicalCashReceived)}{' '}
+            <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 500 }}>FCFA</span>
           </div>
         </div>
         <div>
           <div className="recon-meta-l">Écart</div>
-          <div className={
-            'recon-meta-v ' + (variance === 0 ? 'variance-zero' : variance > 0 ? 'variance-pos' : 'variance-neg')
-          } style={{ fontVariantNumeric: 'tabular-nums' }}>
-            {variance === 0
-              ? '—'
-              : (variance > 0 ? '+' : '−') + fmt(Math.abs(variance))}
+          <div
+            className={
+              'recon-meta-v ' +
+              (variance === 0 ? 'variance-zero' : variance > 0 ? 'variance-pos' : 'variance-neg')
+            }
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          >
+            {variance === 0 ? '—' : (variance > 0 ? '+' : '−') + fmt(Math.abs(variance))}
             {variance !== 0 && (
-              <span style={{ fontSize: 11, color: 'currentColor', fontWeight: 500, opacity: 0.7 }}> FCFA</span>
+              <span style={{ fontSize: 11, color: 'currentColor', fontWeight: 500, opacity: 0.7 }}>
+                {' '}
+                FCFA
+              </span>
             )}
           </div>
         </div>
         <div>
           <div className="recon-meta-l">Vérifié par</div>
           <div className="recon-meta-v">
-            {record.verifierName ?? <span style={{ color: 'var(--ink-3)', fontWeight: 500 }}>—</span>}
+            {record.verifierName ?? (
+              <span style={{ color: 'var(--ink-3)', fontWeight: 500 }}>—</span>
+            )}
             {record.timestamp && (
-              <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 500 }}> · {formatTs(record.timestamp)}</span>
+              <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 500 }}>
+                {' '}
+                · {formatTs(record.timestamp)}
+              </span>
             )}
           </div>
         </div>
@@ -750,14 +851,20 @@ function ReconciliationDetail({ reconciliationId, onBack }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {(summary ?? []).map(tx => (
+                  {(summary ?? []).map((tx) => (
                     <tr key={tx._id}>
                       <td className="cell-sub" style={{ fontVariantNumeric: 'tabular-nums' }}>
                         {formatTs(tx.timestamp)}
                       </td>
                       <td>{tx.type ?? tx.transactionType ?? '—'}</td>
                       <td>{tx.beneficiaryName ?? tx.clientName ?? '—'}</td>
-                      <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 550 }}>
+                      <td
+                        style={{
+                          textAlign: 'right',
+                          fontVariantNumeric: 'tabular-nums',
+                          fontWeight: 550,
+                        }}
+                      >
                         {fmt(tx.amount)} <span className="cell-sub">FCFA</span>
                       </td>
                       <td>
@@ -776,8 +883,27 @@ function ReconciliationDetail({ reconciliationId, onBack }) {
         <div>
           <div className="card" style={{ marginBottom: 14 }}>
             <div className="variance-hero">
-              <div style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>Écart total</div>
-              <div className={'variance-big ' + (variance === 0 ? 'variance-zero' : variance > 0 ? 'variance-pos' : 'variance-neg')}>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'var(--ink-3)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  fontWeight: 600,
+                }}
+              >
+                Écart total
+              </div>
+              <div
+                className={
+                  'variance-big ' +
+                  (variance === 0
+                    ? 'variance-zero'
+                    : variance > 0
+                      ? 'variance-pos'
+                      : 'variance-neg')
+                }
+              >
                 {variance === 0
                   ? 'Équilibrée'
                   : (variance > 0 ? '+' : '−') + fmt(Math.abs(variance)) + ' FCFA'}
@@ -806,7 +932,14 @@ function ReconciliationDetail({ reconciliationId, onBack }) {
                   <div className="card-title">Note de session</div>
                 </div>
               </div>
-              <div style={{ padding: '0 14px 14px', fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+              <div
+                style={{
+                  padding: '0 14px 14px',
+                  fontSize: 13.5,
+                  color: 'var(--ink-2)',
+                  lineHeight: 1.55,
+                }}
+              >
                 {record.notes}
               </div>
             </div>
@@ -818,22 +951,30 @@ function ReconciliationDetail({ reconciliationId, onBack }) {
                 <div className="card-title">Récapitulatif</div>
               </div>
             </div>
-            <div style={{ padding: '8px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div
+              style={{ padding: '8px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}
+            >
               {[
-                { label: 'Agent',          value: record.agentName ?? '—' },
-                { label: 'Date',           value: formatDate(record.date) },
+                { label: 'Agent', value: record.agentName ?? '—' },
+                { label: 'Date', value: formatDate(record.date) },
                 { label: 'Heure de saisie', value: formatTs(record.timestamp) },
-                { label: 'Vérifié par',    value: record.verifierName ?? '—' },
-                { label: 'Statut',         value: meta.label },
-              ].map(row => (
-                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                { label: 'Vérifié par', value: record.verifierName ?? '—' },
+                { label: 'Statut', value: meta.label },
+              ].map((row) => (
+                <div
+                  key={row.label}
+                  style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}
+                >
                   <span style={{ color: 'var(--ink-3)' }}>{row.label}</span>
                   <span style={{ fontWeight: 550 }}>{row.value}</span>
                 </div>
               ))}
             </div>
             <div className="recon-foot">
-              <button className="btn"><I.Export size={14} />Télécharger PV</button>
+              <button className="btn">
+                <I.Export size={14} />
+                Télécharger PV
+              </button>
             </div>
           </div>
         </div>
@@ -844,7 +985,7 @@ function ReconciliationDetail({ reconciliationId, onBack }) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function ReverseButton({ tx, reconciled }) {
+function ReverseButton({ reconciled }) {
   if (reconciled) {
     return (
       <span
@@ -876,10 +1017,14 @@ function VarianceRow({ label, expected, counted }) {
       <span className="v-label">{label}</span>
       <span className="v-num muted">{fmt(expected)}</span>
       <span className="v-num">{fmt(counted)}</span>
-      <span className={'v-delta ' + (delta === 0 ? '' : delta > 0 ? 'variance-pos' : 'variance-neg')}>
-        {delta === 0
-          ? <span style={{ color: 'var(--ink-4)' }}>—</span>
-          : (delta > 0 ? '+' : '−') + fmt(Math.abs(delta))}
+      <span
+        className={'v-delta ' + (delta === 0 ? '' : delta > 0 ? 'variance-pos' : 'variance-neg')}
+      >
+        {delta === 0 ? (
+          <span style={{ color: 'var(--ink-4)' }}>—</span>
+        ) : (
+          (delta > 0 ? '+' : '−') + fmt(Math.abs(delta))
+        )}
       </span>
     </div>
   )

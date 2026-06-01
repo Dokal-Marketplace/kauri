@@ -193,9 +193,9 @@ export const I = {
     </Icon>
   ),
   Close: (p) => (
-  <Icon {...p}>
-    <path d="M6 6l12 12M6 18L18 6" />
-  </Icon>
+    <Icon {...p}>
+      <path d="M6 6l12 12M6 18L18 6" />
+    </Icon>
   ),
   Edit: (p) => (
     <Icon {...p}>
