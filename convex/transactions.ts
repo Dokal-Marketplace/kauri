@@ -43,15 +43,10 @@ export const listByCustomer = query({
       .order('desc')
       .take(args.limit ?? 10)
 
-    return Promise.all(
-      rows.map(async (t) => {
-        const agentRecord = await ctx.db.get(t.agentId)
-        return {
-          ...t,
-          agentName: agentRecord?.fullName ?? '—',
-        }
-      })
-    )
+    const agentIds = [...new Set(rows.map((t) => t.agentId))]
+    const agents = await Promise.all(agentIds.map((id) => ctx.db.get(id)))
+    const agentMap = Object.fromEntries(agents.map((a) => [a!._id, a]))
+    return rows.map((t) => ({ ...t, agentName: agentMap[t.agentId]?.fullName ?? '—' }))
   },
 })
 

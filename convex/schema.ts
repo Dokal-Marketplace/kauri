@@ -115,6 +115,7 @@ export default defineSchema({
     notes: v.optional(v.string()),
   })
     .index('by_branch_status', ['branchId', 'status'])
+    .index('by_branch_date', ['branchId', 'date'])
     .index('by_agent_date', ['agentId', 'date']),
 
   products: defineTable({
