@@ -46,7 +46,9 @@ function AppShell() {
   return (
     <TenantsProvider
       features={{ members: true, invitations: true, teams: true }}
-      onToast={(msg, type) => console[type === 'error' ? 'error' : 'log']('[tenant]', msg)}
+      onToast={(msg, type) => {
+        if (import.meta.env.DEV) console[type === 'error' ? 'error' : 'log']('[tenant]', msg)
+      }}
     >
       <div className="app">
         <Sidebar />
