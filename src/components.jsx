@@ -136,7 +136,7 @@ export function Sidebar() {
           {group.entries.map((it) =>
             it.path ? (
               <NavLink
-                key={it.path}
+                key={it.path ?? it.label}
                 to={it.path}
                 end={it.end}
                 className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')}
@@ -146,7 +146,7 @@ export function Sidebar() {
                 {it.badge && <span className="nav-badge">{it.badge}</span>}
               </NavLink>
             ) : (
-              <div key={it.label} className="nav-item disabled">
+              <div key={it.path ?? it.label} className="nav-item disabled">
                 {it.icon}
                 <span>{it.label}</span>
               </div>
