@@ -98,6 +98,8 @@ export default defineSchema({
     timestamp: v.number(),
     payoutMethod: v.union(v.literal('cash'), v.literal('mobile_money')),
     transactionId: v.optional(v.string()),
+    rejectionReason: v.optional(v.string()),
+    rejectedBy: v.optional(v.id('users')),
   }).index('by_status', ['status']),
 
   reconciliations: defineTable({

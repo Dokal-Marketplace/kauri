@@ -51,6 +51,9 @@ export const createProspect = mutation({
     if (!fullName || !phoneNumber || !idNumber) {
       throw new Error('All fields are required')
     }
+    if (fullName.length > 200) throw new Error('Full name too long (max 200 chars)')
+    if (phoneNumber.length > 20) throw new Error('Phone number too long (max 20 chars)')
+    if (idNumber.length > 50) throw new Error('ID number too long (max 50 chars)')
 
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')

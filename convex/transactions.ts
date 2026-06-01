@@ -171,6 +171,7 @@ export const reverseTransaction = mutation({
     if (!tx) throw new Error('Transaction not found')
     if (tx.branchId !== agent.branchId) throw new Error('Unauthorized')
     if (tx.status === 'reversed') throw new Error('Already reversed')
+    if (args.reason.length > 500) throw new Error('Reason too long (max 500 chars)')
 
     // Fix 3: scope reconciliation guard to the transaction's agent + date,
     // replacing the broken lte+gte exact-equality filter that missed most

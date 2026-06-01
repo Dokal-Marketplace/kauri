@@ -29,7 +29,9 @@
       "Bash(git -C /Users/serge/workspace/kauri rebase --continue)",
       "Bash(git -C /Users/serge/workspace/kauri diff --name-only --diff-filter=U)",
       "Bash(git -C /Users/serge/workspace/kauri status --short)",
-      "Bash(pnpm --version)"
+      "Bash(pnpm --version)",
+      "Bash(git push *)",
+      "Bash(pnpm format:check)"
     ],
     "additionalDirectories": ["/Users/serge/Downloads/TontiPro"]
   }
