@@ -61,9 +61,15 @@ export default defineSchema({
     batteryPct: v.optional(v.number()),
     signalLevel: v.optional(v.number()),
     queuedCount: v.optional(v.number()),
+    bindingPin:        v.optional(v.string()),   // 6-digit numeric string
+    bindingPinExpiry:  v.optional(v.number()),   // Unix ms — TTL 10 minutes
+    bindingToken:      v.optional(v.string()),   // UUID embedded in QR payload
+    bindingTokenExpiry: v.optional(v.number()),  // Unix ms — TTL 10 minutes
   })
     .index('by_serial', ['serialNumber'])
-    .index('by_assigned_to', ['assignedTo']),
+    .index('by_assigned_to', ['assignedTo'])
+    .index('by_binding_pin', ['bindingPin'])
+    .index('by_binding_token', ['bindingToken']),
 
   transactions: defineTable({
     amount: v.number(),

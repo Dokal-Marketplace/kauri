@@ -1,0 +1,158 @@
+// convex/devices.ts
+import { mutation } from './_generated/server'
+import { v } from 'convex/values'
+import { authz } from './authz'
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+function randomPin(): string {
+  // Cryptographically random 6-digit string, zero-padded
+  const array = new Uint32Array(1)
+  crypto.getRandomValues(array)
+  return String(array[0] % 1_000_000).padStart(6, '0')
+}
+
+function randomUUID(): string {
+  return crypto.randomUUID()
+}
+
+const TTL = 10 * 60 * 1000 // 10 minutes in ms
+
+// ─── generateBindingCredentials ─────────────────────────────────────────────
+
+export const generateBindingCredentials = mutation({
+  args: { deviceId: v.id('devices') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
+
+    const device = await ctx.db.get(args.deviceId)
+    if (!device) throw new Error('Device not found')
+
+    const pin = randomPin()
+    const token = randomUUID()
+    const expiry = Date.now() + TTL
+
+    await ctx.db.patch(args.deviceId, {
+      bindingPin: pin,
+      bindingPinExpiry: expiry,
+      bindingToken: token,
+      bindingTokenExpiry: expiry,
+    })
+
+    return { pin, token }
+  },
+})
+
+// ─── claimDeviceByPin ────────────────────────────────────────────────────────
+
+export const claimDeviceByPin = mutation({
+  args: { pin: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+
+    const device = await ctx.db
+      .query('devices')
+      .withIndex('by_binding_pin', (q) => q.eq('bindingPin', args.pin))
+      .unique()
+
+    if (!device) throw new Error('Invalid PIN')
+    if (device.assignedTo) throw new Error('Device is already assigned to an agent')
+    if (!device.bindingPinExpiry || device.bindingPinExpiry < Date.now()) {
+      throw new Error('PIN has expired — ask your manager to generate a new one')
+    }
+
+    await ctx.db.patch(device._id, {
+      assignedTo: caller._id,
+      bindingPin: undefined,
+      bindingPinExpiry: undefined,
+      bindingToken: undefined,
+      bindingTokenExpiry: undefined,
+    })
+
+    return { deviceId: device._id }
+  },
+})
+
+// ─── claimDeviceByToken ──────────────────────────────────────────────────────
+
+export const claimDeviceByToken = mutation({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+
+    const device = await ctx.db
+      .query('devices')
+      .withIndex('by_binding_token', (q) => q.eq('bindingToken', args.token))
+      .unique()
+
+    if (!device) throw new Error('Invalid QR token')
+    if (device.assignedTo) throw new Error('Device is already assigned to an agent')
+    if (!device.bindingTokenExpiry || device.bindingTokenExpiry < Date.now()) {
+      throw new Error('QR token has expired — ask your manager to generate a new one')
+    }
+
+    await ctx.db.patch(device._id, {
+      assignedTo: caller._id,
+      bindingPin: undefined,
+      bindingPinExpiry: undefined,
+      bindingToken: undefined,
+      bindingTokenExpiry: undefined,
+    })
+
+    return { deviceId: device._id }
+  },
+})
+
+// ─── unbindDevice ────────────────────────────────────────────────────────────
+
+export const unbindDevice = mutation({
+  args: { deviceId: v.id('devices') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
+
+    const device = await ctx.db.get(args.deviceId)
+    if (!device) throw new Error('Device not found')
+
+    await ctx.db.patch(args.deviceId, {
+      assignedTo: undefined,
+      bindingPin: undefined,
+      bindingPinExpiry: undefined,
+      bindingToken: undefined,
+      bindingTokenExpiry: undefined,
+    })
+
+    return { success: true }
+  },
+})

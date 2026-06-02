@@ -8,39 +8,45 @@
  * @module
  */
 
-import type * as agents from '../agents.js'
-import type * as authz from '../authz.js'
-import type * as crons from '../crons.js'
-import type * as customers from '../customers.js'
-import type * as dashboard from '../dashboard.js'
-import type * as disbursements from '../disbursements.js'
-import type * as goals from '../goals.js'
-import type * as helpers from '../helpers.js'
-import type * as invitations from '../invitations.js'
-import type * as products from '../products.js'
-import type * as reconciliation from '../reconciliation.js'
-import type * as seed from '../seed.js'
-import type * as transactions from '../transactions.js'
-import type * as users from '../users.js'
+import type * as agents from "../agents.js";
+import type * as authz from "../authz.js";
+import type * as crons from "../crons.js";
+import type * as customers from "../customers.js";
+import type * as dashboard from "../dashboard.js";
+import type * as devices from "../devices.js";
+import type * as disbursements from "../disbursements.js";
+import type * as goals from "../goals.js";
+import type * as helpers from "../helpers.js";
+import type * as invitations from "../invitations.js";
+import type * as products from "../products.js";
+import type * as reconciliation from "../reconciliation.js";
+import type * as seed from "../seed.js";
+import type * as transactions from "../transactions.js";
+import type * as users from "../users.js";
 
-import type { ApiFromModules, FilterApi, FunctionReference } from 'convex/server'
+import type {
+  ApiFromModules,
+  FilterApi,
+  FunctionReference,
+} from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  agents: typeof agents
-  authz: typeof authz
-  crons: typeof crons
-  customers: typeof customers
-  dashboard: typeof dashboard
-  disbursements: typeof disbursements
-  goals: typeof goals
-  helpers: typeof helpers
-  invitations: typeof invitations
-  products: typeof products
-  reconciliation: typeof reconciliation
-  seed: typeof seed
-  transactions: typeof transactions
-  users: typeof users
-}>
+  agents: typeof agents;
+  authz: typeof authz;
+  crons: typeof crons;
+  customers: typeof customers;
+  dashboard: typeof dashboard;
+  devices: typeof devices;
+  disbursements: typeof disbursements;
+  goals: typeof goals;
+  helpers: typeof helpers;
+  invitations: typeof invitations;
+  products: typeof products;
+  reconciliation: typeof reconciliation;
+  seed: typeof seed;
+  transactions: typeof transactions;
+  users: typeof users;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
@@ -50,7 +56,10 @@ declare const fullApi: ApiFromModules<{
  * const myFunctionReference = api.myModule.myFunction;
  * ```
  */
-export declare const api: FilterApi<typeof fullApi, FunctionReference<any, 'public'>>
+export declare const api: FilterApi<
+  typeof fullApi,
+  FunctionReference<any, "public">
+>;
 
 /**
  * A utility for referencing Convex functions in your app's internal API.
@@ -60,8 +69,11 @@ export declare const api: FilterApi<typeof fullApi, FunctionReference<any, 'publ
  * const myFunctionReference = internal.myModule.myFunction;
  * ```
  */
-export declare const internal: FilterApi<typeof fullApi, FunctionReference<any, 'internal'>>
+export declare const internal: FilterApi<
+  typeof fullApi,
+  FunctionReference<any, "internal">
+>;
 
 export declare const components: {
-  authz: import('@djpanda/convex-authz/_generated/component.js').ComponentApi<'authz'>
-}
+  authz: import("@djpanda/convex-authz/_generated/component.js").ComponentApi<"authz">;
+};
