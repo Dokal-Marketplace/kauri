@@ -32,7 +32,7 @@
       "Bash(pnpm --version)",
       "Bash(git checkout *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(pnpm format:check)",
       "Bash(npx prettier *)",
