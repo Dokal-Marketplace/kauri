@@ -55,6 +55,7 @@ export default defineSchema({
   devices: defineTable({
     serialNumber: v.string(),
     model: v.string(),
+    branchId: v.id('branches'),
     assignedTo: v.optional(v.id('users')),
     status: v.union(v.literal('active'), v.literal('maintenance'), v.literal('lost')),
     lastSync: v.number(),
@@ -67,6 +68,7 @@ export default defineSchema({
     bindingTokenExpiry: v.optional(v.number()), // Unix ms — TTL 10 minutes
   })
     .index('by_serial', ['serialNumber'])
+    .index('by_branch', ['branchId'])
     .index('by_assigned_to', ['assignedTo'])
     .index('by_binding_pin', ['bindingPin'])
     .index('by_binding_token', ['bindingToken']),

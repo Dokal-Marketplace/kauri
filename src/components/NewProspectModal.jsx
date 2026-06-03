@@ -1,3 +1,4 @@
+//components/NewProspectModal.jsx
 import { useState, useEffect } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
@@ -81,31 +82,38 @@ export function NewProspectModal({ isOpen, onClose, onSuccess }) {
         phoneNumber: phoneNumber.trim(),
         idNumber: idNumber.trim(),
       })
-
-      onSuccess?.() // optional success toast / callback from parent
-      setFormState({
-        fullName: '',
-        phoneNumber: '',
-        idNumber: '',
-        isLoading: false,
-        errors: { form: null, phoneNumber: null },
-      })
-      onClose()
     } catch (err) {
-      const msg = err?.message ?? 'Une erreur est survenue.'
-      let nextErrors = { form: msg, phoneNumber: null }
+      const rawMessage = typeof err?.message === 'string' ? err.message : ''
+      let nextErrors = {
+        form: 'Une erreur est survenue. Veuillez réessayer.',
+        phoneNumber: null,
+      }
 
       // Surface duplicate-phone / duplicate-idNumber errors at field level
       // Convex throws with a message that contains the field name when the
       // unique constraint is violated (see issue #68).
-      if (/phone/i.test(msg)) {
+      if (/phone/i.test(rawMessage)) {
         nextErrors = { form: null, phoneNumber: 'Ce numéro de téléphone est déjà enregistré.' }
-      } else if (/idNumber|identit/i.test(msg)) {
+      } else if (/idNumber|identit/i.test(rawMessage)) {
         nextErrors = { form: "Ce numéro d'identité est déjà enregistré.", phoneNumber: null }
       }
 
       setFormState((prev) => ({ ...prev, isLoading: false, errors: nextErrors }))
+      return
     }
+
+    // createProspect succeeded — reset form, close, then fire callback.
+    // Callbacks run outside the catch so their exceptions never show as form errors.
+
+    setFormState({
+      fullName: '',
+      phoneNumber: '',
+      idNumber: '',
+      isLoading: false,
+      errors: { form: null, phoneNumber: null },
+    })
+    onClose()
+    onSuccess?.()
   }
 
   if (!isOpen) return null

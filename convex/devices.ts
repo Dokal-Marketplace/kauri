@@ -36,8 +36,17 @@ export const generateBindingCredentials = mutation({
 
     const device = await ctx.db.get(args.deviceId)
     if (!device) throw new Error('Device not found')
+    if (device.branchId !== caller.branchId) throw new Error('Device not found')
 
-    const pin = randomPin()
+    let pin = randomPin()
+    while (
+      await ctx.db
+        .query('devices')
+        .withIndex('by_binding_pin', (q) => q.eq('bindingPin', pin))
+        .unique()
+    ) {
+      pin = randomPin()
+    }
     const token = randomUUID()
     const expiry = Date.now() + TTL
 
@@ -77,6 +86,10 @@ export const claimDeviceByPin = mutation({
       throw new Error('PIN has expired — ask your manager to generate a new one')
     }
 
+    if (device.branchId !== caller.branchId) {
+      throw new Error('Unauthorized: device does not belong to your branch')
+    }
+
     await ctx.db.patch(device._id, {
       assignedTo: caller._id,
       bindingPin: undefined,
@@ -112,6 +125,10 @@ export const claimDeviceByToken = mutation({
     if (device.assignedTo) throw new Error('Device is already assigned to an agent')
     if (!device.bindingTokenExpiry || device.bindingTokenExpiry < Date.now()) {
       throw new Error('QR token has expired — ask your manager to generate a new one')
+    }
+
+    if (device.branchId !== caller.branchId) {
+      throw new Error('Unauthorized: device does not belong to your branch')
     }
 
     await ctx.db.patch(device._id, {
