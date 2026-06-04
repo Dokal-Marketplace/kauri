@@ -1,5 +1,5 @@
 /**
- * BindDeviceDrawer.jsx — Issue #88
+ * BindDeviceDrawer.jsx
  * Liaison TPE/agent via QR code ou PIN à 6 chiffres.
  * Tous les styles sont dans kauri.css (classes préfixées .bdd-*)
  */
@@ -72,10 +72,10 @@ function Countdown({ secondsLeft, expired }) {
 }
 
 // ─── Composant principal ──────────────────────────────────────────────────────
-export function BindDeviceDrawer({ agent, tenantId, onClose }) {
+export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
   // ── sélection appareil ──
   const unboundDevices =
-    useQuery(api.devices.listUnbound, tenantId ? { branchId: tenantId } : 'skip') ?? []
+    useQuery(api.devices.listUnbound, isLoaded && tenantId ? { branchId: tenantId } : 'skip') ?? []
   const [selectedDeviceId, setSelectedDeviceId] = useState('')
 
   // ── identifiants ──
@@ -93,7 +93,10 @@ export function BindDeviceDrawer({ agent, tenantId, onClose }) {
   const [successBanner, setSuccessBanner] = useState(false)
 
   // ── fermeture réactive quand l'agent reçoit un appareil ──
-  const agentDoc = useQuery(api.agents.getById, agent?.id ? { agentId: agent.id } : 'skip')
+  const agentDoc = useQuery(
+    api.agents.getById,
+    isLoaded && agent?.id ? { agentId: agent.id } : 'skip'
+  )
   useEffect(() => {
     if (agentDoc?.device?.serialNumber && creds) {
       // setTimeout(0) sort le setState du cycle de rendu synchrone de l'effet
@@ -126,8 +129,22 @@ export function BindDeviceDrawer({ agent, tenantId, onClose }) {
     setGenError(null)
     try {
       const result = await generateCreds({ agentId: agent.id, deviceId: selectedDeviceId })
-      setCreds(result)
-      startTimer(result.expiresAt)
+      // Validation défensive : le backend doit retourner ces champs.
+      // On les normalise ici pour ne pas casser le rendu si l'un est absent.
+      const normalized = {
+        token: result?.token ?? '',
+        pin: result?.pin ?? '------',
+        deviceSerial: result?.deviceSerial ?? selectedDeviceId,
+        expiresAt: result?.expiresAt ?? Date.now() + VALIDITY_SECONDS * 1000,
+      }
+      if (!result?.expiresAt || !result?.deviceSerial) {
+        console.warn(
+          '[BindDeviceDrawer] generateBindingCredentials: expiresAt ou deviceSerial absent,' +
+            ' valeurs de fallback utilisées. Vérifier issue #89.'
+        )
+      }
+      setCreds(normalized)
+      startTimer(normalized.expiresAt)
     } catch (err) {
       setGenError(err?.message ?? 'Erreur lors de la génération')
     } finally {

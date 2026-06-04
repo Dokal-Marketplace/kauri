@@ -1,3 +1,4 @@
+//pages/AgentsPage.jsx
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
@@ -330,8 +331,13 @@ export default function AgentsPage() {
     isLoaded && tenantId ? { branchId: tenantId } : 'skip'
   )
 
-  const agentStats =
-    useQuery(api.transactions.summarizeByAgent, isLoaded && tenantId ? {} : 'skip') ?? {}
+  const rawAgentStats = useQuery(
+    api.transactions.summarizeByAgent,
+    isLoaded && tenantId ? {} : 'skip'
+  )
+  // Stabiliser la référence : ?? {} crée un nouvel objet à chaque rendu
+  // ce qui rendrait la dépendance du useMemo suivant instable.
+  const agentStats = useMemo(() => rawAgentStats ?? {}, [rawAgentStats])
 
   const AGENTS = useMemo(
     () => (rawAgents ?? []).map((u) => mapAgent(u, branchName, agentStats)),
@@ -456,6 +462,7 @@ export default function AgentsPage() {
       {/* BindDeviceDrawer — "Lier un appareil" / "Changer d'appareil" */}
       {bindAgent && (
         <BindDeviceDrawer
+          isLoaded={isLoaded}
           agent={bindAgent}
           tenantId={tenantId}
           onClose={() => setBindAgent(null)}
