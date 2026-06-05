@@ -10,6 +10,12 @@ export default [
   { ignores: ['dist', 'node_modules', 'convex/_generated'] },
   js.configs.recommended,
   {
+    files: ['vite.config.js', 'eslint.config.js', '.lintstagedrc.js', 'commitlint.config.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
       ecmaVersion: 2021,
