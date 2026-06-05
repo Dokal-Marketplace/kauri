@@ -20,12 +20,19 @@ export const currentUser = query({
     const roles = await authz.withTenant(user.branchId).getUserRoles(ctx, identity.subject)
     const role = roles[0]?.role ?? null
 
+    // Attach the device assigned to this user (if any)
+    const device = await ctx.db
+      .query('devices')
+      .withIndex('by_assigned_to', (q) => q.eq('assignedTo', user._id))
+      .first()
+
     return {
       ...user,
       branch,
       organization: org,
       tenantId: user.branchId,
       role,
+      device: device ?? null,
     }
   },
 })

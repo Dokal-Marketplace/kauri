@@ -1,5 +1,5 @@
 // convex/devices.ts
-import { mutation } from './_generated/server'
+import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { authz } from './authz'
 
@@ -171,5 +171,32 @@ export const unbindDevice = mutation({
     })
 
     return { success: true }
+  },
+})
+
+// ─── listUnbound (query for managers to pick an unassigned device) -------
+
+export const listUnbound = query({
+  args: { branchId: v.id('branches') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+
+    // require manager/permission to bind devices in this tenant
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
+
+    const devices = await ctx.db
+      .query('devices')
+      .withIndex('by_branch', (q) => q.eq('branchId', args.branchId))
+      .collect()
+
+    // only return active, unassigned devices
+    return devices.filter((d) => !d.assignedTo && d.status === 'active')
   },
 })

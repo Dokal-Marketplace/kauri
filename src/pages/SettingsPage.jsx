@@ -18,6 +18,12 @@ import { useState } from 'react'
 import { I } from '../icons'
 import { PageHeader } from '../components'
 import Novu from '../components/Inbox'
+import { useCurrentUser } from '../hooks/useCurrentUser'
+import { lazyWithReload } from '../utils/lazyWithReload'
+
+const BindDeviceLazy = lazyWithReload(() =>
+  import('./BindDeviceDrawer').then((m) => ({ default: m.BindDeviceDrawer }))
+)
 
 // ---------------------------------------------------------------------------
 // Tiny primitives (unchanged API, same look)
@@ -329,6 +335,8 @@ function CredentialsDrawer({ integration, onClose, onSave }) {
 export default function SettingsPage() {
   const [section, setSection] = useState('agence')
   const [online, setOnline] = useState(true)
+  const { isLoaded, convexUser } = useCurrentUser()
+  const [showBinder, setShowBinder] = useState(false)
 
   // ── isEditing flow ──────────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false)
@@ -686,6 +694,26 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </SetCard>
+
+              <SetCard title="Mon appareil" sub="Gérer votre TPE personnel lié à votre compte">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div>
+                    <div style={{ fontWeight: 550 }}>
+                      {convexUser?.device ? convexUser.device.serialNumber : 'Aucun appareil lié'}
+                    </div>
+                    <div className="cell-sub" style={{ marginTop: 4 }}>
+                      {convexUser?.device
+                        ? convexUser.device.model
+                        : 'Liez un appareil en scannant le QR ou en entrant un PIN.'}
+                    </div>
+                  </div>
+                  <div style={{ marginLeft: 'auto' }}>
+                    <button className="btn brand" onClick={() => setShowBinder(true)}>
+                      {convexUser?.device ? "Changer d'appareil" : 'Lier un appareil'}
+                    </button>
+                  </div>
+                </div>
+              </SetCard>
             </>
           )}
 
@@ -1040,6 +1068,15 @@ export default function SettingsPage() {
           integration={configIntegration}
           onClose={() => setConfigDrawer(null)}
           onSave={handleIntegrationSave}
+        />
+      )}
+
+      {showBinder && isLoaded && convexUser && (
+        <BindDeviceLazy
+          agent={convexUser}
+          tenantId={convexUser.tenantId}
+          isLoaded={isLoaded}
+          onClose={() => setShowBinder(false)}
         />
       )}
     </div>

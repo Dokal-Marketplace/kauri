@@ -17,6 +17,12 @@ const ReconciliationPage = lazyWithReload(() => import('./pages/ReconciliationPa
 const SettingsPage = lazyWithReload(() => import('./pages/SettingsPage'))
 const DisbursementsPage = lazyWithReload(() => import('./pages/DisbursementsPage'))
 
+// Render binding flow as a full-screen modal when an agent has no device
+// We wrap BindDeviceDrawer via lazyWithReload and export a small helper
+const BindDeviceLazy = lazyWithReload(() =>
+  import('./pages/BindDeviceDrawer').then((m) => ({ default: m.BindDeviceDrawer }))
+)
+
 // ─── Error boundary ────────────────────────────────────────────────────────────
 class ChunkErrorBoundary extends Component {
   constructor(props) {
@@ -43,11 +49,25 @@ class ChunkErrorBoundary extends Component {
 function AppShell() {
   const { isLoaded, convexUser } = useCurrentUser()
   if (isLoaded && !convexUser) return <OnboardingWizard />
+  // If the user is an agent and is loaded but has no device assigned, show the binding flow
+  if (isLoaded && convexUser && convexUser.role === 'agent' && convexUser.device === null) {
+    return (
+      <BindDeviceLazy
+        agent={convexUser}
+        tenantId={convexUser.tenantId}
+        isLoaded={isLoaded}
+        onClose={() => window.location.reload()}
+      />
+    )
+  }
   return (
     <TenantsProvider
       features={{ members: true, invitations: true, teams: true }}
       onToast={(msg, type) => {
-        if (import.meta.env.DEV) console[type === 'error' ? 'error' : 'log']('[tenant]', msg)
+        if (import.meta.env.DEV) {
+          if (type === 'error') console.error('[tenant]', msg)
+          else console.warn('[tenant]', msg)
+        }
       }}
     >
       <div className="app">
@@ -102,3 +122,7 @@ const router = createBrowserRouter([
 export default function App() {
   return <RouterProvider router={router} />
 }
+
+// Render binding flow as a full-screen modal when an agent has no device
+// We wrap BindDeviceDrawer via lazyWithReload and export a small helper
+// Note: the router's Layout renders AppShell which reads `useCurrentUser`.
