@@ -6,6 +6,8 @@ import { Topbar, QuickActionsCard } from '../components'
 import Novu from '../components/Inbox'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { SkeletonDashboard } from '../components/Skeleton'
+import { EmptyState } from '../components/EmptyState'
+import { I } from '../icons'
 
 // ─── Skeleton primitives ─────────────────────────────────────────────────────
 
@@ -172,17 +174,26 @@ function ClientsCard({ clients }) {
   return (
     <div className="card" style={{ padding: 20 }}>
       <div className="card-title">Derniers clients</div>
-      {clients.map((c) => (
-        <div key={c.id} className="feed-row">
-          <div className="avatar">{c.name?.[0] ?? '?'}</div>
-          <div className="feed-info">
-            <div className="feed-name">{c.name}</div>
-            <div className="feed-sub">{c.phone ?? '—'}</div>
+      {clients.length === 0 ? (
+        <EmptyState
+          variant="compact"
+          icon={<I.Users size={24} />}
+          title="Aucun client récent"
+          description="Les derniers clients inscrits apparaîtront ici."
+        />
+      ) : (
+        clients.map((c) => (
+          <div key={c.id} className="feed-row">
+            <div className="avatar">{c.name?.[0] ?? '?'}</div>
+            <div className="feed-info">
+              <div className="feed-name">{c.name}</div>
+              <div className="feed-sub">{c.phone ?? '—'}</div>
+            </div>
+            <div className="feed-amount">{fmt(c.balance)}</div>
+            <div className={`badge badge-${c.status}`}>{c.status}</div>
           </div>
-          <div className="feed-amount">{fmt(c.balance)}</div>
-          <div className={`badge badge-${c.status}`}>{c.status}</div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   )
 }
@@ -193,17 +204,26 @@ function TransactionsCard({ tx }) {
   return (
     <div className="card" style={{ padding: 20 }}>
       <div className="card-title">Transactions récentes</div>
-      {tx.map((t) => (
-        <div key={t._id} className="feed-row">
-          <div className={`tx-icon tx-${t.type}`}>{t.type === 'deposit' ? '↓' : '↑'}</div>
-          <div className="feed-info">
-            <div className="feed-name">{t.customerName}</div>
-            <div className="feed-sub">{new Date(t.timestamp).toLocaleDateString('fr-FR')}</div>
+      {tx.length === 0 ? (
+        <EmptyState
+          variant="compact"
+          icon={<I.Receipt size={24} />}
+          title="Aucune transaction récente"
+          description="Les dernières transactions de l'agence apparaîtront ici."
+        />
+      ) : (
+        tx.map((t) => (
+          <div key={t._id} className="feed-row">
+            <div className={`tx-icon tx-${t.type}`}>{t.type === 'deposit' ? '↓' : '↑'}</div>
+            <div className="feed-info">
+              <div className="feed-name">{t.customerName}</div>
+              <div className="feed-sub">{new Date(t.timestamp).toLocaleDateString('fr-FR')}</div>
+            </div>
+            <div className={`feed-amount ${t.type}`}>{fmt(t.amount)}</div>
+            <div className={`badge badge-${t.status}`}>{t.status}</div>
           </div>
-          <div className={`feed-amount ${t.type}`}>{fmt(t.amount)}</div>
-          <div className={`badge badge-${t.status}`}>{t.status}</div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   )
 }
@@ -214,26 +234,35 @@ function ActivityFeed({ feed }) {
   return (
     <div className="card" style={{ padding: 20 }}>
       <div className="card-title">Activité récente</div>
-      {feed.map((item) => (
-        <div key={item.id} className="feed-row">
-          <div className={`tx-icon tx-${item.type}`}>
-            {item.kind === 'reconciliation' ? '⚖' : item.type === 'deposit' ? '↓' : '↑'}
-          </div>
-          <div className="feed-info">
-            <div className="feed-name">{item.customer}</div>
-            <div className="feed-sub">
-              {item.kind === 'reconciliation'
-                ? 'Réconciliation'
-                : item.type === 'deposit'
-                  ? 'Dépôt'
-                  : 'Retrait'}
-              {item.ref ? ` · ${item.ref}` : ''}
+      {feed.length === 0 ? (
+        <EmptyState
+          variant="compact"
+          icon={<I.Bell size={24} />}
+          title="Aucune activité récente"
+          description="Les dernières actions de votre agence apparaîtront ici."
+        />
+      ) : (
+        feed.map((item) => (
+          <div key={item.id} className="feed-row">
+            <div className={`tx-icon tx-${item.type}`}>
+              {item.kind === 'reconciliation' ? '⚖' : item.type === 'deposit' ? '↓' : '↑'}
             </div>
+            <div className="feed-info">
+              <div className="feed-name">{item.customer}</div>
+              <div className="feed-sub">
+                {item.kind === 'reconciliation'
+                  ? 'Réconciliation'
+                  : item.type === 'deposit'
+                    ? 'Dépôt'
+                    : 'Retrait'}
+                {item.ref ? ` · ${item.ref}` : ''}
+              </div>
+            </div>
+            <div className="feed-amount">{fmt(item.amount)}</div>
+            <div className="feed-time">{timeAgo(item.timestamp)}</div>
           </div>
-          <div className="feed-amount">{fmt(item.amount)}</div>
-          <div className="feed-time">{timeAgo(item.timestamp)}</div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   )
 }
@@ -244,24 +273,33 @@ function GoalsCard({ goals }) {
   return (
     <div className="card" style={{ padding: 20 }}>
       <div className="card-title">Objectifs d'épargne</div>
-      {goals.map((g) => (
-        <div key={g._id} style={{ marginBottom: 14 }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: 13,
-              marginBottom: 4,
-            }}
-          >
-            <span>{g.name}</span>
-            <span style={{ color: 'var(--ink-3)' }}>{g.pct ?? 0}%</span>
+      {goals.length === 0 ? (
+        <EmptyState
+          variant="compact"
+          icon={<I.Star size={24} />}
+          title="Aucun objectif d'épargne"
+          description="Les objectifs d'épargne actifs de l'agence apparaîtront ici."
+        />
+      ) : (
+        goals.map((g) => (
+          <div key={g._id} style={{ marginBottom: 14 }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: 13,
+                marginBottom: 4,
+              }}
+            >
+              <span>{g.name}</span>
+              <span style={{ color: 'var(--ink-3)' }}>{g.pct ?? 0}%</span>
+            </div>
+            <div className="progress-track">
+              <div className="progress-fill" style={{ width: `${Math.min(g.pct ?? 0, 100)}%` }} />
+            </div>
           </div>
-          <div className="progress-track">
-            <div className="progress-fill" style={{ width: `${Math.min(g.pct ?? 0, 100)}%` }} />
-          </div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   )
 }
