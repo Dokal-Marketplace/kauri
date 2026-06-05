@@ -3307,3 +3307,173 @@ textarea.input {
   background: oklch(0.28 0.04 25);
   border-color: oklch(0.38 0.07 25);
 }
+
+/* ── BindDeviceDrawer: tab strip ── */
+.bdd-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 10px 20px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+
+.bdd-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  background: transparent;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+  bottom: -1px; /* sit flush on the border-bottom of .bdd-tabs */
+  transition:
+    color 0.12s,
+    background 0.12s;
+}
+
+.bdd-tab svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.bdd-tab:hover {
+  color: var(--ink);
+  background: var(--surface-inset);
+}
+
+.bdd-tab.on {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--border-subtle);
+  border-bottom-color: var(--surface); /* masks the parent border */
+  box-shadow: var(--shadow-sm);
+}
+
+.bdd-tab.on svg {
+  color: var(--brand);
+  opacity: 1;
+}
+
+/* ── QR scanner (camera) wrapper ── */
+.bdd-qr-scanner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0 8px;
+}
+
+.bdd-video-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--r-md);
+  background: #fff;
+  padding: 10px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    filter 0.4s,
+    opacity 0.4s;
+}
+
+.bdd-video-wrap video,
+.bdd-video-wrap canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: calc(var(--r-md) - 2px);
+  display: block;
+}
+
+.bdd-video-wrap--expired {
+  filter: grayscale(1) opacity(0.4);
+}
+
+/* Dark-mode inversion: keep QR viewfinder on white */
+.app[data-theme='dark'] .bdd-video-wrap {
+  background: oklch(0.95 0 0);
+}
+
+/* ── 6-digit PIN entry ── */
+.bdd-pin-entry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0 4px;
+  flex-wrap: wrap;
+}
+
+.bdd-pin-input {
+  width: 42px;
+  height: 52px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  outline: none;
+  caret-color: var(--brand);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    color 0.15s;
+  /* prevent mobile zoom on iOS */
+  font-size: max(22px, 1rem);
+}
+
+.bdd-pin-input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px oklch(0.66 0.145 42 / 0.14);
+}
+
+.bdd-pin-input:disabled,
+.bdd-pin-input--expired {
+  color: var(--ink-3);
+  border-color: var(--border);
+  background: var(--surface-inset);
+  cursor: not-allowed;
+}
+
+/* Separator between digit groups (e.g. after digit 3) */
+.bdd-pin-sep {
+  color: var(--ink-4);
+  font-size: 18px;
+  font-family: var(--font-mono);
+  user-select: none;
+  opacity: 0.45;
+  margin: 0 -2px;
+}
+
+/* ── helper / credential note ── */
+.bdd-cred-note {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  text-align: center;
+  line-height: 1.55;
+  padding: 0 4px;
+}
+
+.bdd-cred-note strong {
+  color: var(--ink-2);
+  font-weight: 550;
+}

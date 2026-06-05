@@ -191,6 +191,11 @@ export const listUnbound = query({
     // require manager/permission to bind devices in this tenant
     await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
 
+    // Ensure the caller can only query their own branch
+    if (args.branchId !== caller.branchId) {
+      throw new Error('Unauthorized: cannot list devices from a different branch')
+    }
+
     const devices = await ctx.db
       .query('devices')
       .withIndex('by_branch', (q) => q.eq('branchId', args.branchId))

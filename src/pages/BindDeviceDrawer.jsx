@@ -96,7 +96,11 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
     isLoaded && agent?.id ? { agentId: agent.id } : 'skip'
   )
   useEffect(() => {
-    if (agentDoc?.device?.serialNumber && creds) {
+    if (
+      creds &&
+      agentDoc?.device?.serialNumber === creds.deviceSerial &&
+      agentDoc?.device?.serialNumber !== agent.device?.serialNumber
+    ) {
       const tBanner = setTimeout(() => setSuccessBanner(true), 0)
       const tClose = setTimeout(onClose, 1400)
       return () => {
@@ -124,7 +128,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
     setLoading(true)
     setGenError(null)
     try {
-      const res = await generateCreds({ deviceId: selectedDeviceId })
+      const res = await generateCreds({ deviceId: selectedDeviceId, agentId: agent.id })
       const normalized = {
         token: res?.token ?? '',
         pin: res?.pin ?? '------',
@@ -171,7 +175,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
                   if (token) {
                     setLoading(true)
                     try {
-                      await claimByToken({ token })
+                      await claimByToken({ token, agentId: agent.id })
                       setSuccessBanner(true)
                       setTimeout(onClose, 1200)
                       return
@@ -226,9 +230,13 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
 
   const handlePinChange = async (e, idx) => {
     const v = e.target.value.replace(/[^0-9]/g, '')
-    if (!v) return
-    const digit = v.slice(-1)
     const next = [...pinDigits]
+    if (v === '') {
+      next[idx] = ''
+      setPinDigits(next)
+      return
+    }
+    const digit = v.slice(-1)
     next[idx] = digit
     setPinDigits(next)
     if (idx < 5) focusInput(idx + 1)
@@ -237,7 +245,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
       setLoading(true)
       setPinError(null)
       try {
-        await claimByPin({ pin: combined })
+        await claimByPin({ pin: combined, agentId: agent.id })
         setSuccessBanner(true)
         setTimeout(onClose, 1200)
       } catch (err) {
@@ -266,7 +274,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
         setLoading(true)
         setPinError(null)
         try {
-          await claimByPin({ pin: arr.join('') })
+          await claimByPin({ pin: arr.join(''), agentId: agent.id })
           setSuccessBanner(true)
           setTimeout(onClose, 1200)
         } catch (err) {
