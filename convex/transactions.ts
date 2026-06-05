@@ -195,7 +195,10 @@ export const summarizeByAgent = query({
 
     const agent = await resolveAgent(ctx, identity.subject)
 
-    await authz.withTenant(agent.branchId).require(ctx, identity.subject, 'transactions:audit')
+    const allowed = await authz
+      .withTenant(agent.branchId)
+      .can(ctx, identity.subject, 'transactions:audit')
+    if (!allowed) return {}
 
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
