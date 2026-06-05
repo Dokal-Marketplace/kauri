@@ -1,9 +1,10 @@
-import { StrictMode, useEffect } from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ConvexReactClient } from 'convex/react'
-import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-react'
+import { ClerkProvider, useAuth } from '@clerk/clerk-react'
 import { ConvexProviderWithClerk } from 'convex/react-clerk'
 import * as Sentry from '@sentry/react'
+import { SentryUserSync } from './components/SentryUserSync'
 import './styles.css'
 import App from './App'
 
@@ -20,18 +21,6 @@ Sentry.init({
 })
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
-
-function SentryUserSync() {
-  const { user, isSignedIn } = useUser()
-  useEffect(() => {
-    if (isSignedIn && user) {
-      Sentry.setUser({ id: user.id, email: user.primaryEmailAddress?.emailAddress })
-    } else {
-      Sentry.setUser(null)
-    }
-  }, [isSignedIn, user])
-  return null
-}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
