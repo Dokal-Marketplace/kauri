@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import * as Sentry from '@sentry/react'
 
 /**
  * Wraps React.lazy() so that if a dynamic chunk fails to fetch
@@ -18,6 +19,7 @@ export function lazyWithReload(factory) {
         // Return a never-resolving promise so React doesn't render garbage
         return new Promise(() => {})
       }
+      Sentry.captureException(err, { tags: { surface: 'chunk-load' } })
       throw err
     })
   )
