@@ -1,6 +1,8 @@
-import { Component, Suspense } from 'react'
+import { Suspense } from 'react'
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom'
+import { wrapCreateBrowserRouterV7 } from '@sentry/react'
 import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react'
+import * as Sentry from '@sentry/react'
 import { Sidebar } from './components'
 import { lazyWithReload } from './utils/lazyWithReload'
 import { OnboardingWizard } from './components/OnboardingWizard'
@@ -17,26 +19,15 @@ const ReconciliationPage = lazyWithReload(() => import('./pages/ReconciliationPa
 const SettingsPage = lazyWithReload(() => import('./pages/SettingsPage'))
 const DisbursementsPage = lazyWithReload(() => import('./pages/DisbursementsPage'))
 
-// ─── Error boundary ────────────────────────────────────────────────────────────
-class ChunkErrorBoundary extends Component {
-  constructor(props) {
-    super(props)
-    this.state = { hasError: false }
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true }
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{ padding: '2rem', textAlign: 'center' }}>
-          <p>Cette page n&apos;a pas pu se charger.</p>
-          <button onClick={() => window.location.reload()}>Réessayer</button>
-        </div>
-      )
-    }
-    return this.props.children
-  }
+// ─── Error fallbacks ───────────────────────────────────────────────────────────
+function PageErrorFallback({ eventId }) {
+  return (
+    <div style={{ padding: '2rem', textAlign: 'center' }}>
+      <p>Cette page a rencontré une erreur.</p>
+      {eventId && <p style={{ fontSize: '0.75rem', color: '#888' }}>Référence&nbsp;: {eventId}</p>}
+      <button onClick={() => window.location.reload()}>Réessayer</button>
+    </div>
+  )
 }
 
 // ─── Layout ────────────────────────────────────────────────────────────────────
@@ -53,11 +44,11 @@ function AppShell() {
       <div className="app">
         <Sidebar />
         <main className="main">
-          <ChunkErrorBoundary>
+          <Sentry.ErrorBoundary fallback={PageErrorFallback} showDialog>
             <Suspense fallback={null}>
               <Outlet />
             </Suspense>
-          </ChunkErrorBoundary>
+          </Sentry.ErrorBoundary>
         </main>
       </div>
     </TenantsProvider>
@@ -81,7 +72,8 @@ function Layout() {
 }
 
 // ─── Router ────────────────────────────────────────────────────────────────────
-const router = createBrowserRouter([
+const createSentryRouter = wrapCreateBrowserRouterV7(createBrowserRouter)
+const router = createSentryRouter([
   {
     path: '/',
     element: <Layout />,

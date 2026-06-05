@@ -20,15 +20,31 @@ Sentry.init({
   ],
 })
 
+window.addEventListener('unhandledrejection', (event) => {
+  Sentry.captureException(event.reason)
+})
+
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
+
+function AppCrashFallback({ eventId }) {
+  return (
+    <div style={{ padding: '4rem', textAlign: 'center' }}>
+      <p>L&apos;application a rencontré une erreur inattendue.</p>
+      {eventId && <p style={{ fontSize: '0.75rem', color: '#888' }}>Référence&nbsp;: {eventId}</p>}
+      <button onClick={() => window.location.reload()}>Recharger</button>
+    </div>
+  )
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
-      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-        <SentryUserSync />
-        <App />
-      </ConvexProviderWithClerk>
-    </ClerkProvider>
+    <Sentry.ErrorBoundary fallback={AppCrashFallback}>
+      <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
+        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+          <SentryUserSync />
+          <App />
+        </ConvexProviderWithClerk>
+      </ClerkProvider>
+    </Sentry.ErrorBoundary>
   </StrictMode>
 )
