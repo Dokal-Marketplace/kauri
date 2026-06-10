@@ -69,7 +69,7 @@ function mapAgent(u, branchName, agentStats = {}) {
     initials,
     name: u.fullName,
     phone: u.phoneNumber,
-    role: 'Agent terrain',
+    role: 'Administrateur',
     branch: branchName || '—',
     status: u.status === 'active' ? 'en ligne' : 'hors ligne',
     last: formatLastSync(d?.lastSync),

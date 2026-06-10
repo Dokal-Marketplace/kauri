@@ -21,6 +21,7 @@ import type * as invitations from "../invitations.js";
 import type * as products from "../products.js";
 import type * as reconciliation from "../reconciliation.js";
 import type * as seed from "../seed.js";
+import type * as seedDevices from "../seedDevices.js";
 import type * as transactions from "../transactions.js";
 import type * as users from "../users.js";
 
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   products: typeof products;
   reconciliation: typeof reconciliation;
   seed: typeof seed;
+  seedDevices: typeof seedDevices;
   transactions: typeof transactions;
   users: typeof users;
 }>;

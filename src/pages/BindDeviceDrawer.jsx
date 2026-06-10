@@ -90,6 +90,19 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
   // success banner
   const [successBanner, setSuccessBanner] = useState(false)
 
+  // copy PIN feedback
+  const [copied, setCopied] = useState(false)
+  const handleCopyPin = useCallback(async () => {
+    if (!creds?.pin || copied) return
+    try {
+      await navigator.clipboard.writeText(creds.pin)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      /* fallback: select text */
+    }
+  }, [creds, copied])
+
   // watch for agent doc changes (assigned device) to auto-close
   const agentDoc = useQuery(
     api.agents.getById,
@@ -425,35 +438,51 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
                 </div>
 
                 <div className={`bdd-cred-panel${expired ? ' bdd-cred-panel--expired' : ''}`}>
-                  <div className="bdd-pin-entry">
-                    <div className="bdd-cred-label">Entrez le PIN à 6 chiffres</div>
-                    <div
-                      onPaste={handlePinPaste}
-                      style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8 }}
-                    >
-                      {pinDigits.map((d, i) => (
-                        <input
-                          key={i}
-                          ref={(el) => (pinInputs.current[i] = el)}
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          maxLength={1}
-                          value={d}
-                          onChange={(e) => handlePinChange(e, i)}
-                          onKeyDown={(e) => handlePinKeyDown(e, i)}
-                          aria-label={`Chiffre ${i + 1}`}
-                          className="bdd-pin-input"
-                        />
-                      ))}
+                  <div className="bdd-cred-label">Code PIN à communiquer à l'agent</div>
+                  <div
+                    className={`bdd-pin-code${copied ? ' bdd-pin-code--copied' : ''}`}
+                    onClick={handleCopyPin}
+                    role="button"
+                    tabIndex={0}
+                    title="Cliquer pour copier"
+                  >
+                    <span>{creds.pin.slice(0, 3)}</span>
+                    <span className="bdd-pin-code__sep">–</span>
+                    <span>{creds.pin.slice(3)}</span>
+                    <span className="bdd-pin-code__copy">{copied ? '✓' : '⧉'}</span>
+                  </div>
+                  <div className="bdd-pin-code__hint">
+                    {copied ? 'Copié dans le presse-papiers' : 'Cliquer pour copier'}
+                  </div>
+                  <div className="bdd-cred-label" style={{ marginTop: 16 }}>
+                    Entrez le PIN à 6 chiffres
+                  </div>
+                  <div
+                    onPaste={handlePinPaste}
+                    style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8 }}
+                  >
+                    {pinDigits.map((d, i) => (
+                      <input
+                        key={i}
+                        ref={(el) => (pinInputs.current[i] = el)}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={1}
+                        value={d}
+                        onChange={(e) => handlePinChange(e, i)}
+                        onKeyDown={(e) => handlePinKeyDown(e, i)}
+                        aria-label={`Chiffre ${i + 1}`}
+                        className="bdd-pin-input"
+                      />
+                    ))}
+                  </div>
+                  {pinError && (
+                    <div className="bdd-error" role="alert" style={{ marginTop: 8 }}>
+                      {pinError}
                     </div>
-                    {pinError && (
-                      <div className="bdd-error" role="alert" style={{ marginTop: 8 }}>
-                        {pinError}
-                      </div>
-                    )}
-                    <div className="bdd-cred-note" style={{ marginTop: 10 }}>
-                      Vous n'avez pas de code ? Demandez à votre responsable.
-                    </div>
+                  )}
+                  <div className="bdd-cred-note" style={{ marginTop: 10 }}>
+                    Vous n'avez pas de code ? Demandez à votre responsable.
                   </div>
 
                   <Countdown secondsLeft={secondsLeft} expired={expired} />
