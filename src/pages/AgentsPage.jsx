@@ -1,5 +1,5 @@
 //pages/AgentsPage.jsx
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { useCurrentUser } from '../hooks/useCurrentUser'
@@ -15,7 +15,25 @@ const ROLE_TAGS = {
   Superviseure: { bg: 'oklch(0.94 0.05 270)', fg: 'oklch(0.4 0.13 270)' },
   'Agent terrain': { bg: 'var(--surface-inset)', fg: 'var(--ink-2)' },
   Caissière: { bg: 'oklch(0.95 0.04 190)', fg: 'oklch(0.4 0.1 190)' },
+  'Admin IT': { bg: 'oklch(0.94 0.04 30)', fg: 'oklch(0.4 0.12 30)' },
 }
+
+// Maps authz role keys → display labels used in ROLE_TAGS
+const ROLE_KEY_TO_LABEL = {
+  admin: 'Administrateur',
+  supervisor: 'Superviseure',
+  field_agent: 'Agent terrain',
+  accountant: 'Caissière',
+  it_admin: 'Admin IT',
+}
+
+// Options shown in the “Nouvel agent” role selector (admin excluded — reserved for onboarding)
+const ASSIGNABLE_ROLES = [
+  { value: 'field_agent', label: 'Agent terrain' },
+  { value: 'supervisor', label: 'Superviseure' },
+  { value: 'accountant', label: 'Caissière' },
+  { value: 'it_admin', label: 'Admin IT' },
+]
 
 const STATUS_DOT = {
   'en ligne': 'var(--pos)',
@@ -69,7 +87,7 @@ function mapAgent(u, branchName, agentStats = {}) {
     initials,
     name: u.fullName,
     phone: u.phoneNumber,
-    role: 'Administrateur',
+    role: ROLE_KEY_TO_LABEL[u.role] ?? 'Agent terrain',
     branch: branchName || '—',
     status: u.status === 'active' ? 'en ligne' : 'hors ligne',
     last: formatLastSync(d?.lastSync),
@@ -155,44 +173,258 @@ function SyncTag({ d }) {
   return <span className="tag archive">Hors service</span>
 }
 
-function NewAgentModal({ onClose }) {
+const PHONE_REGEX = /^\+?[0-9\s-]{8,15}$/
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function NewAgentModal({ isOpen, onClose, onSuccess }) {
+  const createAgent = useMutation(api.agents.createAgent)
+
+  const [formState, setFormState] = useState({
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    role: 'field_agent',
+    isLoading: false,
+    errors: {
+      form: null,
+      email: null,
+      phoneNumber: null,
+    },
+  })
+
+  const { fullName, email, phoneNumber, role, isLoading, errors } = formState
+
+  // ── Escape key handler ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !isLoading) onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, isLoading, onClose])
+
+  // ── Validation ──────────────────────────────────────────────────────────────
+  const validate = () => {
+    const next = { form: null, email: null, phoneNumber: null }
+    let valid = true
+
+    if (!fullName.trim() || !email.trim() || !phoneNumber.trim() || !role) {
+      next.form = 'Tous les champs sont obligatoires.'
+      valid = false
+    }
+
+    if (email.trim() && !EMAIL_REGEX.test(email.trim())) {
+      next.email = 'Format d\u2019email invalide. Exemple : agent@dokal.com'
+      valid = false
+    }
+
+    if (phoneNumber.trim() && !PHONE_REGEX.test(phoneNumber.trim())) {
+      next.phoneNumber = 'Format invalide. Exemple : +226 XX XX XX XX'
+      valid = false
+    }
+
+    setFormState((prev) => ({ ...prev, errors: next }))
+    return valid
+  }
+
+  // ── Submit ──────────────────────────────────────────────────────────────────
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!validate()) return
+
+    setFormState((prev) => ({
+      ...prev,
+      isLoading: true,
+      errors: { form: null, email: null, phoneNumber: null },
+    }))
+
+    try {
+      await createAgent({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phoneNumber: phoneNumber.trim(),
+        role,
+      })
+    } catch (err) {
+      const rawMessage = typeof err?.message === 'string' ? err.message : ''
+      let nextErrors = {
+        form: 'Une erreur est survenue. Veuillez réessayer.',
+        email: null,
+        phoneNumber: null,
+      }
+
+      if (/email/i.test(rawMessage)) {
+        nextErrors = { form: null, email: 'Cet email est déjà enregistré.', phoneNumber: null }
+      } else if (/phone|téléphone/i.test(rawMessage)) {
+        nextErrors = { form: null, email: null, phoneNumber: 'Ce numéro est déjà enregistré.' }
+      }
+
+      setFormState((prev) => ({ ...prev, isLoading: false, errors: nextErrors }))
+      return
+    }
+
+    setFormState({
+      fullName: '',
+      email: '',
+      phoneNumber: '',
+      role: 'field_agent',
+      isLoading: false,
+      errors: { form: null, email: null, phoneNumber: null },
+    })
+    onClose()
+    onSuccess?.()
+  }
+
+  if (!isOpen) return null
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 100,
-        background: 'rgba(0,0,0,0.4)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: 'var(--surface)',
-          borderRadius: 12,
-          padding: 28,
-          minWidth: 360,
-          boxShadow: 'var(--shadow-md)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ fontWeight: 650, fontSize: 15, marginBottom: 16 }}>Nouvel agent</div>
-        <p style={{ color: 'var(--ink-2)', fontSize: 13, marginBottom: 20 }}>
-          Formulaire d&apos;invitation à implémenter (nom, téléphone, rôle, agence).
-        </p>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button className="btn" onClick={onClose}>
-            Annuler
-          </button>
-          <button className="btn brand" onClick={onClose}>
-            Inviter
+    <>
+      {/* Scrim */}
+      <div className="modal-scrim" onClick={isLoading ? undefined : onClose} />
+
+      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="agent-modal-title">
+        {/* Header */}
+        <div className="modal-head">
+          <h2 id="agent-modal-title">Nouvel agent</h2>
+          <button
+            className="btn ghost sm"
+            onClick={onClose}
+            disabled={isLoading}
+            aria-label="Fermer"
+            style={{ padding: 6 }}
+          >
+            ✕
           </button>
         </div>
+
+        {/* Body */}
+        <form onSubmit={handleSubmit} className="modal-body" noValidate>
+          {/* Form-level error */}
+          {errors.form && (
+            <div
+              role="alert"
+              style={{
+                padding: 12,
+                marginBottom: 16,
+                backgroundColor: 'var(--red-1)',
+                border: '1px solid var(--red-2)',
+                borderRadius: 6,
+                fontSize: 13,
+                color: 'var(--red-6)',
+              }}
+            >
+              {errors.form}
+            </div>
+          )}
+
+          {/* Full name */}
+          <div className="form-group">
+            <label className="form-label" htmlFor="agent-full-name">
+              Nom complet
+            </label>
+            <input
+              id="agent-full-name"
+              type="text"
+              className="form-input"
+              value={fullName}
+              onChange={(e) => setFormState((prev) => ({ ...prev, fullName: e.target.value }))}
+              placeholder="Prénom et Nom"
+              disabled={isLoading}
+              autoFocus
+            />
+          </div>
+
+          {/* Email */}
+          <div className="form-group">
+            <label className="form-label" htmlFor="agent-email">
+              Email
+            </label>
+            <input
+              id="agent-email"
+              type="email"
+              className={`form-input${errors.email ? ' input-error' : ''}`}
+              value={email}
+              onChange={(e) => {
+                setFormState((prev) => ({
+                  ...prev,
+                  email: e.target.value,
+                  errors: { ...prev.errors, email: null },
+                }))
+              }}
+              placeholder="agent@dokal.com"
+              disabled={isLoading}
+              aria-describedby={errors.email ? 'email-error' : undefined}
+              aria-invalid={!!errors.email}
+            />
+            {errors.email && (
+              <p id="email-error" style={{ marginTop: 4, fontSize: 12, color: 'var(--red-6)' }}>
+                {errors.email}
+              </p>
+            )}
+          </div>
+
+          {/* Phone */}
+          <div className="form-group">
+            <label className="form-label" htmlFor="agent-phone">
+              Numéro de téléphone
+            </label>
+            <input
+              id="agent-phone"
+              type="tel"
+              className={`form-input${errors.phoneNumber ? ' input-error' : ''}`}
+              value={phoneNumber}
+              onChange={(e) => {
+                setFormState((prev) => ({
+                  ...prev,
+                  phoneNumber: e.target.value,
+                  errors: { ...prev.errors, phoneNumber: null },
+                }))
+              }}
+              placeholder="+226 XX XX XX XX"
+              disabled={isLoading}
+              aria-describedby={errors.phoneNumber ? 'phone-error' : undefined}
+              aria-invalid={!!errors.phoneNumber}
+            />
+            {errors.phoneNumber && (
+              <p id="phone-error" style={{ marginTop: 4, fontSize: 12, color: 'var(--red-6)' }}>
+                {errors.phoneNumber}
+              </p>
+            )}
+          </div>
+
+          {/* Role */}
+          <div className="form-group">
+            <label className="form-label" htmlFor="agent-role">
+              Rôle
+            </label>
+            <select
+              id="agent-role"
+              className="form-input"
+              value={role}
+              onChange={(e) => setFormState((prev) => ({ ...prev, role: e.target.value }))}
+              disabled={isLoading}
+            >
+              {ASSIGNABLE_ROLES.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn" onClick={onClose} disabled={isLoading}>
+              Annuler
+            </button>
+            <button type="submit" className="btn brand" disabled={isLoading}>
+              {isLoading ? 'Invitation…' : 'Inviter agent'}
+            </button>
+          </div>
+        </form>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -452,7 +684,11 @@ export default function AgentsPage() {
 
   return (
     <div className="agents-page">
-      {showNewAgentModal && <NewAgentModal onClose={() => setShowNewAgentModal(false)} />}
+      <NewAgentModal
+        isOpen={showNewAgentModal}
+        onClose={() => setShowNewAgentModal(false)}
+        onSuccess={() => setShowNewAgentModal(false)}
+      />
 
       {detailAgent && <AgentDetailModal agent={detailAgent} onClose={() => setDetailAgent(null)} />}
       {reassignAgent && (

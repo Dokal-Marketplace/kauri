@@ -3665,3 +3665,86 @@ textarea.input {
   color: var(--ink-2);
   font-weight: 550;
 }
+
+/* ── Modal ── */
+.modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.modal {
+  position: fixed;
+  z-index: 101;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  border-radius: var(--r-md);
+  padding: 28px;
+  min-width: 380px;
+  max-width: 480px;
+  width: 92vw;
+  box-shadow: var(--shadow-md);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.modal-head h2 {
+  font-size: 15px;
+  font-weight: 650;
+  margin: 0;
+  color: var(--ink);
+}
+
+.modal-body .form-group {
+  margin-bottom: 16px;
+}
+
+.modal-body .form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--ink-2);
+  margin-bottom: 5px;
+}
+
+.modal-body .form-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.modal-body .form-input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+.modal-body .form-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-body .form-input.input-error {
+  border-color: oklch(0.58 0.16 30);
+}
+
+/* Red palette for error messages */
+:root {
+  --red-1: oklch(0.97 0.02 30);
+  --red-2: oklch(0.9 0.06 30);
+  --red-6: oklch(0.45 0.16 30);
+}

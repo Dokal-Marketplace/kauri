@@ -29,7 +29,7 @@ export const seedDevicesForBranch = mutation({
     if (!branch) throw new Error('Branch not found')
 
     // Eviter les doublons sur serialNumber
-    
+
     const serialPrefix = 'TPE-${String(branchId)}'
     const existing = await ctx.db
       .query('devices')
