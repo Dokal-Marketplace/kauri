@@ -3,6 +3,7 @@
 // Appeler depuis la Convex dashboard ou un bouton admin temporaire
 
 import { mutation } from './_generated/server'
+import { authz } from './authz'
 
 export const seedDevicesForBranch = mutation({
   args: {},
@@ -18,15 +19,21 @@ export const seedDevicesForBranch = mutation({
     if (!caller) throw new Error('User not found')
 
     const branchId = caller.branchId
+    await authz.withTenant(branchId).require(ctx, identity.subject, 'devices:bind')
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Disabled in production')
+    }
 
     // Vérifier que la branche existe
     const branch = await ctx.db.get(branchId)
     if (!branch) throw new Error('Branch not found')
 
     // Eviter les doublons sur serialNumber
+    
+    const serialPrefix = 'TPE-${String(branchId)}'
     const existing = await ctx.db
       .query('devices')
-      .withIndex('by_serial', (q) => q.eq('serialNumber', 'TPE-SEED-001'))
+      .withIndex('by_serial', (q) => q.eq('serialNumber', `${serialPrefix}-001`))
       .unique()
     if (existing) {
       return { skipped: true, message: 'Devices déjà seedés pour cette session' }
@@ -35,7 +42,7 @@ export const seedDevicesForBranch = mutation({
     const now = Date.now()
 
     const d1 = await ctx.db.insert('devices', {
-      serialNumber: 'TPE-SEED-001',
+      serialNumber: '${serialPrefix}-001',
       model: 'Ingenico iWL250',
       branchId,
       status: 'active',
@@ -46,7 +53,7 @@ export const seedDevicesForBranch = mutation({
     })
 
     const d2 = await ctx.db.insert('devices', {
-      serialNumber: 'TPE-SEED-002',
+      serialNumber: '${serialPrefix}-002',
       model: 'PAX A920',
       branchId,
       status: 'active',
@@ -57,7 +64,7 @@ export const seedDevicesForBranch = mutation({
     })
 
     const d3 = await ctx.db.insert('devices', {
-      serialNumber: 'TPE-SEED-003',
+      serialNumber: '${serialPrefix}-003',
       model: 'Ingenico iWL250',
       branchId,
       status: 'active',
