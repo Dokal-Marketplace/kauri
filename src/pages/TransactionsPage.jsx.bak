@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
 import { I } from '../icons'
 import Novu from '../components/Inbox'
-import { fmt, PageHeader, SearchInput } from '../components'
+import { PageHeader, SearchInput } from '../components'
+import { fmt } from '../utils/fmt'
 
 const PAGE_SIZE = 10
 
