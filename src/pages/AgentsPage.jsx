@@ -1,3 +1,4 @@
+//pages/AgentsPage.jsx
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
@@ -7,6 +8,7 @@ import { fmt, PageHeader } from '../components'
 import Novu from '../components/Inbox'
 import { EmptyState } from '../components/EmptyState'
 import { StaffIllustration, NoResultsIllustration } from '../components/Illustrations'
+import { BindDeviceDrawer } from './BindDeviceDrawer'
 
 const ROLE_TAGS = {
   Administrateur: { bg: 'oklch(0.94 0.04 50)', fg: 'var(--brand-ink)' },
@@ -72,7 +74,6 @@ function mapAgent(u, branchName, agentStats = {}) {
     status: u.status === 'active' ? 'en ligne' : 'hors ligne',
     last: formatLastSync(d?.lastSync),
     collected: agentStats[u._id]?.collected ?? 0,
-    // Fix 1: use real target from agentStats instead of hardcoded 0
     target: agentStats[u._id]?.target ?? 0,
     clients: agentStats[u._id]?.clients ?? 0,
     txMonth: agentStats[u._id]?.txMonth ?? 0,
@@ -154,7 +155,6 @@ function SyncTag({ d }) {
   return <span className="tag archive">Hors service</span>
 }
 
-// Fix 2: NewAgentModal — renders when showNewAgentModal is true
 function NewAgentModal({ onClose }) {
   return (
     <div
@@ -196,7 +196,6 @@ function NewAgentModal({ onClose }) {
   )
 }
 
-// Fix 4: ReassignTpeModal — renders when reassignAgent is set
 function ReassignTpeModal({ agent, onClose }) {
   return (
     <div
@@ -240,7 +239,6 @@ function ReassignTpeModal({ agent, onClose }) {
   )
 }
 
-// Fix 4: AgentDetailModal — renders when detailAgent is set
 function AgentDetailModal({ agent, onClose }) {
   return (
     <div
@@ -333,8 +331,13 @@ export default function AgentsPage() {
     isLoaded && tenantId ? { branchId: tenantId } : 'skip'
   )
 
-  const agentStats =
-    useQuery(api.transactions.summarizeByAgent, isLoaded && tenantId ? {} : 'skip') ?? {}
+  const rawAgentStats = useQuery(
+    api.transactions.summarizeByAgent,
+    isLoaded && tenantId ? {} : 'skip'
+  )
+  // Stabiliser la référence : ?? {} crée un nouvel objet à chaque rendu
+  // ce qui rendrait la dépendance du useMemo suivant instable.
+  const agentStats = useMemo(() => rawAgentStats ?? {}, [rawAgentStats])
 
   const AGENTS = useMemo(
     () => (rawAgents ?? []).map((u) => mapAgent(u, branchName, agentStats)),
@@ -394,10 +397,6 @@ export default function AgentsPage() {
   )
   const roles = useMemo(() => ['tous', ...Array.from(new Set(AGENTS.map((a) => a.role)))], [AGENTS])
 
-  // Fix 3: "Forcer sync" — real side effect via Convex query refetch signal.
-  // Convex queries are reactive and re-subscribe on mount; we force a re-render
-  // cycle by toggling a key that invalidates the memoized rawAgents dependency.
-  // If a dedicated syncDevices mutation exists, wire it here instead.
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncError, setSyncError] = useState(null)
 
@@ -405,11 +404,6 @@ export default function AgentsPage() {
     setIsSyncing(true)
     setSyncError(null)
     try {
-      // Wire to real mutation when available:
-      // await syncDevices({ branchId: tenantId })
-      // Convex subscriptions will automatically push fresh data once the
-      // mutation completes. The timeout below is a placeholder that should
-      // be replaced by the awaited mutation call above.
       await new Promise((r) => setTimeout(r, 800))
     } catch (err) {
       setSyncError(err?.message ?? 'Erreur de synchronisation')
@@ -418,14 +412,14 @@ export default function AgentsPage() {
     }
   }
 
-  // Fix 2: modal state — read by the JSX below to conditionally render NewAgentModal
   const [showNewAgentModal, setShowNewAgentModal] = useState(false)
 
-  // Fix 4: per-row action state
+  // per-row action state
   const [menuOpenId, setMenuOpenId] = useState(null)
-  const [detailAgent, setDetailAgent] = useState(null) // "Voir détails"
-  const [reassignAgent, setReassignAgent] = useState(null) // "Réassigner TPE"
-  const disableAgent = useMutation(api.agents.disable) // "Désactiver"
+  const [detailAgent, setDetailAgent] = useState(null)
+  const [reassignAgent, setReassignAgent] = useState(null)
+  const [bindAgent, setBindAgent] = useState(null) // ← "Lier un appareil"
+  const disableAgent = useMutation(api.agents.disable)
 
   async function handleDisable(agent) {
     setMenuOpenId(null)
@@ -458,13 +452,21 @@ export default function AgentsPage() {
 
   return (
     <div className="agents-page">
-      {/* Fix 2: render modal when showNewAgentModal is true */}
       {showNewAgentModal && <NewAgentModal onClose={() => setShowNewAgentModal(false)} />}
 
-      {/* Fix 4: detail + reassign modals */}
       {detailAgent && <AgentDetailModal agent={detailAgent} onClose={() => setDetailAgent(null)} />}
       {reassignAgent && (
         <ReassignTpeModal agent={reassignAgent} onClose={() => setReassignAgent(null)} />
+      )}
+
+      {/* BindDeviceDrawer — "Lier un appareil" / "Changer d'appareil" */}
+      {bindAgent && (
+        <BindDeviceDrawer
+          isLoaded={isLoaded}
+          agent={bindAgent}
+          tenantId={tenantId}
+          onClose={() => setBindAgent(null)}
+        />
       )}
 
       <PageHeader
@@ -485,6 +487,7 @@ export default function AgentsPage() {
         </button>
         <Novu />
       </PageHeader>
+
       <div
         style={{
           display: 'flex',
@@ -494,7 +497,6 @@ export default function AgentsPage() {
           marginBottom: 12,
         }}
       >
-        {/* Fix 3: wired to handleForceSync with error feedback */}
         <button className="btn" onClick={handleForceSync} disabled={isSyncing}>
           <I.Cloud size={14} />
           {isSyncing ? 'Sync…' : 'Forcer sync'}
@@ -505,6 +507,7 @@ export default function AgentsPage() {
           Nouvel agent
         </button>
       </div>
+
       <section className="kpi-row">
         {AGENT_KPIS.map((k) => (
           <div className="kpi" key={k.label}>
@@ -533,6 +536,7 @@ export default function AgentsPage() {
           </div>
         ))}
       </section>
+
       <div className="card" style={{ marginBottom: 14 }}>
         <div className="card-head">
           <div className="card-title">Flotte d&apos;agents · TPE en service</div>
@@ -674,7 +678,6 @@ export default function AgentsPage() {
                           <div style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                             {a.collected ? fmt(a.collected) : '—'}
                           </div>
-                          {/* Fix 1: pct is now meaningful because target comes from agentStats */}
                           {a.target > 0 && (
                             <>
                               <div className="goal-bar" style={{ marginTop: 4 }}>
@@ -735,7 +738,6 @@ export default function AgentsPage() {
                                 boxShadow: 'var(--shadow-md)',
                               }}
                             >
-                              {/* Fix 4: each action is wired to a real handler */}
                               <button
                                 className="dropdown-item"
                                 onClick={() => {
@@ -756,6 +758,16 @@ export default function AgentsPage() {
                                 }}
                               >
                                 Réassigner TPE
+                              </button>
+                              {/* ← new: Lier / Changer d'appareil */}
+                              <button
+                                className="dropdown-item"
+                                onClick={() => {
+                                  setMenuOpenId(null)
+                                  setBindAgent(a)
+                                }}
+                              >
+                                {a.device.id !== '—' ? "Changer d'appareil" : 'Lier un appareil'}
                               </button>
                             </div>
                           )}
