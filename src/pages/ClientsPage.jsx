@@ -210,7 +210,7 @@ export default function ClientsPage() {
 
   // Convex hooks
   const clientsRaw = useQuery(api.customers.listByBranch, isLoaded && branchId ? {} : 'skip')
-  const clients = clientsRaw ?? []
+  const clients = useMemo(() => clientsRaw ?? [], [clientsRaw])
   const clientsLoading = isLoaded && branchId && clientsRaw === undefined
 
   const createProspectMutation = useMutation(api.customers.createProspect)

@@ -121,7 +121,7 @@ export default function ProductsPage() {
   const canManage = useQuery(api.products.canManageProducts) ?? false
   const upsert = useMutation(api.products.upsert)
 
-  const products = rawProducts?.map(fromConvex) ?? []
+  const products = useMemo(() => rawProducts?.map(fromConvex) ?? [], [rawProducts])
   const isLoading = rawProducts === undefined
 
   const [seg, setSeg] = useState('tous')
