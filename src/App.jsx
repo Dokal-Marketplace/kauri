@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Component, Suspense } from 'react'
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom'
 import { wrapCreateBrowserRouterV7 } from '@sentry/react'
 import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react'
