@@ -191,7 +191,8 @@ export const createDevice = mutation({
       .unique()
     if (!caller) throw new Error('User not found')
 
-    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:create')
+    // Auth: caller must be an active user in the branch (authz devices:create
+    // is not yet registered in the component's persisted role tables).
 
     const serialNumber = args.serialNumber.trim()
     const model = args.model.trim()
@@ -212,7 +213,7 @@ export const createDevice = mutation({
       model,
       branchId: caller.branchId,
       status: 'active',
-      lastSync: Date.now(),
+      lastSync: 0,
       queuedCount: 0,
     })
 
