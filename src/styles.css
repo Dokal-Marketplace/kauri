@@ -3748,3 +3748,32 @@ textarea.input {
   --red-2: oklch(0.9 0.06 30);
   --red-6: oklch(0.45 0.16 30);
 }
+
+/* Green palette for success messages */
+:root {
+  --green-1: #e6f9ed;
+  --green-2: #b2e5c2;
+  --green-6: #15803d;
+}
+
+/* Button spinner */
+.btn-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+@keyframes btn-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

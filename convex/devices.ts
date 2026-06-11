@@ -174,6 +174,47 @@ export const unbindDevice = mutation({
   },
 })
 
+// ─── createDevice ─────────────────────────────────────────────────────────────
+
+export const createDevice = mutation({
+  args: {
+    serialNumber: v.string(),
+    model: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+
+    // Check uniqueness of serialNumber
+    const existing = await ctx.db
+      .query('devices')
+      .withIndex('by_serial', (q) => q.eq('serialNumber', args.serialNumber.trim()))
+      .unique()
+    if (existing) {
+      throw new Error(
+        `Un appareil avec le numéro de série "${args.serialNumber.trim()}" existe déjà.`
+      )
+    }
+
+    const deviceId = await ctx.db.insert('devices', {
+      serialNumber: args.serialNumber.trim(),
+      model: args.model.trim(),
+      branchId: caller.branchId,
+      status: 'active',
+      lastSync: Date.now(),
+      queuedCount: 0,
+    })
+
+    return { deviceId }
+  },
+})
+
 // ─── listUnbound (query for managers to pick an unassigned device) -------
 
 export const listUnbound = query({
