@@ -35,7 +35,7 @@ const ERROR_MAP = [
 
 function localizeError(err, fallback) {
   const raw = err?.message ?? ''
-  if (raw) console.debug('[BindDeviceDrawer] raw error:', raw)
+  if (raw) console.warn('[BindDeviceDrawer] raw error:', raw)
   const entry = ERROR_MAP.find(({ match }) => match.test(raw) || match.test(err?.name ?? ''))
   return entry ? entry.fr : fallback
 }
@@ -143,7 +143,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
         clearTimeout(tClose)
       }
     }
-  }, [agentDoc?.device?.serialNumber, creds, onClose])
+  }, [agentDoc?.device?.serialNumber, agent.device?.serialNumber, creds, onClose])
 
   // timer
   function startTimer(expiresAt) {
