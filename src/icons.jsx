@@ -1,3 +1,4 @@
+// eslint-disable-next-line react-refresh/only-export-components
 const Icon = ({
   d,
   size = 16,
@@ -22,7 +23,6 @@ const Icon = ({
   </svg>
 )
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const I = {
   Grid: (p) => (
     <Icon {...p}>
