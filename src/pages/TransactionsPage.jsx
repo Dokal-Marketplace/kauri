@@ -334,7 +334,7 @@ export default function TransactionsPage() {
         }
       : 'skip'
   )
-  const convexData = convexRaw ?? []
+  const convexData = useMemo(() => convexRaw ?? [], [convexRaw])
   const txLoading = branchId && convexRaw === undefined
 
   // Map Convex data to UI schema
