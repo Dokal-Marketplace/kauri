@@ -30,7 +30,7 @@ export const seedDevicesForBranch = mutation({
 
     // Eviter les doublons sur serialNumber
 
-    const serialPrefix = 'TPE-${String(branchId)}'
+    const serialPrefix = `TPE-${String(branchId)}`
     const existing = await ctx.db
       .query('devices')
       .withIndex('by_serial', (q) => q.eq('serialNumber', `${serialPrefix}-001`))
@@ -42,7 +42,7 @@ export const seedDevicesForBranch = mutation({
     const now = Date.now()
 
     const d1 = await ctx.db.insert('devices', {
-      serialNumber: '${serialPrefix}-001',
+      serialNumber: `${serialPrefix}-001`,
       model: 'Ingenico iWL250',
       branchId,
       status: 'active',
@@ -53,7 +53,7 @@ export const seedDevicesForBranch = mutation({
     })
 
     const d2 = await ctx.db.insert('devices', {
-      serialNumber: '${serialPrefix}-002',
+      serialNumber: `${serialPrefix}-002`,
       model: 'PAX A920',
       branchId,
       status: 'active',
@@ -64,7 +64,7 @@ export const seedDevicesForBranch = mutation({
     })
 
     const d3 = await ctx.db.insert('devices', {
-      serialNumber: '${serialPrefix}-003',
+      serialNumber: `${serialPrefix}-003`,
       model: 'Ingenico iWL250',
       branchId,
       status: 'active',

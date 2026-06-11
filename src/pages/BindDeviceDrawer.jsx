@@ -141,7 +141,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
     setLoading(true)
     setGenError(null)
     try {
-      const res = await generateCreds({ deviceId: selectedDeviceId, agentId: agent.id })
+      const res = await generateCreds({ deviceId: selectedDeviceId })
       const normalized = {
         token: res?.token ?? '',
         pin: res?.pin ?? '------',
@@ -188,7 +188,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
                   if (token) {
                     setLoading(true)
                     try {
-                      await claimByToken({ token, agentId: agent.id })
+                      await claimByToken({ token })
                       setSuccessBanner(true)
                       setTimeout(onClose, 1200)
                       return
@@ -258,7 +258,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
       setLoading(true)
       setPinError(null)
       try {
-        await claimByPin({ pin: combined, agentId: agent.id })
+        await claimByPin({ pin: combined })
         setSuccessBanner(true)
         setTimeout(onClose, 1200)
       } catch (err) {
@@ -287,7 +287,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
         setLoading(true)
         setPinError(null)
         try {
-          await claimByPin({ pin: arr.join(''), agentId: agent.id })
+          await claimByPin({ pin: arr.join('') })
           setSuccessBanner(true)
           setTimeout(onClose, 1200)
         } catch (err) {
@@ -380,13 +380,13 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
 
               <div className="bdd-tabs">
                 <button
-                  className={`bdd-tab${activeTab === 'qr' ? ' active' : ''}`}
+                  className={`bdd-tab${activeTab === 'qr' ? ' on' : ''}`}
                   onClick={() => setActiveTab('qr')}
                 >
                   Scanner le QR
                 </button>
                 <button
-                  className={`bdd-tab${activeTab === 'pin' ? ' active' : ''}`}
+                  className={`bdd-tab${activeTab === 'pin' ? ' on' : ''}`}
                   onClick={() => setActiveTab('pin')}
                 >
                   Saisir le code PIN
@@ -442,6 +442,12 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
                   <div
                     className={`bdd-pin-code${copied ? ' bdd-pin-code--copied' : ''}`}
                     onClick={handleCopyPin}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleCopyPin()
+                      }
+                    }}
                     role="button"
                     tabIndex={0}
                     title="Cliquer pour copier"

@@ -18,9 +18,7 @@ export const listByBranch = query({
           .query('devices')
           .withIndex('by_assigned_to', (q) => q.eq('assignedTo', u._id))
           .first()
-        const roles = await authz
-          .withTenant(args.branchId)
-          .getUserRoles(ctx, u.tokenIdentifier)
+        const roles = await authz.withTenant(args.branchId).getUserRoles(ctx, u.tokenIdentifier)
         const role = roles[0]?.role ?? null
         return { ...u, device, role }
       })
@@ -90,9 +88,7 @@ export const createAgent = mutation({
     })
 
     // Assign the selected role to the new agent
-    await authz
-      .withTenant(caller.branchId)
-      .assignRole(ctx, placeholderToken, args.role)
+    await authz.withTenant(caller.branchId).assignRole(ctx, placeholderToken, args.role)
 
     return userId
   },

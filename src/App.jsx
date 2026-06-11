@@ -52,12 +52,16 @@ function AppShell() {
   // If the user is an agent and is loaded but has no device assigned, show the binding flow
   if (isLoaded && convexUser && convexUser.role === 'agent' && convexUser.device === null) {
     return (
-      <BindDeviceLazy
-        agent={convexUser}
-        tenantId={convexUser.tenantId}
-        isLoaded={isLoaded}
-        onClose={() => window.location.reload()}
-      />
+      <ChunkErrorBoundary>
+        <Suspense fallback={null}>
+          <BindDeviceLazy
+            agent={convexUser}
+            tenantId={convexUser.tenantId}
+            isLoaded={isLoaded}
+            onClose={() => window.location.reload()}
+          />
+        </Suspense>
+      </ChunkErrorBoundary>
     )
   }
   return (
