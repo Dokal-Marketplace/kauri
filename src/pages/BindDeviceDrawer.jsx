@@ -18,6 +18,28 @@ function fmtCountdown(secs) {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
+/**
+ * Maps known backend error codes / message substrings to French UI strings.
+ * Always logs the raw message for debugging, never surfaces it to the user.
+ */
+const ERROR_MAP = [
+  { match: /not found|introuvable/i, fr: 'Appareil introuvable.' },
+  { match: /already (claimed|bound)|déjà lié/i, fr: 'Cet appareil est déjà lié à un agent.' },
+  { match: /expired|expiré/i, fr: 'Les identifiants ont expiré. Veuillez regénérer.' },
+  { match: /invalid.*(pin|token)|pin.*invalid/i, fr: 'Code PIN invalide ou expiré.' },
+  { match: /unauthorized|non autorisé/i, fr: 'Action non autorisée.' },
+  { match: /network|fetch|NetworkError/i, fr: 'Erreur réseau. Vérifiez votre connexion.' },
+  { match: /permission|NotAllowedError/i, fr: 'Permission refusée.' },
+  { match: /overcapacity|rate.?limit/i, fr: 'Trop de tentatives. Réessayez dans un moment.' },
+]
+
+function localizeError(err, fallback) {
+  const raw = err?.message ?? ''
+  if (raw) console.debug('[BindDeviceDrawer] raw error:', raw)
+  const entry = ERROR_MAP.find(({ match }) => match.test(raw) || match.test(err?.name ?? ''))
+  return entry ? entry.fr : fallback
+}
+
 function Countdown({ secondsLeft, expired }) {
   const pct = Math.max(0, secondsLeft / VALIDITY_SECONDS) * 100
   const arcColor = expired
@@ -151,7 +173,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
       setCreds(normalized)
       startTimer(normalized.expiresAt)
     } catch (err) {
-      setGenError(err?.message ?? 'Erreur lors de la génération')
+      setGenError(localizeError(err, 'Erreur lors de la génération'))
     } finally {
       setLoading(false)
     }
@@ -193,7 +215,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
                       setTimeout(onClose, 1200)
                       return
                     } catch (err) {
-                      setGenError(err?.message ?? 'Erreur de liaison')
+                      setGenError(localizeError(err, 'Erreur de liaison'))
                     } finally {
                       setLoading(false)
                     }
@@ -204,7 +226,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
               }
             }
           } catch (err) {
-            setCameraError(err?.message ?? 'Erreur caméra')
+            setCameraError(localizeError(err, 'Erreur caméra'))
             setActiveTab('pin')
             return
           }
@@ -212,7 +234,11 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
         }
         requestAnimationFrame(loop)
       } catch (err) {
-        setCameraError(err?.name === 'NotAllowedError' ? 'Permission caméra refusée' : err?.message)
+        setCameraError(
+          err?.name === 'NotAllowedError'
+            ? 'Permission caméra refusée'
+            : localizeError(err, 'Erreur caméra')
+        )
         setActiveTab('pin')
       }
     }
@@ -262,7 +288,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
         setSuccessBanner(true)
         setTimeout(onClose, 1200)
       } catch (err) {
-        setPinError(err?.message ?? 'Erreur PIN')
+        setPinError(localizeError(err, 'Code PIN invalide ou expiré'))
         setPinDigits(['', '', '', '', '', ''])
         focusInput(0)
       } finally {
@@ -291,7 +317,7 @@ export function BindDeviceDrawer({ agent, tenantId, isLoaded, onClose }) {
           setSuccessBanner(true)
           setTimeout(onClose, 1200)
         } catch (err) {
-          setPinError(err?.message ?? 'Erreur PIN')
+          setPinError(localizeError(err, 'Code PIN invalide ou expiré'))
           setPinDigits(['', '', '', '', '', ''])
         } finally {
           setLoading(false)
