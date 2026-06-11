@@ -5,7 +5,7 @@ import { api } from '../convex/_generated/api'
 import { useCurrentUser } from './hooks/useCurrentUser'
 import { I } from './icons'
 import { AddDeviceModal } from './components/AddDeviceModal'
-import { fmt } from 'utils/fmt'
+import { fmt } from './utils/fmt'
 
 export function SearchInput({ placeholder, value, onChange, width = 240 }) {
   return (
