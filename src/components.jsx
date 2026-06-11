@@ -5,10 +5,7 @@ import { api } from '../convex/_generated/api'
 import { useCurrentUser } from './hooks/useCurrentUser'
 import { I } from './icons'
 import { AddDeviceModal } from './components/AddDeviceModal'
-
-export function fmt(n) {
-  return n.toLocaleString('fr-FR').replace(/,/g, ' ')
-}
+import { fmt } from '../utils/fmt'
 
 export function SearchInput({ placeholder, value, onChange, width = 240 }) {
   return (

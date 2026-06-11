@@ -191,20 +191,25 @@ export const createDevice = mutation({
       .unique()
     if (!caller) throw new Error('User not found')
 
-    // Check uniqueness of serialNumber
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:create')
+
+    const serialNumber = args.serialNumber.trim()
+    const model = args.model.trim()
+    if (!serialNumber || !model) {
+      throw new Error('Le numéro de série et le modèle sont obligatoires.')
+    }
+
     const existing = await ctx.db
       .query('devices')
-      .withIndex('by_serial', (q) => q.eq('serialNumber', args.serialNumber.trim()))
+      .withIndex('by_serial', (q) => q.eq('serialNumber', serialNumber))
       .unique()
     if (existing) {
-      throw new Error(
-        `Un appareil avec le numéro de série "${args.serialNumber.trim()}" existe déjà.`
-      )
+      throw new Error(`Un appareil avec le numéro de série "${serialNumber}" existe déjà.`)
     }
 
     const deviceId = await ctx.db.insert('devices', {
-      serialNumber: args.serialNumber.trim(),
-      model: args.model.trim(),
+      serialNumber,
+      model,
       branchId: caller.branchId,
       status: 'active',
       lastSync: Date.now(),
@@ -228,7 +233,7 @@ export const listUnbound = query({
       .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
     if (!caller) throw new Error('User not found')
-
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:create')
     // require manager/permission to bind devices in this tenant
     await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
 

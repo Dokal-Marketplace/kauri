@@ -52,7 +52,11 @@ export const createAgent = mutation({
     if (!caller) throw new Error('Agent appelant introuvable')
 
     await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
-
+    const callerRoles = await authz.withTenant(caller.branchId).getUserRoles(ctx, identity.subject)
+    const isAdmin = callerRoles.some((r) => r.role === 'admin')
+    if (args.role === 'admin' && !isAdmin) {
+      throw new Error("Seul un administrateur peut attribuer le rôle 'admin'.")
+    }
     const fullName = args.fullName.trim()
     const email = args.email.trim().toLowerCase()
     const phoneNumber = args.phoneNumber.trim()
@@ -107,7 +111,9 @@ export const disable = mutation({
     if (!caller) throw new Error('Agent appelant introuvable')
 
     await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
-
+    const target = await ctx.db.get(args.agentId)
+    if (!target) throw new Error('Agent introuvable')
+    if (target.branchId !== caller.branchId) throw new Error('Unauthorized')
     return ctx.db.patch(args.agentId, { status: 'suspended' })
   },
 })
