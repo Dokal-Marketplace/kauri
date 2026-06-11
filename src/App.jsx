@@ -1,6 +1,8 @@
-import { Component, Suspense } from 'react'
+import { Suspense } from 'react'
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom'
+import { wrapCreateBrowserRouterV7 } from '@sentry/react'
 import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react'
+import * as Sentry from '@sentry/react'
 import { Sidebar } from './components'
 import { lazyWithReload } from './utils/lazyWithReload'
 import { OnboardingWizard } from './components/OnboardingWizard'
@@ -77,11 +79,11 @@ function AppShell() {
       <div className="app">
         <Sidebar />
         <main className="main">
-          <ChunkErrorBoundary>
+          <Sentry.ErrorBoundary fallback={PageErrorFallback} showDialog>
             <Suspense fallback={null}>
               <Outlet />
             </Suspense>
-          </ChunkErrorBoundary>
+          </Sentry.ErrorBoundary>
         </main>
       </div>
     </TenantsProvider>
@@ -105,7 +107,8 @@ function Layout() {
 }
 
 // ─── Router ────────────────────────────────────────────────────────────────────
-const router = createBrowserRouter([
+const createSentryRouter = wrapCreateBrowserRouterV7(createBrowserRouter)
+const router = createSentryRouter([
   {
     path: '/',
     element: <Layout />,
