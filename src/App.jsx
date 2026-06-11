@@ -19,6 +19,17 @@ const ReconciliationPage = lazyWithReload(() => import('./pages/ReconciliationPa
 const SettingsPage = lazyWithReload(() => import('./pages/SettingsPage'))
 const DisbursementsPage = lazyWithReload(() => import('./pages/DisbursementsPage'))
 
+// ─── Error fallbacks ───────────────────────────────────────────────────────────
+function PageErrorFallback({ eventId }) {
+  return (
+    <div style={{ padding: '2rem', textAlign: 'center' }}>
+      <p>Cette page a rencontré une erreur.</p>
+      {eventId && <p style={{ fontSize: '0.75rem', color: '#888' }}>Référence&nbsp;: {eventId}</p>}
+      <button onClick={() => window.location.reload()}>Réessayer</button>
+    </div>
+  )
+}
+
 // Render binding flow as a full-screen modal when an agent has no device
 // We wrap BindDeviceDrawer via lazyWithReload and export a small helper
 const BindDeviceLazy = lazyWithReload(() =>
