@@ -31,6 +31,7 @@ const permissions = definePermissions({
   },
   devices: {
     bind: true, // Linking a specific TPE serial number to an agent
+    create: true, // Register a new TPE in the branch inventory
   },
   products: {
     manage: true, // Create or update product definitions (supervisor/admin only)
@@ -55,6 +56,7 @@ const roles = defineRoles(permissions, {
     customers: ['verify_identity', 'edit_sensitive', 'view'],
     disbursements: ['approve'],
     products: ['manage'],
+    devices: ['bind', 'create'],
   },
 
   // Specialized back-office role
@@ -72,12 +74,12 @@ const roles = defineRoles(permissions, {
     includes: ['supervisor'], // all field + manager permissions
     kyc: ['register', 'validate'],
     disbursements: ['request', 'approve', 'execute'],
-    devices: ['bind'],
+    devices: ['bind', 'create'],
   },
 
   // System management
   it_admin: {
-    devices: ['bind'],
+    devices: ['bind', 'create'],
     // Usually IT shouldn't have 'collect' or 'reverse' permissions (Separation of Duties)
   },
 })

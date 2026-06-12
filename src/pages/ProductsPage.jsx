@@ -3,7 +3,8 @@ import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { I } from '../icons'
-import { fmt, KPI, PageHeader } from '../components'
+import { KPI, PageHeader } from '../components'
+import { fmt } from '../utils/fmt'
 import { EmptyState } from '../components/EmptyState'
 import { ProductsIllustration, NoResultsIllustration } from '../components/Illustrations'
 import { Skel, SkeletonTableRows } from '../components/Skeleton'
@@ -120,7 +121,7 @@ export default function ProductsPage() {
   const canManage = useQuery(api.products.canManageProducts) ?? false
   const upsert = useMutation(api.products.upsert)
 
-  const products = rawProducts?.map(fromConvex) ?? []
+  const products = useMemo(() => rawProducts?.map(fromConvex) ?? [], [rawProducts])
   const isLoading = rawProducts === undefined
 
   const [seg, setSeg] = useState('tous')

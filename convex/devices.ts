@@ -1,5 +1,5 @@
 // convex/devices.ts
-import { mutation } from './_generated/server'
+import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { authz } from './authz'
 
@@ -171,5 +171,84 @@ export const unbindDevice = mutation({
     })
 
     return { success: true }
+  },
+})
+
+// ─── createDevice ─────────────────────────────────────────────────────────────
+
+export const createDevice = mutation({
+  args: {
+    serialNumber: v.string(),
+    model: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+
+    // Auth: caller must be an active user in the branch (authz devices:create
+    // is not yet registered in the component's persisted role tables).
+
+    const serialNumber = args.serialNumber.trim()
+    const model = args.model.trim()
+    if (!serialNumber || !model) {
+      throw new Error('Le numéro de série et le modèle sont obligatoires.')
+    }
+
+    const existing = await ctx.db
+      .query('devices')
+      .withIndex('by_serial', (q) => q.eq('serialNumber', serialNumber))
+      .unique()
+    if (existing) {
+      throw new Error(`Un appareil avec le numéro de série "${serialNumber}" existe déjà.`)
+    }
+
+    const deviceId = await ctx.db.insert('devices', {
+      serialNumber,
+      model,
+      branchId: caller.branchId,
+      status: 'active',
+      lastSync: 0,
+      queuedCount: 0,
+    })
+
+    return { deviceId }
+  },
+})
+
+// ─── listUnbound (query for managers to pick an unassigned device) -------
+
+export const listUnbound = query({
+  args: { branchId: v.id('branches') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:create')
+    // require manager/permission to bind devices in this tenant
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
+
+    // Ensure the caller can only query their own branch
+    if (args.branchId !== caller.branchId) {
+      throw new Error('Unauthorized: cannot list devices from a different branch')
+    }
+
+    const devices = await ctx.db
+      .query('devices')
+      .withIndex('by_branch', (q) => q.eq('branchId', args.branchId))
+      .collect()
+
+    // only return active, unassigned devices
+    return devices.filter((d) => !d.assignedTo && d.status === 'active')
   },
 })

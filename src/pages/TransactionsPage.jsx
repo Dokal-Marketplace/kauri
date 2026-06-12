@@ -3,7 +3,8 @@ import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
 import Novu from '../components/Inbox'
-import { fmt, PageHeader } from '../components'
+import { PageHeader } from '../components'
+import { fmt } from '../utils/fmt'
 import { useCurrentBranch } from '../hooks/useCurrentBranch'
 import { SkeletonTableRows } from '../components/Skeleton'
 import { EmptyState } from '../components/EmptyState'
@@ -333,7 +334,7 @@ export default function TransactionsPage() {
         }
       : 'skip'
   )
-  const convexData = convexRaw ?? []
+  const convexData = useMemo(() => convexRaw ?? [], [convexRaw])
   const txLoading = branchId && convexRaw === undefined
 
   // Map Convex data to UI schema

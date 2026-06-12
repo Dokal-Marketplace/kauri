@@ -4,10 +4,8 @@ import { useQuery } from 'convex/react'
 import { api } from '../convex/_generated/api'
 import { useCurrentUser } from './hooks/useCurrentUser'
 import { I } from './icons'
-
-export function fmt(n) {
-  return n.toLocaleString('fr-FR').replace(/,/g, ' ')
-}
+import { AddDeviceModal } from './components/AddDeviceModal'
+import { fmt } from './utils/fmt'
 
 export function SearchInput({ placeholder, value, onChange, width = 240 }) {
   return (
@@ -524,68 +522,81 @@ export function ActivityCard({ feed }) {
 }
 
 export function QuickActionsCard() {
+  const [showAddDevice, setShowAddDevice] = useState(false)
+
   const actions = [
     { ic: <I.Plus />, label: 'Dépôt rapide', sub: "Carnet d'épargne" },
     { ic: <I.ArrowUp />, label: 'Retrait', sub: 'Validation requise' },
     { ic: <I.Users />, label: 'Inscrire client', sub: 'KYC en 3 étapes' },
+    {
+      ic: <I.Terminal />,
+      label: 'Ajouter un TPE',
+      sub: 'Nouveau terminal',
+      onClick: () => setShowAddDevice(true),
+    },
     { ic: <I.Cloud />, label: 'Synchroniser', sub: '4 en file' },
   ]
   return (
-    <div className="card">
-      <div className="card-head">
-        <div className="card-title">Actions rapides</div>
-        <span className="card-sub" style={{ marginLeft: 'auto' }}>
-          ⌘ + raccourci
-        </span>
-      </div>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 8,
-          padding: '4px 14px 16px',
-        }}
-      >
-        {actions.map((a, i) => (
-          <button
-            key={i}
-            className="btn"
-            style={{
-              justifyContent: 'flex-start',
-              textAlign: 'left',
-              padding: '11px 12px',
-              height: 'auto',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: 6,
-              borderRadius: 10,
-            }}
-          >
-            <span
+    <>
+      <div className="card">
+        <div className="card-head">
+          <div className="card-title">Actions rapides</div>
+          <span className="card-sub" style={{ marginLeft: 'auto' }}>
+            ⌘ + raccourci
+          </span>
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 8,
+            padding: '4px 14px 16px',
+          }}
+        >
+          {actions.map((a, i) => (
+            <button
+              key={i}
+              className="btn"
+              onClick={a.onClick}
               style={{
-                width: 28,
-                height: 28,
-                borderRadius: 7,
-                background: 'var(--brand-softer)',
-                display: 'grid',
-                placeItems: 'center',
-                color: 'var(--brand-ink)',
+                justifyContent: 'flex-start',
+                textAlign: 'left',
+                padding: '11px 12px',
+                height: 'auto',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: 6,
+                borderRadius: 10,
               }}
             >
-              {a.label === 'Dépôt rapide' && <I.Plus size={14} />}
-              {a.label === 'Retrait' && <I.ArrowUp size={14} />}
-              {a.label === 'Inscrire client' && <I.Users size={14} />}
-              {a.label === 'Synchroniser' && <I.Cloud size={14} />}
-            </span>
-            <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <span style={{ fontWeight: 550, fontSize: 13 }}>{a.label}</span>
-              <span style={{ fontSize: 11.5, color: 'var(--ink-3)', fontWeight: 400 }}>
-                {a.sub}
+              <span
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 7,
+                  background: 'var(--brand-softer)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: 'var(--brand-ink)',
+                }}
+              >
+                {a.label === 'Dépôt rapide' && <I.Plus size={14} />}
+                {a.label === 'Retrait' && <I.ArrowUp size={14} />}
+                {a.label === 'Inscrire client' && <I.Users size={14} />}
+                {a.label === 'Ajouter un TPE' && <I.Terminal size={14} />}
+                {a.label === 'Synchroniser' && <I.Cloud size={14} />}
               </span>
-            </span>
-          </button>
-        ))}
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span style={{ fontWeight: 550, fontSize: 13 }}>{a.label}</span>
+                <span style={{ fontSize: 11.5, color: 'var(--ink-3)', fontWeight: 400 }}>
+                  {a.sub}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
+      <AddDeviceModal isOpen={showAddDevice} onClose={() => setShowAddDevice(false)} />
+    </>
   )
 }

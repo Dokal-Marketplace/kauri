@@ -1,3 +1,4 @@
+// eslint-disable-next-line react-refresh/only-export-components
 const Icon = ({
   d,
   size = 16,
@@ -201,6 +202,13 @@ export const I = {
     <Icon {...p}>
       <path d="M4 20h4l10.5-10.5a2.83 2.83 0 0 0-4-4L4 16v4z" />
       <path d="M13.5 6.5l4 4" />
+    </Icon>
+  ),
+  Terminal: (p) => (
+    <Icon {...p}>
+      <rect x="4" y="2" width="16" height="20" rx="2" />
+      <path d="M8 6h8M8 10h8M8 14h4" />
+      <circle cx="12" cy="18.5" r="1" fill="currentColor" />
     </Icon>
   ),
 }

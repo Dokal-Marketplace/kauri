@@ -4,7 +4,8 @@ import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { I } from '../icons'
-import { fmt, KPI, PageHeader } from '../components'
+import { KPI, PageHeader } from '../components'
+import { fmt } from '../utils/fmt'
 import Novu from '../components/Inbox'
 import { SkeletonTableRows } from '../components/Skeleton'
 import { EmptyState } from '../components/EmptyState'
@@ -300,11 +301,14 @@ export default function ObjectifsPage({ branchId: branchIdProp, customers: custo
   const branchId = branchIdProp ?? tenantId
   // ── Live data ──────────────────────────────────────────────────────────────
   const goalsRaw = useQuery(api.goals.listByBranch, isLoaded && branchId ? { branchId } : 'skip')
-  const goals = goalsRaw ?? []
+  const goals = useMemo(() => goalsRaw ?? [], [goalsRaw])
   const goalsLoading = isLoaded && branchId && goalsRaw === undefined
 
   const customersRaw = useQuery(api.customers.listByBranch, isLoaded && branchId ? {} : 'skip')
-  const customers = customersProp ?? customersRaw ?? []
+  const customers = useMemo(
+    () => customersProp ?? customersRaw ?? [],
+    [customersProp, customersRaw]
+  )
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [q, setQ] = useState('')
