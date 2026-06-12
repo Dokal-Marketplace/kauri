@@ -3615,7 +3615,6 @@ textarea.input {
   background: var(--surface);
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-align: center;
