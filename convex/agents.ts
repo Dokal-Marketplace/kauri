@@ -129,6 +129,37 @@ export const disable = mutation({
   },
 })
 
+export const getById = query({
+  args: { userId: v.id('users') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return null
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) return null
+
+    const user = await ctx.db.get(args.userId)
+    if (!user) return null
+
+    // Allow: self-lookup, or caller is in the same branch with devices:bind permission
+    const isSelf = caller._id === args.userId
+    const sameBranch = caller.branchId === user.branchId
+    if (!isSelf) {
+      if (!sameBranch) return null
+      await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
+    }
+
+    const device = await ctx.db
+      .query('devices')
+      .withIndex('by_assigned_to', (q) => q.eq('assignedTo', args.userId))
+      .first()
+    return { ...user, device: device ?? null }
+  },
+})
+
 export const bindDevice = mutation({
   args: { userId: v.id('users'), serialNumber: v.string() },
   handler: async (ctx, args) => {

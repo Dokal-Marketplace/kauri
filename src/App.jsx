@@ -34,12 +34,6 @@ function PageErrorFallback({ eventId }) {
   )
 }
 
-// Render binding flow as a full-screen modal when an agent has no device
-// We wrap BindDeviceDrawer via lazyWithReload and export a small helper
-const BindDeviceLazy = lazyWithReload(() =>
-  import('./pages/BindDeviceDrawer').then((m) => ({ default: m.BindDeviceDrawer }))
-)
-
 // ─── Error boundary ────────────────────────────────────────────────────────────
 class ChunkErrorBoundary extends Component {
   constructor(props) {
@@ -66,21 +60,6 @@ class ChunkErrorBoundary extends Component {
 function AppShell() {
   const { isLoaded, convexUser } = useCurrentUser()
   if (isLoaded && !convexUser) return <OnboardingWizard />
-  // If the user is an agent and is loaded but has no device assigned, show the binding flow
-  if (isLoaded && convexUser && convexUser.role === 'agent' && convexUser.device === null) {
-    return (
-      <ChunkErrorBoundary>
-        <Suspense fallback={null}>
-          <BindDeviceLazy
-            agent={convexUser}
-            tenantId={convexUser.tenantId}
-            isLoaded={isLoaded}
-            onClose={() => window.location.reload()}
-          />
-        </Suspense>
-      </ChunkErrorBoundary>
-    )
-  }
   return (
     <TenantsProvider
       features={{ members: true, invitations: true, teams: true }}
