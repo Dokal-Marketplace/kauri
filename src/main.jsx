@@ -1,10 +1,11 @@
-import { StrictMode } from 'react'
+import { StrictMode, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ConvexReactClient } from 'convex/react'
 import { ClerkProvider, useAuth } from '@clerk/clerk-react'
 import { ConvexProviderWithClerk } from 'convex/react-clerk'
+import { ConvexAuthProvider } from '@convex-dev/auth/react'
 import * as Sentry from '@sentry/react'
 import { SentryUserSync } from './components/SentryUserSync'
+import { adminConvex, agentConvex } from './convexClients'
 import './styles.css'
 import App from './App'
 
@@ -24,8 +25,6 @@ window.addEventListener('unhandledrejection', (event) => {
   Sentry.captureException(event.reason)
 })
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
-
 function AppCrashFallback({ eventId }) {
   return (
     <div style={{ padding: '4rem', textAlign: 'center' }}>
@@ -36,14 +35,31 @@ function AppCrashFallback({ eventId }) {
   )
 }
 
+// Reads auth mode once at mount — requires a full page reload to switch modes.
+// Agent sign-in sets sessionStorage 'kauri_auth_mode' = 'agent', then reloads.
+// Agent sign-out clears it and reloads to /connexion.
+function ConvexWrapper({ children }) {
+  const [isAgentMode] = useState(() => sessionStorage.getItem('kauri_auth_mode') === 'agent')
+
+  if (isAgentMode) {
+    return <ConvexAuthProvider client={agentConvex}>{children}</ConvexAuthProvider>
+  }
+
+  return (
+    <ConvexProviderWithClerk client={adminConvex} useAuth={useAuth}>
+      {children}
+    </ConvexProviderWithClerk>
+  )
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Sentry.ErrorBoundary fallback={AppCrashFallback}>
       <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
-        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+        <ConvexWrapper>
           <SentryUserSync />
           <App />
-        </ConvexProviderWithClerk>
+        </ConvexWrapper>
       </ClerkProvider>
     </Sentry.ErrorBoundary>
   </StrictMode>

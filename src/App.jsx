@@ -1,14 +1,18 @@
-import { Component, Suspense } from 'react'
-import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom'
+import { Component, Suspense, useState } from 'react'
+import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom'
 import { wrapCreateBrowserRouterV7 } from '@sentry/react'
 import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react'
+import { ConvexAuthProvider } from '@convex-dev/auth/react'
+import { useConvexAuth } from 'convex/react'
 import * as Sentry from '@sentry/react'
 import { Sidebar } from './components'
 import { lazyWithReload } from './utils/lazyWithReload'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { useCurrentUser } from './hooks/useCurrentUser'
 import { TenantsProvider } from './components/providers/tenant-provider'
+import { agentConvex } from './convexClients'
 
+const AgentLoginPage = lazyWithReload(() => import('./pages/AgentLoginPage'))
 const DashboardPage = lazyWithReload(() => import('./pages/DashboardPage'))
 const ClientsPage = lazyWithReload(() => import('./pages/ClientsPage'))
 const TransactionsPage = lazyWithReload(() => import('./pages/TransactionsPage'))
@@ -101,7 +105,22 @@ function AppShell() {
   )
 }
 
+// Layout for agents authenticated via @convex-dev/auth (Password provider)
+function AgentLayout() {
+  const { isLoading, isAuthenticated } = useConvexAuth()
+  if (isLoading) return null
+  if (!isAuthenticated) {
+    sessionStorage.removeItem('kauri_auth_mode')
+    return <Navigate to="/connexion" replace />
+  }
+  return <AppShell />
+}
+
 function Layout() {
+  const [isAgentMode] = useState(() => sessionStorage.getItem('kauri_auth_mode') === 'agent')
+
+  if (isAgentMode) return <AgentLayout />
+
   return (
     <>
       <SignedIn>
@@ -120,6 +139,20 @@ function Layout() {
 // ─── Router ────────────────────────────────────────────────────────────────────
 const createSentryRouter = wrapCreateBrowserRouterV7(createBrowserRouter)
 const router = createSentryRouter([
+  {
+    // Agent login — has its own ConvexAuthProvider so signIn/signOut work
+    // before the main ConvexWrapper has switched to agent mode.
+    path: '/connexion',
+    element: (
+      <ConvexAuthProvider client={agentConvex}>
+        <ChunkErrorBoundary>
+          <Suspense fallback={null}>
+            <AgentLoginPage />
+          </Suspense>
+        </ChunkErrorBoundary>
+      </ConvexAuthProvider>
+    ),
+  },
   {
     path: '/',
     element: <Layout />,

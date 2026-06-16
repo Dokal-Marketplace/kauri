@@ -91,3 +91,61 @@ export const onboard = mutation({
     await authz.withTenant(branchId).assignRole(ctx, identity.subject, 'admin')
   },
 })
+
+async function sha256Hex(text: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+// Called after every agent Password sign-in.
+// For returning agents (already linked): no-ops immediately.
+// For first-time agents: verifies the single-use invite token (by SHA-256 hash),
+// swaps the placeholder tokenIdentifier, transfers the role, and burns the token.
+export const linkAgentAccount = mutation({
+  args: { inviteToken: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Non authentifié')
+
+    // Already linked — returning agent, nothing to do
+    const already = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (already) return already._id
+
+    // First-time activation requires the raw invite token from the invite URL
+    if (!args.inviteToken) {
+      throw new Error('Jeton d\'invitation requis pour la première connexion')
+    }
+
+    const hash = await sha256Hex(args.inviteToken)
+
+    const invitedUser = await ctx.db
+      .query('users')
+      .withIndex('by_invite_token_hash', (q) => q.eq('inviteTokenHash', hash))
+      .unique()
+
+    if (!invitedUser || !invitedUser.tokenIdentifier.startsWith('invited|')) {
+      throw new Error('Jeton d\'invitation invalide ou déjà utilisé')
+    }
+
+    // Link account: swap placeholder for real convex-auth subject, burn the token
+    await ctx.db.patch(invitedUser._id, {
+      tokenIdentifier: identity.subject,
+      inviteTokenHash: undefined,
+    })
+
+    // Transfer role from placeholder to real subject
+    const branchAuthz = authz.withTenant(invitedUser.branchId)
+    const roles = await branchAuthz.getUserRoles(ctx, invitedUser.tokenIdentifier)
+    if (roles.length > 0) {
+      await branchAuthz.removeRole(ctx, invitedUser.tokenIdentifier, roles[0].role)
+      await branchAuthz.assignRole(ctx, identity.subject, roles[0].role)
+    }
+
+    return invitedUser._id
+  },
+})

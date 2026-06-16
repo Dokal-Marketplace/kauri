@@ -179,6 +179,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function NewAgentModal({ isOpen, onClose, onSuccess }) {
   const createAgent = useMutation(api.agents.createAgent)
+  const [inviteLink, setInviteLink] = useState(null)
 
   const [formState, setFormState] = useState({
     fullName: '',
@@ -241,12 +242,14 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
     }))
 
     try {
-      await createAgent({
+      const result = await createAgent({
         fullName: fullName.trim(),
         email: email.trim(),
         phoneNumber: phoneNumber.trim(),
         role,
       })
+      const link = `${window.location.origin}/connexion?token=${result.inviteToken}`
+      setInviteLink(link)
     } catch (err) {
       const rawMessage = typeof err?.message === 'string' ? err.message : ''
       let nextErrors = {
@@ -273,8 +276,13 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
       isLoading: false,
       errors: { form: null, email: null, phoneNumber: null },
     })
-    onClose()
+    // inviteLink is set above — stay open so admin can copy the link
     onSuccess?.()
+  }
+
+  function handleClose() {
+    setInviteLink(null)
+    onClose()
   }
 
   if (!isOpen) return null
@@ -282,7 +290,7 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
   return (
     <>
       {/* Scrim */}
-      <div className="modal-scrim" onClick={isLoading ? undefined : onClose} />
+      <div className="modal-scrim" onClick={isLoading ? undefined : handleClose} />
 
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="agent-modal-title">
         {/* Header */}
@@ -290,7 +298,7 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
           <h2 id="agent-modal-title">Nouvel agent</h2>
           <button
             className="btn ghost sm"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={isLoading}
             aria-label="Fermer"
             style={{ padding: 6 }}
@@ -416,7 +424,7 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button type="button" className="btn" onClick={onClose} disabled={isLoading}>
+            <button type="button" className="btn" onClick={handleClose} disabled={isLoading}>
               Annuler
             </button>
             <button type="submit" className="btn brand" disabled={isLoading}>
@@ -424,6 +432,54 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
             </button>
           </div>
         </form>
+
+        {/* Invite link — shown after successful creation */}
+        {inviteLink && (
+          <div
+            style={{
+              padding: '16px 20px',
+              borderTop: '1px solid var(--border)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}
+          >
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>
+              Agent créé — partagez ce lien d&apos;activation :
+            </p>
+            <div
+              style={{
+                display: 'flex',
+                gap: 8,
+                alignItems: 'center',
+                background: 'var(--surface-inset)',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                padding: '6px 10px',
+              }}
+            >
+              <code
+                style={{ flex: 1, fontSize: 11, wordBreak: 'break-all', color: 'var(--ink-2)' }}
+              >
+                {inviteLink}
+              </code>
+              <button
+                type="button"
+                className="btn sm"
+                onClick={() => navigator.clipboard.writeText(inviteLink)}
+              >
+                Copier
+              </button>
+            </div>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--ink-2)' }}>
+              Ce lien est à usage unique. L&apos;agent définira son mot de passe lors de la première
+              connexion.
+            </p>
+            <button type="button" className="btn brand" onClick={handleClose}>
+              Fermer
+            </button>
+          </div>
+        )}
       </div>
     </>
   )

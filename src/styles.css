@@ -2704,6 +2704,114 @@ textarea.input {
   background: var(--bg);
 }
 
+/* ─── Agent Login Card ───────────────────────────────────────────────────────── */
+
+.auth-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg, 12px);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 380px;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.auth-logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.auth-logo-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.auth-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.auth-subtitle {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 0 0 1.5rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.auth-error {
+  font-size: 13px;
+  color: var(--red, #e03e3e);
+  margin: 0;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--red, #e03e3e) 10%, transparent);
+  border-radius: var(--r-sm);
+}
+
+.auth-submit {
+  width: 100%;
+  justify-content: center;
+  padding: 9px 13px;
+  margin-top: 4px;
+}
+
+.auth-switch {
+  font-size: 13px;
+  color: var(--ink-2);
+  text-align: center;
+  margin: 1rem 0 0;
+}
+
+.auth-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1rem 0;
+}
+
+.auth-admin-hint {
+  font-size: 12px;
+  color: var(--ink-3, var(--ink-2));
+  text-align: center;
+  margin: 0;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--brand, var(--ink));
+  font-size: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-btn:hover {
+  opacity: 0.75;
+}
+
 /* ─── Onboarding Wizard ─────────────────────────────────────────────────────── */
 
 .ob-overlay {

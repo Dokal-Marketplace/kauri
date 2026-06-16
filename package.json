@@ -14,7 +14,9 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@auth/core": "^0.41.2",
     "@clerk/clerk-react": "^5.61.3",
+    "@convex-dev/auth": "^0.0.94",
     "@djpanda/convex-authz": "^2.3.1",
     "@novu/react": "^3.16.0",
     "@sentry/react": "^10.56.0",

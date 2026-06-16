@@ -1,8 +1,10 @@
 // convex/schema.ts
 import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
+import { authTables } from '@convex-dev/auth/server'
 
 export default defineSchema({
+  ...authTables,
   organizations: defineTable({
     name: v.string(),
     country: v.string(),
@@ -28,8 +30,11 @@ export default defineSchema({
     tokenIdentifier: v.string(),
     branchId: v.id('branches'),
     status: v.union(v.literal('active'), v.literal('suspended')),
+    inviteTokenHash: v.optional(v.string()),
   })
     .index('by_token', ['tokenIdentifier'])
+    .index('by_email', ['email'])
+    .index('by_invite_token_hash', ['inviteTokenHash'])
     .index('by_branch', ['branchId']),
 
   customers: defineTable({

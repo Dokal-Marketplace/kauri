@@ -2,6 +2,13 @@ import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { authz } from './authz'
 
+async function sha256Hex(text: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 export const listByBranch = query({
   args: { branchId: v.id('branches') },
   handler: async (ctx, args) => {
@@ -78,8 +85,11 @@ export const createAgent = mutation({
       throw new Error('Un agent avec ce numéro de téléphone existe déjà dans cette agence.')
     }
 
-    // Generate a placeholder tokenIdentifier — the agent will get a real one
-    // when they sign up and link their account.
+    // Generate a single-use invite token. The raw token is returned to the admin
+    // (who shares it with the agent via a /connexion?token=<raw> link).
+    // Only the SHA-256 hash is stored — the raw token is never persisted.
+    const rawInviteToken = crypto.randomUUID()
+    const inviteTokenHash = await sha256Hex(rawInviteToken)
     const placeholderToken = `invited|${crypto.randomUUID()}`
 
     const userId = await ctx.db.insert('users', {
@@ -89,12 +99,13 @@ export const createAgent = mutation({
       tokenIdentifier: placeholderToken,
       branchId: caller.branchId,
       status: 'active',
+      inviteTokenHash,
     })
 
     // Assign the selected role to the new agent
     await authz.withTenant(caller.branchId).assignRole(ctx, placeholderToken, args.role)
 
-    return userId
+    return { userId, inviteToken: rawInviteToken }
   },
 })
 
