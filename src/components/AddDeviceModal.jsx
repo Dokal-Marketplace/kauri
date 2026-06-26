@@ -37,9 +37,10 @@ export function AddDeviceModal({ isOpen, onClose, onSuccess }) {
     isLoading: false,
     errors: { form: null, serialNumber: null, model: null },
     successMsg: null,
+    activationCode: null,
   }))
 
-  const { serialNumber, model, isLoading, errors, successMsg } = form
+  const { serialNumber, model, isLoading, errors, successMsg, activationCode } = form
 
   // Reset form via a function (not in an effect) — called when closing
   const resetForm = () =>
@@ -49,6 +50,7 @@ export function AddDeviceModal({ isOpen, onClose, onSuccess }) {
       isLoading: false,
       errors: { form: null, serialNumber: null, model: null },
       successMsg: null,
+      activationCode: null,
     })
 
   const handleClose = useCallback(() => {
@@ -101,10 +103,21 @@ export function AddDeviceModal({ isOpen, onClose, onSuccess }) {
     }))
 
     try {
-      await createDevice({
+      const result = await createDevice({
         serialNumber: serialNumber.trim(),
         model: model.trim(),
       })
+      // Success — show activation code for admin to note
+      setForm((prev) => ({
+        ...prev,
+        isLoading: false,
+        successMsg: `TPE "${serialNumber.trim()}" ajouté avec succès.`,
+        activationCode: result?.activationCode ?? null,
+        serialNumber: '',
+        model: '',
+      }))
+      onSuccess?.()
+      return
     } catch (err) {
       const raw = typeof err?.message === 'string' ? err.message : ''
       let nextErrors = {
@@ -129,24 +142,7 @@ export function AddDeviceModal({ isOpen, onClose, onSuccess }) {
       }
 
       setForm((prev) => ({ ...prev, isLoading: false, errors: nextErrors }))
-      return
     }
-
-    // Success
-    setForm((prev) => ({
-      ...prev,
-      isLoading: false,
-      successMsg: `TPE "${serialNumber.trim()}" ajouté avec succès.`,
-      serialNumber: '',
-      model: '',
-    }))
-
-    onSuccess?.()
-
-    // Auto-close after 1.5s
-    setTimeout(() => {
-      handleClose()
-    }, 1500)
   }
 
   if (!isOpen) return null
@@ -203,23 +199,54 @@ export function AddDeviceModal({ isOpen, onClose, onSuccess }) {
         <form onSubmit={handleSubmit} className="modal-body" noValidate>
           {/* Success banner */}
           {successMsg && (
-            <div
-              role="status"
-              style={{
-                padding: 12,
-                marginBottom: 16,
-                backgroundColor: 'var(--green-1, #e6f9ed)',
-                border: '1px solid var(--green-2, #b2e5c2)',
-                borderRadius: 6,
-                fontSize: 13,
-                color: 'var(--green-6, #15803d)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
-              <I.Check size={14} />
-              {successMsg}
+            <div role="status">
+              <div
+                style={{
+                  padding: 12,
+                  marginBottom: activationCode ? 12 : 16,
+                  backgroundColor: 'var(--green-1, #e6f9ed)',
+                  border: '1px solid var(--green-2, #b2e5c2)',
+                  borderRadius: 6,
+                  fontSize: 13,
+                  color: 'var(--green-6, #15803d)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                <I.Check size={14} />
+                {successMsg}
+              </div>
+              {activationCode && (
+                <div
+                  style={{
+                    padding: 14,
+                    marginBottom: 16,
+                    backgroundColor: 'var(--surface-inset)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 6 }}>
+                    Code d&apos;activation — à noter sur l&apos;étiquette de l&apos;appareil
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 28,
+                      fontWeight: 700,
+                      letterSpacing: '0.25em',
+                      color: 'var(--ink)',
+                    }}
+                  >
+                    {activationCode.slice(0, 3)}–{activationCode.slice(3)}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>
+                    L&apos;admin saisira ce code lors de l&apos;activation pour l&apos;agent.
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

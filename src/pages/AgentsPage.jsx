@@ -697,14 +697,7 @@ export default function AgentsPage() {
       )}
 
       {/* BindDeviceDrawer — "Lier un appareil" / "Changer d'appareil" */}
-      {bindAgent && (
-        <BindDeviceDrawer
-          isLoaded={isLoaded}
-          agent={bindAgent}
-          tenantId={tenantId}
-          onClose={() => setBindAgent(null)}
-        />
-      )}
+      {bindAgent && <BindDeviceDrawer agent={bindAgent} onClose={() => setBindAgent(null)} />}
 
       <PageHeader
         crumbs={['Admin', 'Agents & TPE']}

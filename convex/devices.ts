@@ -208,6 +208,16 @@ export const createDevice = mutation({
       throw new Error(`Un appareil avec le numéro de série "${serialNumber}" existe déjà.`)
     }
 
+    let activationCode = randomPin()
+    while (
+      await ctx.db
+        .query('devices')
+        .withIndex('by_activation_code', (q) => q.eq('activationCode', activationCode))
+        .unique()
+    ) {
+      activationCode = randomPin()
+    }
+
     const deviceId = await ctx.db.insert('devices', {
       serialNumber,
       model,
@@ -215,9 +225,81 @@ export const createDevice = mutation({
       status: 'active',
       lastSync: 0,
       queuedCount: 0,
+      activationCode,
     })
 
-    return { deviceId }
+    return { deviceId, activationCode }
+  },
+})
+
+// ─── activateForAgent ────────────────────────────────────────────────────────
+// Admin directly binds a device to an agent without agent interaction.
+// Device is identified by its printed activationCode or serialNumber (from QR sticker).
+
+export const activateForAgent = mutation({
+  args: {
+    agentId: v.id('users'),
+    activationCode: v.optional(v.string()),
+    serialNumber: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (!args.activationCode && !args.serialNumber) {
+      throw new Error('activationCode ou serialNumber requis')
+    }
+
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
+
+    const agent = await ctx.db.get(args.agentId)
+    if (!agent) throw new Error('Agent introuvable')
+    if (agent.branchId !== caller.branchId) throw new Error('Agent hors agence')
+
+    // Prevent assigning a second device to the same agent
+    const existingDevice = await ctx.db
+      .query('devices')
+      .withIndex('by_assigned_to', (q) => q.eq('assignedTo', args.agentId))
+      .first()
+    if (existingDevice) {
+      throw new Error(
+        `Cet agent a déjà un appareil assigné (${existingDevice.serialNumber}). Désactivez-le d'abord.`
+      )
+    }
+
+    let device = null
+    if (args.activationCode) {
+      device = await ctx.db
+        .query('devices')
+        .withIndex('by_activation_code', (q) => q.eq('activationCode', args.activationCode))
+        .unique()
+    } else if (args.serialNumber) {
+      device = await ctx.db
+        .query('devices')
+        .withIndex('by_serial', (q) => q.eq('serialNumber', args.serialNumber))
+        .unique()
+    }
+
+    if (!device) throw new Error('Appareil introuvable')
+    if (device.branchId !== caller.branchId) throw new Error("Appareil hors agence")
+    if (device.assignedTo) throw new Error('Appareil déjà assigné à un agent')
+    if (device.status !== 'active') throw new Error('Appareil hors service')
+
+    await ctx.db.patch(device._id, {
+      assignedTo: args.agentId,
+      bindingPin: undefined,
+      bindingPinExpiry: undefined,
+      bindingToken: undefined,
+      bindingTokenExpiry: undefined,
+    })
+
+    return { deviceId: device._id, serialNumber: device.serialNumber }
   },
 })
 
