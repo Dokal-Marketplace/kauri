@@ -62,6 +62,7 @@ export default defineSchema({
     batteryPct: v.optional(v.number()),
     signalLevel: v.optional(v.number()),
     queuedCount: v.optional(v.number()),
+    activationCode: v.optional(v.string()), // 6-digit, printed on device at creation
     bindingPin: v.optional(v.string()), // 6-digit numeric string
     bindingPinExpiry: v.optional(v.number()), // Unix ms — TTL 10 minutes
     bindingToken: v.optional(v.string()), // UUID embedded in QR payload
@@ -70,6 +71,7 @@ export default defineSchema({
     .index('by_serial', ['serialNumber'])
     .index('by_branch', ['branchId'])
     .index('by_assigned_to', ['assignedTo'])
+    .index('by_activation_code', ['activationCode'])
     .index('by_binding_pin', ['bindingPin'])
     .index('by_binding_token', ['bindingToken']),
 
