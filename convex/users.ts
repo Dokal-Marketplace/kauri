@@ -155,10 +155,7 @@ export const confirmPasswordChange = mutation({
     // short-circuit cleanly.
     if (!user.mustChangePassword) return
 
-    const passwordSetAt = Math.min(
-      args.clientTimestamp ?? Date.now(),
-      Date.now() // never allow a future timestamp
-    )
+    const passwordSetAt = Date.now()
 
     await ctx.scheduler.runAfter(0, internal.users.applyPasswordPolicyUpdate, {
       tokenIdentifier: identity.subject,
