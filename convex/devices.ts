@@ -300,8 +300,29 @@ export const assignDeviceToAgent = mutation({
 export const unassignDevice = mutation({
   args: { deviceId: v.id('devices') },
   handler: async (ctx, args) => {
-    // ... même pattern que assignDeviceToAgent
-    await ctx.db.patch(args.deviceId, { assignedTo: undefined })
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Non authentifié')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('Utilisateur introuvable')
+
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
+
+    const device = await ctx.db.get(args.deviceId)
+    if (!device || device.branchId !== caller.branchId) {
+      throw new Error('Appareil introuvable')
+    }
+
+    await ctx.db.patch(args.deviceId, {
+      assignedTo: undefined,
+      bindingPin: undefined,
+      bindingPinExpiry: undefined,
+      bindingToken: undefined,
+      bindingTokenExpiry: undefined,
+    })
     return { success: true }
   },
 })

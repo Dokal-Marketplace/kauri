@@ -54,9 +54,8 @@ export default function ChangePasswordPage({ reason }) {
       setTimeout(() => {
         window.location.reload()
       }, 1500)
-    } catch (err) {
-      console.error(err)
-      setError(err.message || 'Une erreur est survenue lors de la mise à jour du mot de passe.')
+    } catch {
+      setError('Une erreur est survenue lors de la mise à jour du mot de passe.')
     } finally {
       setLoading(false)
     }

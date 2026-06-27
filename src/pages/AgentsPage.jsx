@@ -337,8 +337,7 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
 
       // Afficher le statut de succès
       setEmailStatus('success')
-    } catch (err) {
-      console.error('Erreur envoi email:', err)
+    } catch {
       // Afficher le statut d'erreur
       setEmailStatus('error')
     } finally {

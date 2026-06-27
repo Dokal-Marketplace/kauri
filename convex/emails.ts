@@ -22,7 +22,6 @@ export const sendWelcomeEmail = action({
     const fromEmail = process.env.RESEND_FROM_EMAIL ?? 'noreply@resend.dev'
 
     if (!apiKey) {
-      console.error('[Email] RESEND_API_KEY is not configured')
       throw new Error("Service email non configuré. Veuillez contacter l'administrateur.")
     }
 
@@ -178,15 +177,12 @@ export const sendWelcomeEmail = action({
 
       if (!response.ok) {
         const error = await response.text()
-        console.error('[Email] Resend API error:', error)
         throw new Error(`Erreur lors de l'envoi de l'email: ${error}`)
       }
 
       const result = await response.json()
-      console.log('[Email] Email envoyé avec succès:', result.id)
       return { success: true, emailId: result.id }
     } catch (error) {
-      console.error('[Email] Erreur:', error)
       throw error
     }
   },
