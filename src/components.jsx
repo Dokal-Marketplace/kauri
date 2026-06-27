@@ -1,3 +1,4 @@
+//src/components.jsx
 import { useState, useMemo, useId } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useQuery } from 'convex/react'

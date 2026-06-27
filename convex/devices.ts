@@ -252,3 +252,56 @@ export const listUnbound = query({
     return devices.filter((d) => !d.assignedTo && d.status === 'active')
   },
 })
+
+// Assignation manuelle par l'admin
+export const assignDeviceToAgent = mutation({
+  args: {
+    deviceId: v.id('devices'),
+    agentId: v.id('users'),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Non authentifié')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('Utilisateur introuvable')
+
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
+
+    const device = await ctx.db.get(args.deviceId)
+    const agent = await ctx.db.get(args.agentId)
+
+    if (!device || !agent) throw new Error('Appareil ou agent introuvable')
+    if (device.branchId !== caller.branchId) throw new Error('Unauthorized')
+    if (agent.branchId !== caller.branchId) throw new Error('Unauthorized')
+
+    // Désassigner l'ancien agent si le TPE était déjà assigné
+    if (device.assignedTo && device.assignedTo !== args.agentId) {
+      // Optionnel : notifier l'ancien agent
+    }
+
+    await ctx.db.patch(args.deviceId, {
+      assignedTo: args.agentId,
+      // Nettoyer les credentials de binding
+      bindingPin: undefined,
+      bindingPinExpiry: undefined,
+      bindingToken: undefined,
+      bindingTokenExpiry: undefined,
+    })
+
+    return { success: true }
+  },
+})
+
+// Désassigner un TPE
+export const unassignDevice = mutation({
+  args: { deviceId: v.id('devices') },
+  handler: async (ctx, args) => {
+    // ... même pattern que assignDeviceToAgent
+    await ctx.db.patch(args.deviceId, { assignedTo: undefined })
+    return { success: true }
+  },
+})

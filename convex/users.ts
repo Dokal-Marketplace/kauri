@@ -1,3 +1,4 @@
+//convex/users.ts
 import { mutation, query, internalMutation } from './_generated/server'
 import { v } from 'convex/values'
 import { authz } from './authz'
@@ -12,6 +13,7 @@ export const currentUser = query({
       .query('users')
       .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
+
     if (!user) return null
 
     const branch = await ctx.db.get(user.branchId)
@@ -20,7 +22,6 @@ export const currentUser = query({
     const roles = await authz.withTenant(user.branchId).getUserRoles(ctx, identity.subject)
     const role = roles[0]?.role ?? null
 
-    // Attach the device assigned to this user (if any)
     const device = await ctx.db
       .query('devices')
       .withIndex('by_assigned_to', (q) => q.eq('assignedTo', user._id))
@@ -33,6 +34,10 @@ export const currentUser = query({
       tenantId: user.branchId,
       role,
       device: device ?? null,
+      // ↓ NOUVEAUX CHAMPS
+      mustChangePassword: user.mustChangePassword ?? false,
+      passwordSetAt: user.passwordSetAt ?? null,
+      lockedUntil: user.lockedUntil ?? null,
     }
   },
 })
@@ -89,5 +94,47 @@ export const onboard = mutation({
 
     // Assign admin role so the org creator has full operational permissions
     await authz.withTenant(branchId).assignRole(ctx, identity.subject, 'admin')
+  },
+})
+
+// Forcer le changement de mot de passe
+export const updatePasswordPolicy = mutation({
+  args: {
+    mustChange: v.optional(v.boolean()),
+    passwordSetAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Non authentifié')
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!user) throw new Error('Utilisateur introuvable')
+
+    await ctx.db.patch(user._id, {
+      ...(args.mustChange !== undefined && { mustChangePassword: args.mustChange }),
+      ...(args.passwordSetAt !== undefined && { passwordSetAt: args.passwordSetAt }),
+      failedLoginAttempts: 0, // Reset à chaque changement réussi
+    })
+  },
+})
+
+// Incrémenter les tentatives échouées
+export const recordFailedLogin = mutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.query('users').withIndex('by_branch' /* ... */).first()
+    if (!user) return
+
+    const attempts = (user.failedLoginAttempts ?? 0) + 1
+    const patch: any = { failedLoginAttempts: attempts }
+
+    if (attempts >= 5) {
+      patch.lockedUntil = Date.now() + 15 * 60 * 1000 // 15 min
+    }
+
+    await ctx.db.patch(user._id, patch)
   },
 })

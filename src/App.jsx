@@ -1,13 +1,18 @@
-import { Component, Suspense } from 'react'
+// src/App.jsx
+import { Component, Suspense, useEffect, useState } from 'react'
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom'
 import { wrapCreateBrowserRouterV7 } from '@sentry/react'
-import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react'
+import { SignedIn, SignedOut, SignIn, useAuth } from '@clerk/clerk-react'
+import { ConvexReactClient } from 'convex/react'
+import { ConvexProviderWithClerk } from 'convex/react-clerk'
 import * as Sentry from '@sentry/react'
 import { Sidebar } from './components'
 import { lazyWithReload } from './utils/lazyWithReload'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { useCurrentUser } from './hooks/useCurrentUser'
 import { TenantsProvider } from './components/providers/tenant-provider'
+import { SentryUserSync } from './components/SentryUserSync'
+import ChangePasswordPage from './pages/ChangePasswordPage'
 
 const DashboardPage = lazyWithReload(() => import('./pages/DashboardPage'))
 const ClientsPage = lazyWithReload(() => import('./pages/ClientsPage'))
@@ -18,6 +23,9 @@ const ProductsPage = lazyWithReload(() => import('./pages/ProductsPage'))
 const ReconciliationPage = lazyWithReload(() => import('./pages/ReconciliationPage'))
 const SettingsPage = lazyWithReload(() => import('./pages/SettingsPage'))
 const DisbursementsPage = lazyWithReload(() => import('./pages/DisbursementsPage'))
+
+// ─── Convex client (singleton module-level, pas de re-création) ───────────────
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
 
 // ─── Error fallbacks ───────────────────────────────────────────────────────────
 function PageErrorFallback({ eventId }) {
@@ -30,8 +38,6 @@ function PageErrorFallback({ eventId }) {
   )
 }
 
-// Render binding flow as a full-screen modal when an agent has no device
-// We wrap BindDeviceDrawer via lazyWithReload and export a small helper
 const BindDeviceLazy = lazyWithReload(() =>
   import('./pages/BindDeviceDrawer').then((m) => ({ default: m.BindDeviceDrawer }))
 )
@@ -58,11 +64,38 @@ class ChunkErrorBoundary extends Component {
   }
 }
 
-// ─── Layout ────────────────────────────────────────────────────────────────────
+// ─── AppShell — utilise useCurrentUser, doit être sous ConvexProvider ─────────
 function AppShell() {
   const { isLoaded, convexUser } = useCurrentUser()
+  const [now, setNow] = useState(null)
+
+  useEffect(() => {
+    const updateNow = () => setNow(Date.now())
+    const timeoutId = window.setTimeout(updateNow, 0)
+    const intervalId = window.setInterval(updateNow, 60 * 1000)
+    return () => {
+      window.clearTimeout(timeoutId)
+      window.clearInterval(intervalId)
+    }
+  }, [])
+
+  const THREE_DAYS = 3 * 24 * 60 * 60 * 1000
+  const isPasswordExpired =
+    isLoaded &&
+    Boolean(convexUser?.passwordSetAt) &&
+    now !== null &&
+    now - convexUser.passwordSetAt > THREE_DAYS
+
   if (isLoaded && !convexUser) return <OnboardingWizard />
-  // If the user is an agent and is loaded but has no device assigned, show the binding flow
+
+  if (isLoaded && convexUser?.mustChangePassword) {
+    return <ChangePasswordPage reason="required" />
+  }
+
+  if (isLoaded && isPasswordExpired) {
+    return <ChangePasswordPage reason="expired" />
+  }
+
   if (isLoaded && convexUser && convexUser.role === 'agent' && convexUser.device === null) {
     return (
       <ChunkErrorBoundary>
@@ -77,6 +110,7 @@ function AppShell() {
       </ChunkErrorBoundary>
     )
   }
+
   return (
     <TenantsProvider
       features={{ members: true, invitations: true, teams: true }}
@@ -101,19 +135,22 @@ function AppShell() {
   )
 }
 
+// ─── Layout — ConvexProviderWithClerk ICI, au-dessus de AppShell ──────────────
+// C'est le seul endroit garanti d'être dans le React tree au moment du rendu.
+// RouterProvider ne propage pas les contexts React standards vers ses elements.
 function Layout() {
   return (
-    <>
+    <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+      <SentryUserSync />
       <SignedIn>
         <AppShell />
       </SignedIn>
-
       <SignedOut>
         <div className="auth-gate">
           <SignIn routing="hash" />
         </div>
       </SignedOut>
-    </>
+    </ConvexProviderWithClerk>
   )
 }
 
@@ -137,10 +174,7 @@ const router = createSentryRouter([
   },
 ])
 
+// ─── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
   return <RouterProvider router={router} />
 }
-
-// Render binding flow as a full-screen modal when an agent has no device
-// We wrap BindDeviceDrawer via lazyWithReload and export a small helper
-// Note: the router's Layout renders AppShell which reads `useCurrentUser`.

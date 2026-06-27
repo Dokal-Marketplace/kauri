@@ -28,6 +28,11 @@ export default defineSchema({
     tokenIdentifier: v.string(),
     branchId: v.id('branches'),
     status: v.union(v.literal('active'), v.literal('suspended')),
+    mustChangePassword: v.optional(v.boolean()),
+    passwordSetAt: v.optional(v.number()),
+    passwordHistory: v.optional(v.array(v.string())),
+    failedLoginAttempts: v.optional(v.number()),
+    lockedUntil: v.optional(v.number()),
   })
     .index('by_token', ['tokenIdentifier'])
     .index('by_branch', ['branchId']),

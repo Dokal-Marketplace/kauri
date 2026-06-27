@@ -1,6 +1,15 @@
+// convex/agents.ts
 import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { authz } from './authz'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function generateSecurePassword(length: number = 12): string {
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  const array = new Uint32Array(length)
+  crypto.getRandomValues(array)
+  return Array.from(array, (v) => charset[v % charset.length]).join('')
+}
 
 export const listByBranch = query({
   args: { branchId: v.id('branches') },
@@ -26,8 +35,6 @@ export const listByBranch = query({
   },
 })
 
-const VALID_ROLES = ['admin', 'supervisor', 'field_agent', 'accountant', 'it_admin'] as const
-
 export const createAgent = mutation({
   args: {
     fullName: v.string(),
@@ -40,6 +47,7 @@ export const createAgent = mutation({
       v.literal('accountant'),
       v.literal('it_admin')
     ),
+    temporaryPassword: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
@@ -49,14 +57,18 @@ export const createAgent = mutation({
       .query('users')
       .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
       .unique()
+
     if (!caller) throw new Error('Agent appelant introuvable')
 
     await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'devices:bind')
+
     const callerRoles = await authz.withTenant(caller.branchId).getUserRoles(ctx, identity.subject)
     const isAdmin = callerRoles.some((r) => r.role === 'admin')
+
     if (args.role === 'admin' && !isAdmin) {
       throw new Error("Seul un administrateur peut attribuer le rôle 'admin'.")
     }
+
     const fullName = args.fullName.trim()
     const email = args.email.trim().toLowerCase()
     const phoneNumber = args.phoneNumber.trim()
@@ -78,8 +90,10 @@ export const createAgent = mutation({
       throw new Error('Un agent avec ce numéro de téléphone existe déjà dans cette agence.')
     }
 
-    // Generate a placeholder tokenIdentifier — the agent will get a real one
-    // when they sign up and link their account.
+    // Générer ou utiliser le mot de passe fourni
+    const password = args.temporaryPassword || generateSecurePassword(12)
+
+    // Generate a placeholder tokenIdentifier
     const placeholderToken = `invited|${crypto.randomUUID()}`
 
     const userId = await ctx.db.insert('users', {
@@ -94,7 +108,8 @@ export const createAgent = mutation({
     // Assign the selected role to the new agent
     await authz.withTenant(caller.branchId).assignRole(ctx, placeholderToken, args.role)
 
-    return userId
+    // Retourner le mot de passe pour l'afficher à l'admin
+    return { userId, temporaryPassword: password }
   },
 })
 

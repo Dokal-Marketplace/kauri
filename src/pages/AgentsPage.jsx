@@ -1,6 +1,6 @@
 //pages/AgentsPage.jsx
 import { useState, useMemo, useEffect } from 'react'
-import { useQuery, useMutation } from 'convex/react'
+import { useQuery, useMutation, useAction } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { I } from '../icons'
@@ -28,7 +28,7 @@ const ROLE_KEY_TO_LABEL = {
   it_admin: 'Admin IT',
 }
 
-// Options shown in the “Nouvel agent” role selector (admin excluded — reserved for onboarding)
+// Options shown in the "Nouvel agent" role selector (admin excluded — reserved for onboarding)
 const ASSIGNABLE_ROLES = [
   { value: 'field_agent', label: 'Agent terrain' },
   { value: 'supervisor', label: 'Superviseure' },
@@ -179,7 +179,23 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function NewAgentModal({ isOpen, onClose, onSuccess }) {
   const createAgent = useMutation(api.agents.createAgent)
+  const sendWelcomeEmail = useAction(api.emails.sendWelcomeEmail)
+  //Pour récupérer convexUser
+  const { convexUser } = useCurrentUser()
+  // États de succès
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [generatedPassword, setGeneratedPassword] = useState('')
+  const [createdAgentInfo, setCreatedAgentInfo] = useState(null)
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
 
+  // Toggle mot de passe
+  const [autoGenerate, setAutoGenerate] = useState(true)
+  const [manualPassword, setManualPassword] = useState('')
+
+  // ✅ ÉTAT pour le statut d'envoi
+  const [emailStatus, setEmailStatus] = useState(null) // null | 'success' | 'error'
+
+  // Formulaire
   const [formState, setFormState] = useState({
     fullName: '',
     email: '',
@@ -199,11 +215,18 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && !isLoading) onClose()
+      if (e.key === 'Escape' && !isLoading) {
+        if (showSuccess) {
+          setShowSuccess(false)
+          setCreatedAgentInfo(null)
+          setGeneratedPassword('')
+        }
+        onClose()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, isLoading, onClose])
+  }, [isOpen, isLoading, showSuccess, onClose])
 
   // ── Validation ──────────────────────────────────────────────────────────────
   const validate = () => {
@@ -225,6 +248,11 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
       valid = false
     }
 
+    if (!autoGenerate && manualPassword.length < 6) {
+      next.form = 'Le mot de passe doit contenir au moins 6 caractères.'
+      valid = false
+    }
+
     setFormState((prev) => ({ ...prev, errors: next }))
     return valid
   }
@@ -241,11 +269,39 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
     }))
 
     try {
-      await createAgent({
+      const result = await createAgent({
         fullName: fullName.trim(),
         email: email.trim(),
         phoneNumber: phoneNumber.trim(),
         role,
+        temporaryPassword: autoGenerate ? undefined : manualPassword,
+      })
+
+      // Le mot de passe est soit généré, soit celui saisi manuellement
+      const passwordToShow = autoGenerate
+        ? result?.temporaryPassword || 'Non disponible'
+        : manualPassword
+
+      // Stocker les infos pour affichage dans le modal de succès
+      setCreatedAgentInfo({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phoneNumber: phoneNumber.trim(),
+        role: ROLE_KEY_TO_LABEL[role] ?? 'Agent terrain',
+      })
+      setGeneratedPassword(passwordToShow)
+
+      // Afficher le modal de succès
+      setShowSuccess(true)
+
+      // Réinitialiser le formulaire
+      setFormState({
+        fullName: '',
+        email: '',
+        phoneNumber: '',
+        role: 'field_agent',
+        isLoading: false,
+        errors: { form: null, email: null, phoneNumber: null },
       })
     } catch (err) {
       const rawMessage = typeof err?.message === 'string' ? err.message : ''
@@ -262,17 +318,49 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
       }
 
       setFormState((prev) => ({ ...prev, isLoading: false, errors: nextErrors }))
-      return
     }
+  }
 
-    setFormState({
-      fullName: '',
-      email: '',
-      phoneNumber: '',
-      role: 'field_agent',
-      isLoading: false,
-      errors: { form: null, email: null, phoneNumber: null },
-    })
+  // Fonction pour envoyer le mot de passe par email
+  const handleSendEmail = async () => {
+    if (!createdAgentInfo) return
+
+    setIsSendingEmail(true)
+    setEmailStatus(null) // Reset status
+    try {
+      await sendWelcomeEmail({
+        toEmail: createdAgentInfo.email,
+        agentName: createdAgentInfo.fullName,
+        temporaryPassword: generatedPassword,
+        branchName: convexUser?.organization?.name,
+      })
+
+      // Afficher le statut de succès
+      setEmailStatus('success')
+    } catch (err) {
+      console.error('Erreur envoi email:', err)
+      // Afficher le statut d'erreur
+      setEmailStatus('error')
+    } finally {
+      setIsSendingEmail(false)
+    }
+  }
+
+  // Fonction pour créer un nouvel agent (depuis le modal de succès)
+  const handleNewAgent = () => {
+    setShowSuccess(false)
+    setCreatedAgentInfo(null)
+    setGeneratedPassword('')
+    setAutoGenerate(true)
+    setManualPassword('')
+  }
+
+  // Fonction pour fermer le modal de succès
+  const handleCloseSuccess = () => {
+    setShowSuccess(false)
+    setCreatedAgentInfo(null)
+    setGeneratedPassword('')
+    setEmailStatus(null) // Reset email status
     onClose()
     onSuccess?.()
   }
@@ -282,149 +370,513 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
   return (
     <>
       {/* Scrim */}
-      <div className="modal-scrim" onClick={isLoading ? undefined : onClose} />
+      <div className="modal-scrim" onClick={isLoading ? undefined : handleCloseSuccess} />
 
-      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="agent-modal-title">
-        {/* Header */}
-        <div className="modal-head">
-          <h2 id="agent-modal-title">Nouvel agent</h2>
-          <button
-            className="btn ghost sm"
-            onClick={onClose}
-            disabled={isLoading}
-            aria-label="Fermer"
-            style={{ padding: 6 }}
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Body */}
-        <form onSubmit={handleSubmit} className="modal-body" noValidate>
-          {/* Form-level error */}
-          {errors.form && (
+      {/* MODAL DE SUCCÈS */}
+      {showSuccess && createdAgentInfo ? (
+        <div className="modal" role="dialog" aria-modal="true" aria-labelledby="success-title">
+          <div className="modal-head" style={{ borderBottom: 'none' }}>
             <div
-              role="alert"
               style={{
-                padding: 12,
-                marginBottom: 16,
-                backgroundColor: 'var(--red-1)',
-                border: '1px solid var(--red-2)',
-                borderRadius: 6,
-                fontSize: 13,
-                color: 'var(--red-6)',
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                background: 'var(--green-1, #e6f9ed)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 12,
               }}
             >
-              {errors.form}
+              <I.Check size={24} style={{ color: 'var(--green-6, #15803d)' }} />
             </div>
-          )}
-
-          {/* Full name */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="agent-full-name">
-              Nom complet
-            </label>
-            <input
-              id="agent-full-name"
-              type="text"
-              className="form-input"
-              value={fullName}
-              onChange={(e) => setFormState((prev) => ({ ...prev, fullName: e.target.value }))}
-              placeholder="Prénom et Nom"
-              disabled={isLoading}
-              autoFocus
-            />
-          </div>
-
-          {/* Email */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="agent-email">
-              Email
-            </label>
-            <input
-              id="agent-email"
-              type="email"
-              className={`form-input${errors.email ? ' input-error' : ''}`}
-              value={email}
-              onChange={(e) => {
-                setFormState((prev) => ({
-                  ...prev,
-                  email: e.target.value,
-                  errors: { ...prev.errors, email: null },
-                }))
-              }}
-              placeholder="agent@dokal.com"
-              disabled={isLoading}
-              aria-describedby={errors.email ? 'email-error' : undefined}
-              aria-invalid={!!errors.email}
-            />
-            {errors.email && (
-              <p id="email-error" style={{ marginTop: 4, fontSize: 12, color: 'var(--red-6)' }}>
-                {errors.email}
-              </p>
-            )}
-          </div>
-
-          {/* Phone */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="agent-phone">
-              Numéro de téléphone
-            </label>
-            <input
-              id="agent-phone"
-              type="tel"
-              className={`form-input${errors.phoneNumber ? ' input-error' : ''}`}
-              value={phoneNumber}
-              onChange={(e) => {
-                setFormState((prev) => ({
-                  ...prev,
-                  phoneNumber: e.target.value,
-                  errors: { ...prev.errors, phoneNumber: null },
-                }))
-              }}
-              placeholder="+226 XX XX XX XX"
-              disabled={isLoading}
-              aria-describedby={errors.phoneNumber ? 'phone-error' : undefined}
-              aria-invalid={!!errors.phoneNumber}
-            />
-            {errors.phoneNumber && (
-              <p id="phone-error" style={{ marginTop: 4, fontSize: 12, color: 'var(--red-6)' }}>
-                {errors.phoneNumber}
-              </p>
-            )}
-          </div>
-
-          {/* Role */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="agent-role">
-              Rôle
-            </label>
-            <select
-              id="agent-role"
-              className="form-input"
-              value={role}
-              onChange={(e) => setFormState((prev) => ({ ...prev, role: e.target.value }))}
-              disabled={isLoading}
+            <div>
+              <h2 id="success-title" style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
+                Agent créé avec succès !
+              </h2>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>
+                Les informations de connexion sont prêtes
+              </div>
+            </div>
+            <button
+              className="btn ghost sm"
+              onClick={handleCloseSuccess}
+              aria-label="Fermer"
+              style={{ padding: 6, marginLeft: 'auto' }}
             >
-              {ASSIGNABLE_ROLES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
+              ✕
+            </button>
           </div>
 
-          {/* Actions */}
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button type="button" className="btn" onClick={onClose} disabled={isLoading}>
-              Annuler
-            </button>
-            <button type="submit" className="btn brand" disabled={isLoading}>
-              {isLoading ? 'Invitation…' : 'Inviter agent'}
+          <div className="modal-body" style={{ paddingTop: 0 }}>
+            {/* Résumé de l'agent */}
+            <div
+              style={{
+                padding: 16,
+                background: 'var(--surface-inset)',
+                borderRadius: 8,
+                marginBottom: 20,
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 8 }}>
+                {createdAgentInfo.fullName}
+              </div>
+              <div
+                style={{
+                  fontSize: 13,
+                  color: 'var(--ink-2)',
+                  display: 'flex',
+                  gap: 16,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <span>📧 {createdAgentInfo.email}</span>
+                <span>📱 {createdAgentInfo.phoneNumber}</span>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 8 }}>
+                Rôle : {createdAgentInfo.role}
+              </div>
+            </div>
+
+            {/* Mot de passe */}
+            <div style={{ marginBottom: 20 }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: 'var(--ink-2)',
+                  marginBottom: 8,
+                }}
+              >
+                🔑 Mot de passe temporaire
+              </label>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  alignItems: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    background: 'var(--brand-softer)',
+                    border: '1px solid var(--brand-soft)',
+                    borderRadius: 6,
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: 'var(--brand-ink)',
+                    letterSpacing: '0.5px',
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {generatedPassword}
+                </div>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedPassword)
+                    const btn = document.activeElement
+                    if (btn) {
+                      const original = btn.textContent
+                      btn.textContent = 'Copié !'
+                      setTimeout(() => {
+                        btn.textContent = original
+                      }, 2000)
+                    }
+                  }}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  Copier
+                </button>
+              </div>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: 'var(--ink-3)',
+                  marginTop: 6,
+                  fontStyle: 'italic',
+                }}
+              >
+                ⚠️ Ce mot de passe ne sera affiché qu'une seule fois
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <button
+                type="button"
+                className="btn brand"
+                onClick={handleSendEmail}
+                disabled={isSendingEmail}
+                style={{
+                  width: '100%',
+                  opacity: isSendingEmail ? 0.6 : 1,
+                  cursor: isSendingEmail ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isSendingEmail ? (
+                  <>
+                    <span className="btn-spinner" />
+                    Envoi en cours...
+                  </>
+                ) : (
+                  <>
+                    <I.Mail size={16} />
+                    {emailStatus === 'success'
+                      ? 'Renvoyer les identifiants'
+                      : 'Envoyer les identifiants par email'}
+                  </>
+                )}
+              </button>
+
+              {/* BANDEAU DE STATUT D'ENVOI EMAIL */}
+              {emailStatus === 'success' && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: 14,
+                    marginBottom: 20,
+                    background: 'var(--green-1, #e6f9ed)',
+                    border: '1px solid var(--green-2, #86efac)',
+                    borderRadius: 8,
+                    color: 'var(--green-8, #166534)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: 'var(--green-6, #16a34a)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <I.Check size={16} stroke="white" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>Email envoyé avec succès</div>
+                    <div style={{ fontSize: 12, color: 'var(--green-7)', marginTop: 2 }}>
+                      Les identifiants ont été envoyés à {createdAgentInfo.email}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {emailStatus === 'error' && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: 14,
+                    marginBottom: 20,
+                    background: 'var(--red-1, #fef2f2)',
+                    border: '1px solid var(--red-2, #fecaca)',
+                    borderRadius: 8,
+                    color: 'var(--red-8, #991b1b)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: 'var(--red-6, #dc2626)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <I.Close size={16} stroke="white" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>Échec de l'envoi de l'email</div>
+                    <div style={{ fontSize: 12, color: 'var(--red-7)', marginTop: 2 }}>
+                      Veuillez réessayer ou vérifier la configuration du service email
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSendEmail}
+                    disabled={isSendingEmail}
+                    style={{
+                      padding: '6px 12px',
+                      background: 'var(--red-6)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: isSendingEmail ? 'not-allowed' : 'pointer',
+                      opacity: isSendingEmail ? 0.6 : 1,
+                    }}
+                  >
+                    Réessayer
+                  </button>
+                </div>
+              )}
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  marginTop: 4,
+                }}
+              >
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={handleCloseSuccess}
+                  style={{ flex: 1 }}
+                >
+                  Fermer
+                </button>
+                <button type="button" className="btn" onClick={handleNewAgent} style={{ flex: 1 }}>
+                  Nouvel agent
+                </button>
+              </div>
+            </div>
+
+            {/* Note */}
+            <div
+              style={{
+                marginTop: 16,
+                padding: 12,
+                background: 'var(--yellow-1, #fffbeb)',
+                border: '1px solid var(--yellow-2, #fde68a)',
+                borderRadius: 6,
+                fontSize: 12,
+                color: 'var(--yellow-8, #92400e)',
+              }}
+            >
+              <strong>Note :</strong> L'agent devra changer son mot de passe à la première
+              connexion.
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* FORMULAIRE DE CRÉATION */
+        <div className="modal" role="dialog" aria-modal="true" aria-labelledby="agent-modal-title">
+          {/* Header */}
+          <div className="modal-head">
+            <h2 id="agent-modal-title">Nouvel agent</h2>
+            <button
+              className="btn ghost sm"
+              onClick={onClose}
+              disabled={isLoading}
+              aria-label="Fermer"
+              style={{ padding: 6 }}
+            >
+              ✕
             </button>
           </div>
-        </form>
-      </div>
+
+          {/* Body */}
+          <form onSubmit={handleSubmit} className="modal-body" noValidate>
+            {/* Form-level error */}
+            {errors.form && (
+              <div
+                role="alert"
+                style={{
+                  padding: 12,
+                  marginBottom: 16,
+                  backgroundColor: 'var(--red-1)',
+                  border: '1px solid var(--red-2)',
+                  borderRadius: 6,
+                  fontSize: 13,
+                  color: 'var(--red-6)',
+                }}
+              >
+                {errors.form}
+              </div>
+            )}
+
+            {/* Full name */}
+            <div className="form-group">
+              <label className="form-label" htmlFor="agent-full-name">
+                Nom complet
+              </label>
+              <input
+                id="agent-full-name"
+                type="text"
+                className="form-input"
+                value={fullName}
+                onChange={(e) => setFormState((prev) => ({ ...prev, fullName: e.target.value }))}
+                placeholder="Prénom et Nom"
+                disabled={isLoading}
+                autoFocus
+              />
+            </div>
+
+            {/* Email */}
+            <div className="form-group">
+              <label className="form-label" htmlFor="agent-email">
+                Email
+              </label>
+              <input
+                id="agent-email"
+                type="email"
+                className={`form-input${errors.email ? ' input-error' : ''}`}
+                value={email}
+                onChange={(e) => {
+                  setFormState((prev) => ({
+                    ...prev,
+                    email: e.target.value,
+                    errors: { ...prev.errors, email: null },
+                  }))
+                }}
+                placeholder="agent@dokal.com"
+                disabled={isLoading}
+                aria-describedby={errors.email ? 'email-error' : undefined}
+                aria-invalid={!!errors.email}
+              />
+              {errors.email && (
+                <p id="email-error" style={{ marginTop: 4, fontSize: 12, color: 'var(--red-6)' }}>
+                  {errors.email}
+                </p>
+              )}
+            </div>
+
+            {/* Phone */}
+            <div className="form-group">
+              <label className="form-label" htmlFor="agent-phone">
+                Numéro de téléphone
+              </label>
+              <input
+                id="agent-phone"
+                type="tel"
+                className={`form-input${errors.phoneNumber ? ' input-error' : ''}`}
+                value={phoneNumber}
+                onChange={(e) => {
+                  setFormState((prev) => ({
+                    ...prev,
+                    phoneNumber: e.target.value,
+                    errors: { ...prev.errors, phoneNumber: null },
+                  }))
+                }}
+                placeholder="+226 XX XX XX XX"
+                disabled={isLoading}
+                aria-describedby={errors.phoneNumber ? 'phone-error' : undefined}
+                aria-invalid={!!errors.phoneNumber}
+              />
+              {errors.phoneNumber && (
+                <p id="phone-error" style={{ marginTop: 4, fontSize: 12, color: 'var(--red-6)' }}>
+                  {errors.phoneNumber}
+                </p>
+              )}
+            </div>
+
+            {/* Role */}
+            <div className="form-group">
+              <label className="form-label" htmlFor="agent-role">
+                Rôle
+              </label>
+              <select
+                id="agent-role"
+                className="form-input"
+                value={role}
+                onChange={(e) => setFormState((prev) => ({ ...prev, role: e.target.value }))}
+                disabled={isLoading}
+              >
+                {ASSIGNABLE_ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Mot de passe */}
+            <div className="form-group">
+              <label className="form-label">Mot de passe temporaire</label>
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  alignItems: 'center',
+                  marginBottom: 12,
+                  padding: 10,
+                  background: 'var(--surface-inset)',
+                  borderRadius: 6,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  id="auto-generate"
+                  checked={autoGenerate}
+                  onChange={(e) => setAutoGenerate(e.target.checked)}
+                  disabled={isLoading}
+                  style={{ width: 16, height: 16 }}
+                />
+                <label
+                  htmlFor="auto-generate"
+                  style={{
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    color: 'var(--ink-2)',
+                    flex: 1,
+                  }}
+                >
+                  Générer automatiquement (recommandé)
+                </label>
+              </div>
+
+              {!autoGenerate && (
+                <input
+                  type="text"
+                  className="form-input"
+                  value={manualPassword}
+                  onChange={(e) => setManualPassword(e.target.value)}
+                  placeholder="Saisir un mot de passe (min. 6 caractères)"
+                  disabled={isLoading}
+                  minLength={6}
+                />
+              )}
+
+              <p
+                style={{
+                  marginTop: 6,
+                  fontSize: 11,
+                  color: 'var(--ink-3)',
+                  lineHeight: 1.4,
+                }}
+              >
+                {autoGenerate
+                  ? 'Un mot de passe sécurisé à 12 caractères sera généré automatiquement.'
+                  : 'Minimum 6 caractères. Privilégiez la simplicité pour les utilisateurs non-tech.'}
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn" onClick={onClose} disabled={isLoading}>
+                Annuler
+              </button>
+              <button type="submit" className="btn brand" disabled={isLoading}>
+                {isLoading ? 'Création…' : 'Créer agent'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </>
   )
 }
