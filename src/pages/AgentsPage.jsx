@@ -177,7 +177,7 @@ function SyncTag({ d }) {
 const PHONE_REGEX = /^\+?[0-9\s-]{8,15}$/
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-function NewAgentModal({ isOpen, onClose, onSuccess }) {
+function NewAgentModal({ isOpen, onClose }) {
   const createAgent = useMutation(api.agents.createAgent)
   const sendWelcomeEmail = useAction(api.emails.sendWelcomeEmail)
   //Pour récupérer convexUser
