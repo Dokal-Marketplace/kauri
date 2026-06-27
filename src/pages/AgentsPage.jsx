@@ -211,16 +211,20 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
 
   const { fullName, email, phoneNumber, role, isLoading, errors } = formState
 
+  const resetAgentModalState = () => {
+    setShowSuccess(false)
+    setCreatedAgentInfo(null)
+    setGeneratedPassword('')
+    setEmailStatus(null)
+    setAutoGenerate(true)
+    setManualPassword('')
+  }
   // ── Escape key handler ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && !isLoading) {
-        if (showSuccess) {
-          setShowSuccess(false)
-          setCreatedAgentInfo(null)
-          setGeneratedPassword('')
-        }
+        resetAgentModalState()
         onClose()
       }
     }
@@ -347,21 +351,12 @@ function NewAgentModal({ isOpen, onClose, onSuccess }) {
 
   // Fonction pour créer un nouvel agent (depuis le modal de succès)
   const handleNewAgent = () => {
-    setShowSuccess(false)
-    setCreatedAgentInfo(null)
-    setGeneratedPassword('')
-    setAutoGenerate(true)
-    setManualPassword('')
+    resetAgentModalState()
   }
 
   // Fonction pour fermer le modal de succès
   const handleCloseSuccess = () => {
-    setShowSuccess(false)
-    setCreatedAgentInfo(null)
-    setGeneratedPassword('')
-    setEmailStatus(null) // Reset email status
-    onClose()
-    onSuccess?.()
+    resetAgentModalState()
   }
 
   if (!isOpen) return null
