@@ -15,6 +15,7 @@ import type * as customers from "../customers.js";
 import type * as dashboard from "../dashboard.js";
 import type * as devices from "../devices.js";
 import type * as disbursements from "../disbursements.js";
+import type * as emails from "../emails.js";
 import type * as goals from "../goals.js";
 import type * as helpers from "../helpers.js";
 import type * as invitations from "../invitations.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   dashboard: typeof dashboard;
   devices: typeof devices;
   disbursements: typeof disbursements;
+  emails: typeof emails;
   goals: typeof goals;
   helpers: typeof helpers;
   invitations: typeof invitations;

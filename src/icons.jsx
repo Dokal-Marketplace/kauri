@@ -211,4 +211,10 @@ export const I = {
       <circle cx="12" cy="18.5" r="1" fill="currentColor" />
     </Icon>
   ),
+  Mail: (p) => (
+    <Icon {...p}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 7l9 6 9-6" />
+    </Icon>
+  ),
 }

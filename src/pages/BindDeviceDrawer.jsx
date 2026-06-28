@@ -1,5 +1,5 @@
 /**
- * BindDeviceDrawer.jsx
+ * //src/pages/BindDeviceDrawer.jsx
  * QR scanner + 6-digit PIN flow for agents to claim a device.
  * Accessibility-friendly and feature-detected (BarcodeDetector fallback to PIN).
  */
