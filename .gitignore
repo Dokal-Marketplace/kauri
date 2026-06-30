@@ -25,14 +25,6 @@
 /.cache/
 /.husky/_/
 
-# Native build artifacts
-/android/.gradle/
-/android/build/
-/android/app/build/
-/android/local.properties
-/ios/Pods/
-/ios/build/
-/ios/DerivedData/
-/ios/**/*.xcworkspace/
-/ios/**/*.xcuserdata/
-/ios/.xcode.env.local
+# Native projects (Expo managed - generated via expo prebuild)
+/android/
+/ios/
