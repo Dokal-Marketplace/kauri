@@ -27,6 +27,9 @@ const FleetPage = lazyWithReload(() => import('./pages/FleetPage'))
 // ─── Convex client (singleton module-level, pas de re-création) ───────────────
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
 
+// ─── Convex client (singleton module-level, pas de re-création) ───────────────
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
+
 // ─── Error fallbacks ───────────────────────────────────────────────────────────
 function PageErrorFallback({ eventId }) {
   return (
