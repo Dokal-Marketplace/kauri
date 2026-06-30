@@ -24,10 +24,6 @@ const ReconciliationPage = lazyWithReload(() => import('./pages/ReconciliationPa
 const SettingsPage = lazyWithReload(() => import('./pages/SettingsPage'))
 const DisbursementsPage = lazyWithReload(() => import('./pages/DisbursementsPage'))
 const FleetPage = lazyWithReload(() => import('./pages/FleetPage'))
-// ─── Convex client (singleton module-level, pas de re-création) ───────────────
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
-
-// ─── Convex client (singleton module-level, pas de re-création) ───────────────
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
 
 // ─── Error fallbacks ───────────────────────────────────────────────────────────
