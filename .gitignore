@@ -1,10 +1,38 @@
-# gitignore file for the Kauri project
-/node_modules/*
-/dist
-/build
+# Dependencies
+/node_modules/
 
-# Environment variables files
+# Build output
+/dist/
+/build/
+/coverage/
+
+# Environment variables
 .env
-.env.local
-node_modules/.bin/convex
-node_modules/.bin/vite
+.env.*
+!.env.example
+!.env.prod
+
+# Logs and local scratch files
+*.log
+*.bak
+.DS_Store
+
+# Tooling caches
+/.expo/
+/.expo-shared/
+/.turbo/
+/.vite/
+/.cache/
+/.husky/_/
+
+# Native build artifacts
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/local.properties
+/ios/Pods/
+/ios/build/
+/ios/DerivedData/
+/ios/**/*.xcworkspace/
+/ios/**/*.xcuserdata/
+/ios/.xcode.env.local
