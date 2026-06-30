@@ -103,6 +103,8 @@ export const createAgent = mutation({
       tokenIdentifier: placeholderToken,
       branchId: caller.branchId,
       status: 'active',
+      mustChangePassword: true,
+      passwordSetAt: Date.now(),
     })
 
     // Assign the selected role to the new agent

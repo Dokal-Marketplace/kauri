@@ -108,28 +108,40 @@ export function Sidebar() {
     {
       group: 'Principal',
       entries: [
-        { path: '/', end: true, label: 'Tableau de bord', icon: <I.Grid /> },
-        { path: '/clients', label: 'Clients', icon: <I.Users />, badge: '142' },
-        { path: '/tx', label: 'Transactions', icon: <I.Receipt />, badge: '12' },
-        { path: '/objectifs', label: 'Objectifs', icon: <I.Pin /> },
-        { path: '/produits', label: 'Produits', icon: <I.Wallet /> },
-        { path: '/decaissements', label: 'Décaissements', icon: <I.Coin />, badge: pendingCount },
-        { path: '/reconciliation', label: 'Réconciliation', icon: <I.Coin />, badge: '1' },
+        { key: 'dashboard', path: '/', end: true, label: 'Tableau de bord', icon: <I.Grid /> },
+        { key: 'clients', path: '/clients', label: 'Clients', icon: <I.Users />, badge: '142' },
+        { key: 'tx', path: '/tx', label: 'Transactions', icon: <I.Receipt />, badge: '12' },
+        { key: 'objectifs', path: '/objectifs', label: 'Objectifs', icon: <I.Pin /> },
+        { key: 'produits', path: '/produits', label: 'Produits', icon: <I.Wallet /> },
+        {
+          key: 'decaissements',
+          path: '/decaissements',
+          label: 'Décaissements',
+          icon: <I.Coin />,
+          badge: pendingCount,
+        },
+        {
+          key: 'reconciliation',
+          path: '/reconciliation',
+          label: 'Réconciliation',
+          icon: <I.Receipt />,
+        },
       ],
     },
     {
       group: 'Rapports',
       entries: [
-        { label: 'Analyses', icon: <I.Chart /> },
-        { label: 'Export CSV', icon: <I.Export /> },
+        { key: 'analyses', label: 'Analyses', icon: <I.Chart /> },
+        { key: 'export', label: 'Export CSV', icon: <I.Export /> },
       ],
     },
     {
       group: 'Admin',
       entries: [
-        { path: '/agents', label: 'Agents', icon: <I.Users /> },
-        { label: 'Permissions', icon: <I.Shield /> },
-        { path: '/settings', label: 'Paramètres', icon: <I.Settings /> },
+        { key: 'agents', path: '/agents', label: 'Agents', icon: <I.Users /> },
+        { key: 'fleet', path: '/fleet', label: 'Flotte TPE', icon: <I.Terminal /> }, // ← NOUVEAU
+        { key: 'permissions', label: 'Permissions', icon: <I.Shield /> },
+        { key: 'settings', path: '/settings', label: 'Paramètres', icon: <I.Settings /> },
       ],
     },
   ]
@@ -151,7 +163,7 @@ export function Sidebar() {
           {group.entries.map((it) =>
             it.path ? (
               <NavLink
-                key={it.path ?? it.label}
+                key={it.key} // ← Utiliser la clé explicite
                 to={it.path}
                 end={it.end}
                 className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')}
@@ -161,7 +173,7 @@ export function Sidebar() {
                 {it.badge && <span className="nav-badge">{it.badge}</span>}
               </NavLink>
             ) : (
-              <div key={it.path ?? it.label} className="nav-item disabled">
+              <div key={it.key} className="nav-item disabled">
                 {it.icon}
                 <span>{it.label}</span>
               </div>

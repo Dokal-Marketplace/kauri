@@ -60,6 +60,7 @@ export default defineSchema({
   devices: defineTable({
     serialNumber: v.string(),
     model: v.string(),
+    brand: v.optional(v.string()),
     branchId: v.id('branches'),
     assignedTo: v.optional(v.id('users')),
     status: v.union(v.literal('active'), v.literal('maintenance'), v.literal('lost')),
@@ -67,16 +68,38 @@ export default defineSchema({
     batteryPct: v.optional(v.number()),
     signalLevel: v.optional(v.number()),
     queuedCount: v.optional(v.number()),
-    bindingPin: v.optional(v.string()), // 6-digit numeric string
-    bindingPinExpiry: v.optional(v.number()), // Unix ms — TTL 10 minutes
-    bindingToken: v.optional(v.string()), // UUID embedded in QR payload
-    bindingTokenExpiry: v.optional(v.number()), // Unix ms — TTL 10 minutes
+    registrationLocation: v.optional(
+      v.object({
+        latitude: v.number(),
+        longitude: v.number(),
+        accuracy: v.optional(v.number()),
+        timestamp: v.number(),
+      })
+    ),
+    registrationDate: v.optional(v.number()),
+    bindingPin: v.optional(v.string()),
+    bindingPinExpiry: v.optional(v.number()),
+    bindingToken: v.optional(v.string()),
+    bindingTokenExpiry: v.optional(v.number()),
   })
     .index('by_serial', ['serialNumber'])
     .index('by_branch', ['branchId'])
     .index('by_assigned_to', ['assignedTo'])
     .index('by_binding_pin', ['bindingPin'])
     .index('by_binding_token', ['bindingToken']),
+
+  deviceRegistrations: defineTable({
+    branchId: v.id('branches'),
+    token: v.string(),
+    pin: v.string(),
+    expiresAt: v.number(),
+    status: v.union(v.literal('pending'), v.literal('completed'), v.literal('expired')),
+    deviceId: v.optional(v.id('devices')),
+  })
+    .index('by_token', ['token'])
+    .index('by_pin', ['pin'])
+    .index('by_branch', ['branchId'])
+    .index('by_status', ['status']),
 
   transactions: defineTable({
     amount: v.number(),
