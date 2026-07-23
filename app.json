@@ -1,8 +1,0 @@
-{
-  "android": {
-    "package": "com.anonymous.kauri"
-  },
-  "ios": {
-    "bundleIdentifier": "com.anonymous.kauri"
-  }
-}

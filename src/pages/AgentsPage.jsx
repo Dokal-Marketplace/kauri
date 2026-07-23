@@ -28,6 +28,15 @@ const ROLE_KEY_TO_LABEL = {
   it_admin: 'Admin IT',
 }
 
+// Labels FR pour les statuts de livraison Twilio (convex/notifications.ts)
+const DELIVERY_STATUS_LABELS = {
+  queued: 'en cours',
+  sent: 'envoyé',
+  delivered: 'livré ✓',
+  undelivered: 'non livré',
+  failed: 'échec',
+}
+
 // Options shown in the "Nouvel agent" role selector (admin excluded — reserved for onboarding)
 const ASSIGNABLE_ROLES = [
   { value: 'field_agent', label: 'Agent terrain' },
@@ -179,21 +188,19 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function NewAgentModal({ isOpen, onClose }) {
   const createAgent = useMutation(api.agents.createAgent)
-  const sendWelcomeEmail = useAction(api.emails.sendWelcomeEmail)
-  //Pour récupérer convexUser
-  const { convexUser } = useCurrentUser()
+  const sendActivationCode = useAction(api.otp.sendActivationCode)
   // États de succès
   const [showSuccess, setShowSuccess] = useState(false)
-  const [generatedPassword, setGeneratedPassword] = useState('')
   const [createdAgentInfo, setCreatedAgentInfo] = useState(null)
-  const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [isSendingWhatsapp, setIsSendingWhatsapp] = useState(false)
+  const [whatsappResult, setWhatsappResult] = useState(null) // null | { channel } | { error }
 
-  // Toggle mot de passe
-  const [autoGenerate, setAutoGenerate] = useState(true)
-  const [manualPassword, setManualPassword] = useState('')
-
-  // ✅ ÉTAT pour le statut d'envoi
-  const [emailStatus, setEmailStatus] = useState(null) // null | 'success' | 'error'
+  // Historique de livraison réactif — se met à jour tout seul quand le
+  // webhook Twilio patch le statut (voir convex/notifications.ts)
+  const deliveries = useQuery(
+    api.notifications.getDeliveryStatus,
+    createdAgentInfo?.userId ? { userId: createdAgentInfo.userId } : 'skip'
+  )
 
   // Formulaire
   const [formState, setFormState] = useState({
@@ -214,10 +221,7 @@ function NewAgentModal({ isOpen, onClose }) {
   const resetAgentModalState = () => {
     setShowSuccess(false)
     setCreatedAgentInfo(null)
-    setGeneratedPassword('')
-    setEmailStatus(null)
-    setAutoGenerate(true)
-    setManualPassword('')
+    setWhatsappResult(null)
   }
   // ── Escape key handler ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -252,11 +256,6 @@ function NewAgentModal({ isOpen, onClose }) {
       valid = false
     }
 
-    if (!autoGenerate && manualPassword.length < 6) {
-      next.form = 'Le mot de passe doit contenir au moins 6 caractères.'
-      valid = false
-    }
-
     setFormState((prev) => ({ ...prev, errors: next }))
     return valid
   }
@@ -278,22 +277,16 @@ function NewAgentModal({ isOpen, onClose }) {
         email: email.trim(),
         phoneNumber: phoneNumber.trim(),
         role,
-        temporaryPassword: autoGenerate ? undefined : manualPassword,
       })
-
-      // Le mot de passe est soit généré, soit celui saisi manuellement
-      const passwordToShow = autoGenerate
-        ? result?.temporaryPassword || 'Non disponible'
-        : manualPassword
 
       // Stocker les infos pour affichage dans le modal de succès
       setCreatedAgentInfo({
+        userId: result.userId,
         fullName: fullName.trim(),
         email: email.trim(),
         phoneNumber: phoneNumber.trim(),
         role: ROLE_KEY_TO_LABEL[role] ?? 'Agent terrain',
       })
-      setGeneratedPassword(passwordToShow)
 
       // Afficher le modal de succès
       setShowSuccess(true)
@@ -307,6 +300,17 @@ function NewAgentModal({ isOpen, onClose }) {
         isLoading: false,
         errors: { form: null, email: null, phoneNumber: null },
       })
+
+      // Envoyer immédiatement le code d'activation (WhatsApp, repli SMS)
+      setIsSendingWhatsapp(true)
+      try {
+        const sendResult = await sendActivationCode({ userId: result.userId })
+        setWhatsappResult({ channel: sendResult.channel })
+      } catch (sendErr) {
+        setWhatsappResult({ error: sendErr?.message ?? 'Une erreur est survenue.' })
+      } finally {
+        setIsSendingWhatsapp(false)
+      }
     } catch (err) {
       const rawMessage = typeof err?.message === 'string' ? err.message : ''
       let nextErrors = {
@@ -325,27 +329,19 @@ function NewAgentModal({ isOpen, onClose }) {
     }
   }
 
-  // Fonction pour envoyer le mot de passe par email
-  const handleSendEmail = async () => {
-    if (!createdAgentInfo) return
+  // Fonction pour renvoyer le code d'activation (WhatsApp, avec repli SMS auto)
+  const handleSendWhatsapp = async () => {
+    if (!createdAgentInfo?.userId) return
 
-    setIsSendingEmail(true)
-    setEmailStatus(null) // Reset status
+    setIsSendingWhatsapp(true)
+    setWhatsappResult(null)
     try {
-      await sendWelcomeEmail({
-        toEmail: createdAgentInfo.email,
-        agentName: createdAgentInfo.fullName,
-        temporaryPassword: generatedPassword,
-        branchName: convexUser?.organization?.name,
-      })
-
-      // Afficher le statut de succès
-      setEmailStatus('success')
-    } catch {
-      // Afficher le statut d'erreur
-      setEmailStatus('error')
+      const result = await sendActivationCode({ userId: createdAgentInfo.userId })
+      setWhatsappResult({ channel: result.channel })
+    } catch (err) {
+      setWhatsappResult({ error: err?.message ?? 'Une erreur est survenue.' })
     } finally {
-      setIsSendingEmail(false)
+      setIsSendingWhatsapp(false)
     }
   }
 
@@ -432,74 +428,6 @@ function NewAgentModal({ isOpen, onClose }) {
               </div>
             </div>
 
-            {/* Mot de passe */}
-            <div style={{ marginBottom: 20 }}>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: 'var(--ink-2)',
-                  marginBottom: 8,
-                }}
-              >
-                🔑 Mot de passe temporaire
-              </label>
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 8,
-                  alignItems: 'center',
-                }}
-              >
-                <div
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    background: 'var(--brand-softer)',
-                    border: '1px solid var(--brand-soft)',
-                    borderRadius: 6,
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: 'var(--brand-ink)',
-                    letterSpacing: '0.5px',
-                    wordBreak: 'break-all',
-                  }}
-                >
-                  {generatedPassword}
-                </div>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => {
-                    navigator.clipboard.writeText(generatedPassword)
-                    const btn = document.activeElement
-                    if (btn) {
-                      const original = btn.textContent
-                      btn.textContent = 'Copié !'
-                      setTimeout(() => {
-                        btn.textContent = original
-                      }, 2000)
-                    }
-                  }}
-                  style={{ whiteSpace: 'nowrap' }}
-                >
-                  Copier
-                </button>
-              </div>
-              <p
-                style={{
-                  fontSize: 11,
-                  color: 'var(--ink-3)',
-                  marginTop: 6,
-                  fontStyle: 'italic',
-                }}
-              >
-                ⚠️ Ce mot de passe ne sera affiché qu'une seule fois
-              </p>
-            </div>
-
             {/* Actions */}
             <div
               style={{
@@ -508,122 +436,84 @@ function NewAgentModal({ isOpen, onClose }) {
                 gap: 8,
               }}
             >
+              {/* Envoi WhatsApp / SMS — canal principal */}
               <button
                 type="button"
                 className="btn brand"
-                onClick={handleSendEmail}
-                disabled={isSendingEmail}
+                onClick={handleSendWhatsapp}
+                disabled={isSendingWhatsapp}
                 style={{
                   width: '100%',
-                  opacity: isSendingEmail ? 0.6 : 1,
-                  cursor: isSendingEmail ? 'not-allowed' : 'pointer',
+                  opacity: isSendingWhatsapp ? 0.6 : 1,
+                  cursor: isSendingWhatsapp ? 'not-allowed' : 'pointer',
                 }}
               >
-                {isSendingEmail ? (
+                {isSendingWhatsapp ? (
                   <>
                     <span className="btn-spinner" />
                     Envoi en cours...
                   </>
                 ) : (
                   <>
-                    <I.Mail size={16} />
-                    {emailStatus === 'success'
-                      ? 'Renvoyer les identifiants'
-                      : 'Envoyer les identifiants par email'}
+                    <I.Phone size={16} />
+                    {whatsappResult ? 'Renvoyer le code' : 'Envoyer le code (WhatsApp/SMS)'}
                   </>
                 )}
               </button>
 
-              {/* BANDEAU DE STATUT D'ENVOI EMAIL */}
-              {emailStatus === 'success' && (
+              {/* BANDEAU DE STATUT WHATSAPP/SMS */}
+              {whatsappResult?.error && (
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 12,
                     padding: 14,
-                    marginBottom: 20,
-                    background: 'var(--green-1, #e6f9ed)',
-                    border: '1px solid var(--green-2, #86efac)',
-                    borderRadius: 8,
-                    color: 'var(--green-8, #166534)',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      background: 'var(--green-6, #16a34a)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <I.Check size={16} stroke="white" />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>Email envoyé avec succès</div>
-                    <div style={{ fontSize: 12, color: 'var(--green-7)', marginTop: 2 }}>
-                      Les identifiants ont été envoyés à {createdAgentInfo.email}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {emailStatus === 'error' && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: 14,
-                    marginBottom: 20,
                     background: 'var(--red-1, #fef2f2)',
                     border: '1px solid var(--red-2, #fecaca)',
                     borderRadius: 8,
                     color: 'var(--red-8, #991b1b)',
                   }}
                 >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      background: 'var(--red-6, #dc2626)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <I.Close size={16} stroke="white" />
-                  </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>Échec de l'envoi de l'email</div>
-                    <div style={{ fontSize: 12, color: 'var(--red-7)', marginTop: 2 }}>
-                      Veuillez réessayer ou vérifier la configuration du service email
-                    </div>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>Échec de l'envoi</div>
+                    <div style={{ fontSize: 12, marginTop: 2 }}>{whatsappResult.error}</div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleSendEmail}
-                    disabled={isSendingEmail}
-                    style={{
-                      padding: '6px 12px',
-                      background: 'var(--red-6)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 6,
-                      fontSize: 12,
-                      fontWeight: 500,
-                      cursor: isSendingEmail ? 'not-allowed' : 'pointer',
-                      opacity: isSendingEmail ? 0.6 : 1,
-                    }}
-                  >
-                    Réessayer
-                  </button>
+                </div>
+              )}
+
+              {whatsappResult && !whatsappResult.error && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: 14,
+                    background: 'var(--green-1, #e6f9ed)',
+                    border: '1px solid var(--green-2, #86efac)',
+                    borderRadius: 8,
+                    color: 'var(--green-8, #166534)',
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>
+                      {whatsappResult.channel === 'whatsapp'
+                        ? 'Message WhatsApp envoyé'
+                        : 'Envoyé par SMS (WhatsApp indisponible)'}
+                    </div>
+                    {deliveries?.length > 0 && (
+                      <div style={{ fontSize: 12, marginTop: 2 }}>
+                        {deliveries
+                          .map(
+                            (d) =>
+                              `${d.channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} : ${
+                                DELIVERY_STATUS_LABELS[d.status] ?? d.status
+                              }`
+                          )
+                          .join(' · ')}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -797,65 +687,17 @@ function NewAgentModal({ isOpen, onClose }) {
               </select>
             </div>
 
-            {/* Mot de passe */}
+            {/* Activation */}
             <div className="form-group">
-              <label className="form-label">Mot de passe temporaire</label>
-
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 8,
-                  alignItems: 'center',
-                  marginBottom: 12,
-                  padding: 10,
-                  background: 'var(--surface-inset)',
-                  borderRadius: 6,
-                }}
-              >
-                <input
-                  type="checkbox"
-                  id="auto-generate"
-                  checked={autoGenerate}
-                  onChange={(e) => setAutoGenerate(e.target.checked)}
-                  disabled={isLoading}
-                  style={{ width: 16, height: 16 }}
-                />
-                <label
-                  htmlFor="auto-generate"
-                  style={{
-                    fontSize: 13,
-                    cursor: 'pointer',
-                    color: 'var(--ink-2)',
-                    flex: 1,
-                  }}
-                >
-                  Générer automatiquement (recommandé)
-                </label>
-              </div>
-
-              {!autoGenerate && (
-                <input
-                  type="text"
-                  className="form-input"
-                  value={manualPassword}
-                  onChange={(e) => setManualPassword(e.target.value)}
-                  placeholder="Saisir un mot de passe (min. 6 caractères)"
-                  disabled={isLoading}
-                  minLength={6}
-                />
-              )}
-
               <p
                 style={{
-                  marginTop: 6,
-                  fontSize: 11,
+                  fontSize: 12,
                   color: 'var(--ink-3)',
                   lineHeight: 1.4,
                 }}
               >
-                {autoGenerate
-                  ? 'Un mot de passe sécurisé à 12 caractères sera généré automatiquement.'
-                  : 'Minimum 6 caractères. Privilégiez la simplicité pour les utilisateurs non-tech.'}
+                Un code d'activation sera généré et envoyé automatiquement au numéro de téléphone
+                ci-dessus (WhatsApp, avec repli SMS).
               </p>
             </div>
 

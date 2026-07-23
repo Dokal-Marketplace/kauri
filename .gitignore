@@ -28,3 +28,7 @@
 # Native projects (Expo managed - generated via expo prebuild)
 /android/
 /ios/
+
+# JWT secrets
+jwt-private.pem
+jwt-public.pem

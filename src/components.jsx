@@ -1,4 +1,4 @@
-//src/components.jsx
+// src/components.jsx
 import { useState, useMemo, useId } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useQuery } from 'convex/react'
@@ -6,6 +6,7 @@ import { api } from '../convex/_generated/api'
 import { useCurrentUser } from './hooks/useCurrentUser'
 import { I } from './icons'
 import { AddDeviceModal } from './components/AddDeviceModal'
+import { NewAgentModal } from './components/NewAgentModal'
 import { fmt } from './utils/fmt'
 
 export function SearchInput({ placeholder, value, onChange, width = 240 }) {
@@ -25,7 +26,7 @@ export function PageHeader({ crumbs = [], title, children, onSearch }) {
       <div className="crumbs">
         <strong>Kauri</strong>
         {allCrumbs.map((c, i) => (
-          <span key={c}>
+          <span key={`${c}-${i}`}>
             <span className="crumb-sep">/</span>
             {i === allCrumbs.length - 1 ? <span className="crumb-current">{c}</span> : c}
           </span>
@@ -139,7 +140,7 @@ export function Sidebar() {
       group: 'Admin',
       entries: [
         { key: 'agents', path: '/agents', label: 'Agents', icon: <I.Users /> },
-        { key: 'fleet', path: '/fleet', label: 'Flotte TPE', icon: <I.Terminal /> }, // ← NOUVEAU
+        { key: 'fleet', path: '/fleet', label: 'Flotte TPE', icon: <I.Terminal /> },
         { key: 'permissions', label: 'Permissions', icon: <I.Shield /> },
         { key: 'settings', path: '/settings', label: 'Paramètres', icon: <I.Settings /> },
       ],
@@ -163,7 +164,7 @@ export function Sidebar() {
           {group.entries.map((it) =>
             it.path ? (
               <NavLink
-                key={it.key} // ← Utiliser la clé explicite
+                key={it.key}
                 to={it.path}
                 end={it.end}
                 className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')}
@@ -536,6 +537,7 @@ export function ActivityCard({ feed }) {
 
 export function QuickActionsCard() {
   const [showAddDevice, setShowAddDevice] = useState(false)
+  const [showAddAgent, setShowAddAgent] = useState(false)
 
   const actions = [
     { ic: <I.Plus />, label: 'Dépôt rapide', sub: "Carnet d'épargne" },
@@ -546,6 +548,12 @@ export function QuickActionsCard() {
       label: 'Ajouter un TPE',
       sub: 'Nouveau terminal',
       onClick: () => setShowAddDevice(true),
+    },
+    {
+      ic: <I.Users />,
+      label: 'Ajouter un agent',
+      sub: 'Inviter un collaborateur',
+      onClick: () => setShowAddAgent(true),
     },
     { ic: <I.Cloud />, label: 'Synchroniser', sub: '4 en file' },
   ]
@@ -597,6 +605,7 @@ export function QuickActionsCard() {
                 {a.label === 'Retrait' && <I.ArrowUp size={14} />}
                 {a.label === 'Inscrire client' && <I.Users size={14} />}
                 {a.label === 'Ajouter un TPE' && <I.Terminal size={14} />}
+                {a.label === 'Ajouter un agent' && <I.Users size={14} />}
                 {a.label === 'Synchroniser' && <I.Cloud size={14} />}
               </span>
               <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -610,6 +619,11 @@ export function QuickActionsCard() {
         </div>
       </div>
       <AddDeviceModal isOpen={showAddDevice} onClose={() => setShowAddDevice(false)} />
+      <NewAgentModal
+        isOpen={showAddAgent}
+        onClose={() => setShowAddAgent(false)}
+        onSuccess={() => setShowAddAgent(false)}
+      />
     </>
   )
 }
