@@ -841,41 +841,43 @@ function ReconciliationDetail({ reconciliationId, onBack }) {
                 Aucune transaction trouvée.
               </div>
             ) : (
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Heure</th>
-                    <th>Type</th>
-                    <th>Bénéficiaire</th>
-                    <th style={{ textAlign: 'right' }}>Montant</th>
-                    <th>Statut</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(summary ?? []).map((tx) => (
-                    <tr key={tx._id}>
-                      <td className="cell-sub" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                        {formatTs(tx.timestamp)}
-                      </td>
-                      <td>{tx.type ?? tx.transactionType ?? '—'}</td>
-                      <td>{tx.beneficiaryName ?? tx.clientName ?? '—'}</td>
-                      <td
-                        style={{
-                          textAlign: 'right',
-                          fontVariantNumeric: 'tabular-nums',
-                          fontWeight: 550,
-                        }}
-                      >
-                        {fmt(tx.amount)} <span className="cell-sub">FCFA</span>
-                      </td>
-                      <td>
-                        {/* Block reversal if reconciled */}
-                        <ReverseButton tx={tx} reconciled={record.status === 'settled'} />
-                      </td>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Heure</th>
+                      <th>Type</th>
+                      <th>Bénéficiaire</th>
+                      <th style={{ textAlign: 'right' }}>Montant</th>
+                      <th>Statut</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {(summary ?? []).map((tx) => (
+                      <tr key={tx._id}>
+                        <td className="cell-sub" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {formatTs(tx.timestamp)}
+                        </td>
+                        <td>{tx.type ?? tx.transactionType ?? '—'}</td>
+                        <td>{tx.beneficiaryName ?? tx.clientName ?? '—'}</td>
+                        <td
+                          style={{
+                            textAlign: 'right',
+                            fontVariantNumeric: 'tabular-nums',
+                            fontWeight: 550,
+                          }}
+                        >
+                          {fmt(tx.amount)} <span className="cell-sub">FCFA</span>
+                        </td>
+                        <td>
+                          {/* Block reversal if reconciled */}
+                          <ReverseButton tx={tx} reconciled={record.status === 'settled'} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>

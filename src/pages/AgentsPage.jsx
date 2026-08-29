@@ -1115,193 +1115,195 @@ export default function AgentsPage() {
             />
           ) : (
             <>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Agent</th>
-                    <th>Rôle</th>
-                    <th>Zone / Agence</th>
-                    <th>TPE</th>
-                    <th>Batt.</th>
-                    <th>Réseau</th>
-                    <th>Sync</th>
-                    <th style={{ textAlign: 'right' }}>Collecte mois</th>
-                    <th>Statut</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((a) => {
-                    const tag = ROLE_TAGS[a.role] || ROLE_TAGS['Agent terrain']
-                    const pct = a.target > 0 ? Math.round((a.collected / a.target) * 100) : 0
-                    return (
-                      <tr key={a.id}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div className="avatar sm" style={{ position: 'relative' }}>
-                              {a.initials}
-                              <span
-                                style={{
-                                  position: 'absolute',
-                                  right: -1,
-                                  bottom: -1,
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: '50%',
-                                  background: STATUS_DOT[a.status] ?? STATUS_DOT['hors ligne'],
-                                  border: '1.5px solid var(--surface)',
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <div style={{ fontWeight: 550 }}>{a.name}</div>
-                              <div className="cell-sub">{a.phone}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span
-                            className="chip"
-                            style={{
-                              background: tag.bg,
-                              color: tag.fg,
-                              borderColor: 'transparent',
-                            }}
-                          >
-                            {a.role}
-                          </span>
-                        </td>
-                        <td>
-                          <div>{a.branch}</div>
-                          <div className="cell-sub">{a.device.area}</div>
-                        </td>
-                        <td>
-                          <div
-                            style={{
-                              fontFamily: 'var(--font-mono)',
-                              fontSize: 12,
-                              fontWeight: 550,
-                            }}
-                          >
-                            {a.device.id}
-                          </div>
-                          <div className="cell-sub">{a.device.model}</div>
-                        </td>
-                        <td>
-                          <Battery pct={a.device.battery} />
-                        </td>
-                        <td>
-                          <SignalBars level={a.device.signal} />
-                        </td>
-                        <td>
-                          <SyncTag d={a.device} />
-                          <div className="cell-sub" style={{ marginTop: 2 }}>
-                            {a.device.lastSync}
-                          </div>
-                        </td>
-                        <td style={{ textAlign: 'right', minWidth: 130 }}>
-                          <div style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                            {a.collected ? fmt(a.collected) : '—'}
-                          </div>
-                          {a.target > 0 && (
-                            <>
-                              <div className="goal-bar" style={{ marginTop: 4 }}>
-                                <div
-                                  className="goal-fill"
-                                  style={{ width: Math.min(100, pct) + '%' }}
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Agent</th>
+                      <th>Rôle</th>
+                      <th>Zone / Agence</th>
+                      <th>TPE</th>
+                      <th>Batt.</th>
+                      <th>Réseau</th>
+                      <th>Sync</th>
+                      <th style={{ textAlign: 'right' }}>Collecte mois</th>
+                      <th>Statut</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((a) => {
+                      const tag = ROLE_TAGS[a.role] || ROLE_TAGS['Agent terrain']
+                      const pct = a.target > 0 ? Math.round((a.collected / a.target) * 100) : 0
+                      return (
+                        <tr key={a.id}>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div className="avatar sm" style={{ position: 'relative' }}>
+                                {a.initials}
+                                <span
+                                  style={{
+                                    position: 'absolute',
+                                    right: -1,
+                                    bottom: -1,
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: '50%',
+                                    background: STATUS_DOT[a.status] ?? STATUS_DOT['hors ligne'],
+                                    border: '1.5px solid var(--surface)',
+                                  }}
                                 />
                               </div>
-                              <div
-                                className="cell-sub"
-                                style={{ marginTop: 2, fontVariantNumeric: 'tabular-nums' }}
-                              >
-                                {pct}% obj.
+                              <div>
+                                <div style={{ fontWeight: 550 }}>{a.name}</div>
+                                <div className="cell-sub">{a.phone}</div>
                               </div>
-                            </>
-                          )}
-                        </td>
-                        <td>
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              fontSize: 12,
-                            }}
-                          >
+                            </div>
+                          </td>
+                          <td>
                             <span
+                              className="chip"
                               style={{
-                                width: 6,
-                                height: 6,
-                                borderRadius: '50%',
-                                background: STATUS_DOT[a.status] ?? STATUS_DOT['hors ligne'],
-                              }}
-                            />
-                            {a.status}
-                          </span>
-                        </td>
-                        <td style={{ position: 'relative' }}>
-                          <button
-                            className="btn ghost sm"
-                            style={{ padding: 4 }}
-                            onClick={() => setMenuOpenId(menuOpenId === a.id ? null : a.id)}
-                          >
-                            <I.More size={14} />
-                          </button>
-                          {menuOpenId === a.id && (
-                            <div
-                              style={{
-                                position: 'absolute',
-                                right: 0,
-                                top: '100%',
-                                zIndex: 10,
-                                background: 'var(--surface)',
-                                border: '1px solid var(--border)',
-                                borderRadius: 8,
-                                padding: '4px 0',
-                                minWidth: 160,
-                                boxShadow: 'var(--shadow-md)',
+                                background: tag.bg,
+                                color: tag.fg,
+                                borderColor: 'transparent',
                               }}
                             >
-                              <button
-                                className="dropdown-item"
-                                onClick={() => {
-                                  setMenuOpenId(null)
-                                  setDetailAgent(a)
-                                }}
-                              >
-                                Voir détails
-                              </button>
-                              <button className="dropdown-item" onClick={() => handleDisable(a)}>
-                                Désactiver
-                              </button>
-                              <button
-                                className="dropdown-item"
-                                onClick={() => {
-                                  setMenuOpenId(null)
-                                  setReassignAgent(a)
-                                }}
-                              >
-                                Réassigner TPE
-                              </button>
-                              {/* ← new: Lier / Changer d'appareil */}
-                              <button
-                                className="dropdown-item"
-                                onClick={() => {
-                                  setMenuOpenId(null)
-                                  setBindAgent(a)
-                                }}
-                              >
-                                {a.device.id !== '—' ? "Changer d'appareil" : 'Lier un appareil'}
-                              </button>
+                              {a.role}
+                            </span>
+                          </td>
+                          <td>
+                            <div>{a.branch}</div>
+                            <div className="cell-sub">{a.device.area}</div>
+                          </td>
+                          <td>
+                            <div
+                              style={{
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: 12,
+                                fontWeight: 550,
+                              }}
+                            >
+                              {a.device.id}
                             </div>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                            <div className="cell-sub">{a.device.model}</div>
+                          </td>
+                          <td>
+                            <Battery pct={a.device.battery} />
+                          </td>
+                          <td>
+                            <SignalBars level={a.device.signal} />
+                          </td>
+                          <td>
+                            <SyncTag d={a.device} />
+                            <div className="cell-sub" style={{ marginTop: 2 }}>
+                              {a.device.lastSync}
+                            </div>
+                          </td>
+                          <td style={{ textAlign: 'right', minWidth: 130 }}>
+                            <div style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                              {a.collected ? fmt(a.collected) : '—'}
+                            </div>
+                            {a.target > 0 && (
+                              <>
+                                <div className="goal-bar" style={{ marginTop: 4 }}>
+                                  <div
+                                    className="goal-fill"
+                                    style={{ width: Math.min(100, pct) + '%' }}
+                                  />
+                                </div>
+                                <div
+                                  className="cell-sub"
+                                  style={{ marginTop: 2, fontVariantNumeric: 'tabular-nums' }}
+                                >
+                                  {pct}% obj.
+                                </div>
+                              </>
+                            )}
+                          </td>
+                          <td>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: 12,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: '50%',
+                                  background: STATUS_DOT[a.status] ?? STATUS_DOT['hors ligne'],
+                                }}
+                              />
+                              {a.status}
+                            </span>
+                          </td>
+                          <td style={{ position: 'relative' }}>
+                            <button
+                              className="btn ghost sm"
+                              style={{ padding: 4 }}
+                              onClick={() => setMenuOpenId(menuOpenId === a.id ? null : a.id)}
+                            >
+                              <I.More size={14} />
+                            </button>
+                            {menuOpenId === a.id && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  right: 0,
+                                  top: '100%',
+                                  zIndex: 10,
+                                  background: 'var(--surface)',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: 8,
+                                  padding: '4px 0',
+                                  minWidth: 160,
+                                  boxShadow: 'var(--shadow-md)',
+                                }}
+                              >
+                                <button
+                                  className="dropdown-item"
+                                  onClick={() => {
+                                    setMenuOpenId(null)
+                                    setDetailAgent(a)
+                                  }}
+                                >
+                                  Voir détails
+                                </button>
+                                <button className="dropdown-item" onClick={() => handleDisable(a)}>
+                                  Désactiver
+                                </button>
+                                <button
+                                  className="dropdown-item"
+                                  onClick={() => {
+                                    setMenuOpenId(null)
+                                    setReassignAgent(a)
+                                  }}
+                                >
+                                  Réassigner TPE
+                                </button>
+                                {/* ← new: Lier / Changer d'appareil */}
+                                <button
+                                  className="dropdown-item"
+                                  onClick={() => {
+                                    setMenuOpenId(null)
+                                    setBindAgent(a)
+                                  }}
+                                >
+                                  {a.device.id !== '—' ? "Changer d'appareil" : 'Lier un appareil'}
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
               {filtered.length === 0 &&
                 (AGENTS.length === 0 ? (
                   <EmptyState
