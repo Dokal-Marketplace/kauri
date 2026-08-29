@@ -201,7 +201,9 @@ export default defineSchema({
     transactionId: v.optional(v.string()),
     rejectionReason: v.optional(v.string()),
     rejectedBy: v.optional(v.id('users')),
-  }).index('by_status', ['status']),
+  })
+    .index('by_status', ['status'])
+    .index('by_branch_status', ['branchId', 'status']),
 
   reconciliations: defineTable({
     agentId: v.id('users'),

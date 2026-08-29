@@ -44,8 +44,7 @@ export const listPending = query({
     }
     return ctx.db
       .query('disbursements')
-      .withIndex('by_status', (q) => q.eq('status', 'pending'))
-      .filter((q) => q.eq(q.field('branchId'), args.branchId))
+      .withIndex('by_branch_status', (q) => q.eq('branchId', args.branchId).eq('status', 'pending'))
       .collect()
   },
 })
@@ -63,22 +62,25 @@ export const listHistory = query({
     if (!user || user.branchId !== args.branchId) {
       throw new Error('Unauthorized: Cannot view disbursements for this branch')
     }
-    // Fetch each non-pending status and merge — no by_branch index exists
+    // Fetch each non-pending status for this branch and merge
     const [approved, rejected, executed] = await Promise.all([
       ctx.db
         .query('disbursements')
-        .withIndex('by_status', (q) => q.eq('status', 'approved'))
-        .filter((q) => q.eq(q.field('branchId'), args.branchId))
+        .withIndex('by_branch_status', (q) =>
+          q.eq('branchId', args.branchId).eq('status', 'approved')
+        )
         .collect(),
       ctx.db
         .query('disbursements')
-        .withIndex('by_status', (q) => q.eq('status', 'rejected'))
-        .filter((q) => q.eq(q.field('branchId'), args.branchId))
+        .withIndex('by_branch_status', (q) =>
+          q.eq('branchId', args.branchId).eq('status', 'rejected')
+        )
         .collect(),
       ctx.db
         .query('disbursements')
-        .withIndex('by_status', (q) => q.eq('status', 'executed'))
-        .filter((q) => q.eq(q.field('branchId'), args.branchId))
+        .withIndex('by_branch_status', (q) =>
+          q.eq('branchId', args.branchId).eq('status', 'executed')
+        )
         .collect(),
     ])
     return [...approved, ...rejected, ...executed].sort((a, b) => b.timestamp - a.timestamp)

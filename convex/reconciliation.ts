@@ -1,6 +1,7 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import { authz } from './authz'
+import { batchGetMap } from './helpers'
 
 export const settleDailyCash = mutation({
   args: {
@@ -101,16 +102,19 @@ export const listByBranch = query({
           .take(90)
 
     // Enrich with agent and verifier names (batch-fetch unique users once)
-    const userIds = [...new Set(records.flatMap((r) => [r.agentId, r.verifiedBy]))]
-    const users = await Promise.all(userIds.map((id) => ctx.db.get(id)))
-    const nameById = new Map(
-      users.filter((u) => u !== null).map((u) => [u!._id, u!.fullName ?? u!.email ?? null])
+    const userMap = await batchGetMap(
+      ctx,
+      records.flatMap((r) => [r.agentId, r.verifiedBy])
     )
+    const nameOf = (id: (typeof records)[number]['agentId']) => {
+      const u = userMap.get(id)
+      return u?.fullName ?? u?.email ?? null
+    }
 
     return records.map((r) => ({
       ...r,
-      agentName: nameById.get(r.agentId) ?? null,
-      verifierName: nameById.get(r.verifiedBy) ?? null,
+      agentName: nameOf(r.agentId),
+      verifierName: nameOf(r.verifiedBy),
     }))
   },
 })

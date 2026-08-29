@@ -10,6 +10,15 @@ export const listByBranch = query({
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Unauthenticated')
 
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+    if (caller.branchId !== args.branchId) {
+      throw new Error('Unauthorized: Cannot view agents from another branch')
+    }
+
     const users = await ctx.db
       .query('users')
       .withIndex('by_branch', (q) => q.eq('branchId', args.branchId))
