@@ -597,7 +597,6 @@ export default function TransactionsPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Client</th>
                 <th>Type</th>
                 <th>Date / heure</th>
@@ -610,7 +609,7 @@ export default function TransactionsPage() {
             </thead>
             <tbody>
               {txLoading ? (
-                <SkeletonTableRows cols={[80, 160, 70, 110, 90, 80, 80, 70, 30]} rows={8} />
+                <SkeletonTableRows cols={[160, 70, 110, 90, 80, 80, 70, 30]} rows={8} />
               ) : (
                 paginated.map((t) => {
                   const st = STATUS_STYLE[t.status]
@@ -620,27 +619,10 @@ export default function TransactionsPage() {
                       onClick={() => setSelected(t)}
                       className={selected && selected.id === t.id ? 'selected' : ''}
                     >
-                      <td
-                        style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 11.5,
-                          color: 'var(--ink-2)',
-                        }}
-                      >
-                        {t.id}
-                      </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div className="avatar sm">{t.clientInit}</div>
-                          <div>
-                            <div style={{ fontWeight: 550 }}>{t.client}</div>
-                            <div
-                              className="cell-sub"
-                              style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5 }}
-                            >
-                              {t.reference}
-                            </div>
-                          </div>
+                          <div style={{ fontWeight: 550 }}>{t.client}</div>
                         </div>
                       </td>
                       <td>

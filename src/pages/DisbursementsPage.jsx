@@ -334,7 +334,7 @@ function PendingTable({ rows, canApprove, fraudError, loadingId, onApprove, onRe
       <table className="data-table">
         <thead>
           <tr>
-            <th>Référence</th>
+            <th>Client</th>
             <th>Méthode</th>
             <th style={{ textAlign: 'right' }}>Montant</th>
             <th>Date</th>
@@ -357,12 +357,7 @@ function PendingTable({ rows, canApprove, fraudError, loadingId, onApprove, onRe
                       <span className="prod-glyph" style={{ background: 'var(--brand)' }}>
                         <I.Coin size={13} stroke="white" />
                       </span>
-                      <div>
-                        <div style={{ fontWeight: 550 }}>{d.customerId}</div>
-                        <div className="cell-sub" style={{ fontFamily: 'var(--font-mono)' }}>
-                          {d._id.slice(-8)}
-                        </div>
-                      </div>
+                      <div style={{ fontWeight: 550 }}>{d.customerName ?? '—'}</div>
                     </div>
                   </td>
                   <td>
@@ -466,7 +461,7 @@ function HistoryTable({ rows }) {
       <table className="data-table">
         <thead>
           <tr>
-            <th>Référence</th>
+            <th>Client</th>
             <th>Méthode</th>
             <th style={{ textAlign: 'right' }}>Montant</th>
             <th>Date</th>
@@ -488,12 +483,7 @@ function HistoryTable({ rows }) {
                     <span className="prod-glyph" style={{ background: 'var(--ink-3)' }}>
                       <I.Coin size={13} stroke="white" />
                     </span>
-                    <div>
-                      <div style={{ fontWeight: 550 }}>{d.customerId}</div>
-                      <div className="cell-sub" style={{ fontFamily: 'var(--font-mono)' }}>
-                        {d._id.slice(-8)}
-                      </div>
-                    </div>
+                    <div style={{ fontWeight: 550 }}>{d.customerName ?? '—'}</div>
                   </div>
                 </td>
                 <td>
