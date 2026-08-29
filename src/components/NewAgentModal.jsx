@@ -70,7 +70,7 @@ export function NewAgentModal({ isOpen, onClose, onSuccess }) {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, isLoading])
+  }, [isOpen, isLoading, onClose])
 
   // ── Validation ─────────────────────────────────────────────────────────────
   const validate = () => {

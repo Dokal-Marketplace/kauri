@@ -118,10 +118,16 @@ export default function FleetPage() {
   const [detailDevice, setDetailDevice] = useState(null)
   const [assignDeviceTarget, setAssignDeviceTarget] = useState(null) // Device à assigner
 
-  const devices =
-    useQuery(api.devices.listByBranch, isLoaded && tenantId ? { branchId: tenantId } : 'skip') ?? []
-  const agents =
-    useQuery(api.agents.listByBranch, isLoaded && tenantId ? { branchId: tenantId } : 'skip') ?? []
+  const devicesQuery = useQuery(
+    api.devices.listByBranch,
+    isLoaded && tenantId ? { branchId: tenantId } : 'skip'
+  )
+  const agentsQuery = useQuery(
+    api.agents.listByBranch,
+    isLoaded && tenantId ? { branchId: tenantId } : 'skip'
+  )
+  const devices = useMemo(() => devicesQuery ?? [], [devicesQuery])
+  const agents = useMemo(() => agentsQuery ?? [], [agentsQuery])
 
   const assignDevice = useMutation(api.devices.assignDeviceToAgent)
   const unassignDevice = useMutation(api.devices.unassignDevice)
