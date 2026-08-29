@@ -133,7 +133,9 @@ export function SkeletonDashboard() {
 }
 
 // ── Page table skeleton (card + filter bar + table) ──────────────────────────
-export function SkeletonTablePage({ cols, rows = 8 }) {
+export function SkeletonTablePage({ cols = 6, rows = 8 }) {
+  // Accepts an array of column widths or a column count
+  const colWidths = Array.isArray(cols) ? cols : Array.from({ length: cols }, () => 90)
   return (
     <div className="card" style={{ marginTop: 16 }}>
       {/* filter bar placeholder */}
@@ -156,7 +158,7 @@ export function SkeletonTablePage({ cols, rows = 8 }) {
         <table className="data-table">
           <thead>
             <tr>
-              {cols.map((w, i) => (
+              {colWidths.map((w, i) => (
                 <th key={i}>
                   <Skel w={i === 0 ? 14 : w * 0.6} h={10} />
                 </th>
@@ -164,7 +166,7 @@ export function SkeletonTablePage({ cols, rows = 8 }) {
             </tr>
           </thead>
           <tbody>
-            <SkeletonTableRows cols={cols} rows={rows} />
+            <SkeletonTableRows cols={colWidths} rows={rows} />
           </tbody>
         </table>
       </div>

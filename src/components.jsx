@@ -99,7 +99,7 @@ function initials(name) {
     .toUpperCase()
 }
 
-export function Sidebar() {
+export function Sidebar({ open = false, onNavigate }) {
   const { tenantId: branchId, convexUser } = useCurrentUser()
   const pendingDisbursements =
     useQuery(api.disbursements.listPending, branchId ? { branchId } : 'skip') ?? []
@@ -148,7 +148,7 @@ export function Sidebar() {
   ]
 
   return (
-    <aside className="sidebar">
+    <aside className={'sidebar' + (open ? ' open' : '')}>
       <div className="brand">
         <div className="brand-mark">
           <I.KauriDrop stroke="white" />
@@ -167,6 +167,7 @@ export function Sidebar() {
                 key={it.key}
                 to={it.path}
                 end={it.end}
+                onClick={onNavigate}
                 className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')}
               >
                 {it.icon}
