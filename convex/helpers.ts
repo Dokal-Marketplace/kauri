@@ -1,5 +1,22 @@
-import type { Doc, Id } from './_generated/dataModel'
-import type { MutationCtx } from './_generated/server'
+import type { Doc, Id, TableNames } from './_generated/dataModel'
+import type { MutationCtx, QueryCtx } from './_generated/server'
+
+/**
+ * Batch-resolve document ids: one ctx.db.get per unique id, missing docs omitted.
+ * Use for name/doc enrichment instead of per-row gets or branch-wide collects.
+ */
+export async function batchGetMap<T extends TableNames>(
+  ctx: QueryCtx,
+  ids: Iterable<Id<T>>
+): Promise<Map<Id<T>, Doc<T>>> {
+  const unique = [...new Set(ids)]
+  const docs = await Promise.all(unique.map((id) => ctx.db.get(id)))
+  const map = new Map<Id<T>, Doc<T>>()
+  for (const doc of docs) {
+    if (doc !== null) map.set(doc._id, doc)
+  }
+  return map
+}
 
 /** Team doc with optional parentTeamId (for nested teams) */
 type TeamDoc = Doc<'teams'> & { parentTeamId?: Id<'teams'> }

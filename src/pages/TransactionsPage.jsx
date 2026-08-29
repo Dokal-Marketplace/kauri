@@ -48,16 +48,20 @@ function mapConvexToUI(convexTx) {
 
 // ─── Date Range Helpers ──────────────────────────────────────────────────────
 function getDateRangeForPeriod(period) {
-  const now = Date.now()
+  // `from` is snapped to a day boundary so the query args stay stable across
+  // mounts (cacheable subscription), and `to` is left open so transactions
+  // created while the page is mounted stream in reactively. The KPI cards do
+  // their own exact client-side date checks on top of this bound.
+  const startOfToday = new Date().setHours(0, 0, 0, 0)
   const oneDay = 24 * 60 * 60 * 1000
 
   switch (period) {
     case '24h':
-      return { from: now - oneDay, to: now }
+      return { from: startOfToday - oneDay, to: undefined }
     case '7j':
-      return { from: now - 7 * oneDay, to: now }
+      return { from: startOfToday - 7 * oneDay, to: undefined }
     case '30j':
-      return { from: now - 30 * oneDay, to: now }
+      return { from: startOfToday - 30 * oneDay, to: undefined }
     case 'Tout':
     default:
       return { from: undefined, to: undefined }

@@ -6,6 +6,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser'
 import { I } from '../icons'
 import { PageHeader } from '../components'
 import { EmptyState } from '../components/EmptyState'
+import { SkeletonTablePage } from '../components/Skeleton'
 import { AddDeviceModal } from '../components/AddDeviceModal'
 import { StaffIllustration } from '../components/Illustrations'
 
@@ -177,6 +178,14 @@ export default function FleetPage() {
       return true
     })
   }, [enrichedDevices, filterAssignment, filterBrand, filterStatus, searchQuery])
+
+  // Loading gate: don't render the empty state while queries are still resolving
+  // (skipped queries — no tenantId — stay undefined and must not skeleton forever)
+  const fleetLoading =
+    !isLoaded || (tenantId && (devicesQuery === undefined || agentsQuery === undefined))
+  if (fleetLoading) {
+    return <SkeletonTablePage cols={6} />
+  }
 
   const totalDevices = enrichedDevices.length
   const assignedCount = enrichedDevices.filter((d) => d.assignedTo).length

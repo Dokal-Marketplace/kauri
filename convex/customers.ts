@@ -2,6 +2,7 @@
 import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { authz } from './authz'
+import { batchGetMap } from './helpers'
 
 // ── Shared validator for metadata fields ──────────────────────────────────────
 
@@ -104,19 +105,18 @@ export const listByBranch = query({
       .withIndex('by_branch', (q) => q.eq('branchId', targetBranchId))
       .collect()
 
-    // Build a name map for agents in the same branch
-    const branchUsers = await ctx.db
-      .query('users')
-      .withIndex('by_branch', (q) => q.eq('branchId', targetBranchId))
-      .collect()
-    const userMap = new Map(branchUsers.map((u) => [u._id, u.fullName]))
+    // Resolve onboarding agent names (batch-fetch only the ids referenced)
+    const userMap = await batchGetMap(
+      ctx,
+      customers.map((c) => c.onboardedBy)
+    )
 
     return customers.map((c) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { idNumber, ...safeCustomer } = c
       return {
         ...safeCustomer,
-        agentName: userMap.get(c.onboardedBy) ?? '—',
+        agentName: userMap.get(c.onboardedBy)?.fullName ?? '—',
       }
     })
   },

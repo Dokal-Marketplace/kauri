@@ -2,6 +2,7 @@
 import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { authz } from './authz'
+import { batchGetMap } from './helpers'
 
 // ── list ──────────────────────────────────────────────────────────────────────
 
@@ -39,16 +40,10 @@ export const list = query({
       .order('desc')
       .take(100)
 
-    // Enrich with customer names (batch-fetch only the customers referenced)
-    const customerIds = [...new Set(transactions.map((t) => t.customerId))]
-    const customers = await Promise.all(customerIds.map((id) => ctx.db.get(id)))
-    const customerMap = new Map(
-      customers.filter((c) => c !== null).map((c) => [c!._id, c!.fullName])
-    )
-
+    // No customerName enrichment: the mobile app resolves client names locally
+    // (clientNameResolver in TontiPro's transaction-store) and never reads it.
     return transactions.map((t) => ({
       ...t,
-      customerName: customerMap.get(t.customerId) ?? 'Client inconnu',
       agentName: agent.fullName,
     }))
   },
@@ -89,41 +84,46 @@ export const listByBranch = query({
 
     await authz.withTenant(targetBranchId).require(ctx, identity.subject, 'transactions:audit')
 
-    const limit = args.limit ?? 500
+    // Clamp: each returned row costs enrichment reads, so client input must be bounded
+    const limit = Math.min(args.limit ?? 500, 1000)
 
-    // Récupérer les transactions de la branche
-    let transactions = await ctx.db
+    // Plage de dates appliquée dans l'index : `limit` borne les lignes DANS la
+    // fenêtre demandée (un filtre mémoire après take() tronquerait silencieusement)
+    const transactions = await ctx.db
       .query('transactions')
-      .withIndex('by_branch_timestamp', (q) => q.eq('branchId', targetBranchId))
+      .withIndex('by_branch_timestamp', (q) => {
+        const scoped = q.eq('branchId', targetBranchId)
+        const lower = args.from !== undefined ? scoped.gte('timestamp', args.from) : scoped
+        return args.to !== undefined ? lower.lte('timestamp', args.to) : lower
+      })
       .order('desc')
       .take(limit)
 
-    // ✅ Filtrer par plage de dates si fournie
-    if (args.from !== undefined || args.to !== undefined) {
-      transactions = transactions.filter((t) => {
-        if (args.from !== undefined && t.timestamp < args.from) return false
-        if (args.to !== undefined && t.timestamp > args.to) return false
-        return true
-      })
-    }
-
-    // Enrich with customer and agent names (batch-fetch only the ids referenced)
-    const customerIds = [...new Set(transactions.map((t) => t.customerId))]
-    const agentIds = [...new Set(transactions.map((t) => t.agentId))]
-    const [customers, agentDocs] = await Promise.all([
-      Promise.all(customerIds.map((id) => ctx.db.get(id))),
-      Promise.all(agentIds.map((id) => ctx.db.get(id))),
+    // Enrich with customer and agent names (batch-fetch only the ids referenced).
+    // Docs from another branch resolve to the fallback: tenant isolation must not
+    // depend on write-path discipline alone.
+    const [customerMap, agentMap] = await Promise.all([
+      batchGetMap(
+        ctx,
+        transactions.map((t) => t.customerId)
+      ),
+      batchGetMap(
+        ctx,
+        transactions.map((t) => t.agentId)
+      ),
     ])
-    const customerMap = new Map(
-      customers.filter((c) => c !== null).map((c) => [c!._id, c!.fullName])
-    )
-    const agentMap = new Map(agentDocs.filter((u) => u !== null).map((u) => [u!._id, u!.fullName]))
 
-    return transactions.map((t) => ({
-      ...t,
-      customerName: customerMap.get(t.customerId) ?? 'Client inconnu',
-      agentName: agentMap.get(t.agentId) ?? 'Agent inconnu',
-    }))
+    return transactions.map((t) => {
+      const customer = customerMap.get(t.customerId)
+      const agentDoc = agentMap.get(t.agentId)
+      return {
+        ...t,
+        customerName:
+          customer && customer.branchId === targetBranchId ? customer.fullName : 'Client inconnu',
+        agentName:
+          agentDoc && agentDoc.branchId === targetBranchId ? agentDoc.fullName : 'Agent inconnu',
+      }
+    })
   },
 })
 
