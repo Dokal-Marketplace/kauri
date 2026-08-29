@@ -25,6 +25,101 @@ const CUSTOMERS = [
   'Hamidou Sana',
 ]
 
+// Product codes must match GOAL_CATEGORIES' productCode so goals resolve to
+// real products; branchCodes must include the seeded branch's code.
+const PRODUCTS = [
+  {
+    code: 'EP-SCOL',
+    name: 'Épargne Scolarité',
+    family: 'epargne',
+    summary: 'Épargne dédiée aux frais de scolarité, déblocable à la rentrée.',
+    rate: 3.5,
+    durationMin: 6,
+    durationMax: 12,
+    minDeposit: 500,
+    maxBalance: 500000,
+    fees: 0,
+    feesUnit: 'FCFA',
+    kycLevel: 'Allégée',
+    targetSegments: ['Parents', 'Commerçants'],
+  },
+  {
+    code: 'EP-COM',
+    name: 'Épargne Commerce',
+    family: 'epargne',
+    summary: 'Fonds de roulement pour les petits commerçants, dépôts quotidiens.',
+    rate: 4,
+    durationMin: 3,
+    durationMax: 24,
+    minDeposit: 1000,
+    maxBalance: 2000000,
+    fees: 1,
+    feesUnit: '%',
+    kycLevel: 'Standard',
+    targetSegments: ['Commerçants', 'Artisans'],
+  },
+  {
+    code: 'EP-HAB',
+    name: 'Épargne Habitat',
+    family: 'epargne',
+    summary: 'Constitution d’apport pour la construction ou la rénovation.',
+    rate: 4.5,
+    durationMin: 12,
+    durationMax: 60,
+    minDeposit: 5000,
+    maxBalance: 10000000,
+    fees: 0,
+    feesUnit: 'FCFA',
+    kycLevel: 'Renforcée',
+    targetSegments: ['Salariés', 'Fonctionnaires'],
+  },
+  {
+    code: 'TON-STD',
+    name: 'Tontine Standard',
+    family: 'tontine',
+    summary: 'Tontine rotative hebdomadaire gérée par l’agent de terrain.',
+    rate: 0,
+    durationMin: 1,
+    durationMax: 12,
+    minDeposit: 500,
+    maxBalance: 300000,
+    fees: 100,
+    feesUnit: 'FCFA',
+    kycLevel: 'Allégée',
+    targetSegments: ['Groupements', 'Marchés'],
+  },
+  {
+    code: 'EP-URG',
+    name: 'Épargne Urgences',
+    family: 'epargne',
+    summary: 'Réserve de précaution disponible à tout moment, sans pénalité.',
+    rate: 2,
+    durationMin: 1,
+    durationMax: 36,
+    minDeposit: 500,
+    maxBalance: 1000000,
+    fees: 0,
+    feesUnit: 'FCFA',
+    kycLevel: 'Allégée',
+    targetSegments: ['Tous segments'],
+  },
+  {
+    code: 'CR-MICRO',
+    name: 'Microcrédit Express',
+    family: 'credit',
+    summary: 'Crédit court terme adossé à l’historique d’épargne du client.',
+    rate: 12,
+    durationMin: 1,
+    durationMax: 6,
+    minDeposit: 0,
+    maxBalance: 500000,
+    fees: 2,
+    feesUnit: '%',
+    kycLevel: 'Renforcée',
+    targetSegments: ['Épargnants réguliers'],
+  },
+] as const
+
 const GOAL_CATEGORIES = [
   { category: 'Scolarité', productCode: 'EP-SCOL' },
   { category: 'Commerce', productCode: 'EP-COM' },
@@ -34,6 +129,48 @@ const GOAL_CATEGORIES = [
 ]
 
 const DAY = 24 * 60 * 60 * 1000
+
+// Additive: seeds the org's product catalogue (skips codes that already exist).
+// Run separately so an already-seeded branch can pick up products.
+export const seedProducts = mutation({
+  args: { branchId: v.id('branches') },
+  handler: async (ctx, args) => {
+    const branch = await ctx.db.get(args.branchId)
+    if (!branch) throw new Error('Branch not found')
+
+    const existing = await ctx.db
+      .query('products')
+      .withIndex('by_org', (q) => q.eq('organizationId', branch.organizationId))
+      .collect()
+    const existingCodes = new Set(existing.map((p) => p.code))
+
+    let created = 0
+    for (const [i, p] of PRODUCTS.entries()) {
+      if (existingCodes.has(p.code)) continue
+      await ctx.db.insert('products', {
+        organizationId: branch.organizationId,
+        code: p.code,
+        name: p.name,
+        family: p.family,
+        summary: p.summary,
+        status: i === PRODUCTS.length - 1 ? 'brouillon' : 'actif',
+        rate: p.rate,
+        durationMin: p.durationMin,
+        durationMax: p.durationMax,
+        minDeposit: p.minDeposit,
+        maxBalance: p.maxBalance,
+        fees: p.fees,
+        feesUnit: p.feesUnit,
+        graceDays: p.family === 'credit' ? 15 : 0,
+        kycLevel: p.kycLevel,
+        targetSegments: [...p.targetSegments],
+        branchCodes: [branch.code],
+      })
+      created++
+    }
+    return { created, skipped: PRODUCTS.length - created }
+  },
+})
 
 export const seedBranchData = mutation({
   args: { branchId: v.id('branches'), force: v.optional(v.boolean()) },
@@ -183,6 +320,9 @@ export const seedBranchData = mutation({
         rejectedBy: status === 'rejected' ? approver : undefined,
       })
     }
+
+    // Products live in the separate additive seedProducts mutation (org-scoped,
+    // skips existing codes) — run both when seeding a fresh branch.
 
     // ── Reconciliations ──────────────────────────────────────────────────────
     for (let i = 1; i <= 3; i++) {

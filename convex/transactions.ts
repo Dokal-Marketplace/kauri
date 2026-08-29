@@ -127,6 +127,37 @@ export const listByBranch = query({
   },
 })
 
+// ── listByCustomer ────────────────────────────────────────────────────────────
+
+/**
+ * Recent transactions for one customer (client drawer on ClientsPage).
+ */
+export const listByCustomer = query({
+  args: { customerId: v.id('customers'), limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Unauthenticated')
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.subject))
+      .unique()
+    if (!caller) throw new Error('User not found')
+
+    const customer = await ctx.db.get(args.customerId)
+    if (!customer || customer.branchId !== caller.branchId) throw new Error('Forbidden')
+
+    await authz.withTenant(caller.branchId).require(ctx, identity.subject, 'transactions:audit')
+
+    const limit = Math.min(args.limit ?? 10, 100)
+    return ctx.db
+      .query('transactions')
+      .withIndex('by_customer', (q) => q.eq('customerId', args.customerId))
+      .order('desc')
+      .take(limit)
+  },
+})
+
 // ── getById ───────────────────────────────────────────────────────────────────
 
 /**

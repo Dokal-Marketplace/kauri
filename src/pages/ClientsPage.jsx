@@ -141,13 +141,13 @@ function ClientDrawer({ client, onClose }) {
             <div className="tx-list" style={{ padding: 0 }}>
               {transactions.map((t) => (
                 <div key={t._id} className="tx-row">
-                  <div className={'tx-icon ' + (t.type === 'debit' ? 'out' : 'in')}>
-                    {t.type === 'debit' ? <I.ArrowUp size={14} /> : <I.ArrowDown size={14} />}
+                  <div className={'tx-icon ' + (t.type === 'withdrawal' ? 'out' : 'in')}>
+                    {t.type === 'withdrawal' ? <I.ArrowUp size={14} /> : <I.ArrowDown size={14} />}
                   </div>
                   <div>
-                    <div className="tx-name">{t.reference}</div>
+                    <div className="tx-name">{t.type === 'withdrawal' ? 'Retrait' : 'Dépôt'}</div>
                     <div className="tx-time">
-                      {new Date(t._creationTime).toLocaleDateString('fr-FR', {
+                      {new Date(t.timestamp ?? t._creationTime).toLocaleDateString('fr-FR', {
                         month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
@@ -155,8 +155,8 @@ function ClientDrawer({ client, onClose }) {
                       })}
                     </div>
                   </div>
-                  <div className={'tx-amount ' + (t.type === 'debit' ? 'out' : 'in')}>
-                    {t.type === 'debit' ? '−' : '+'}
+                  <div className={'tx-amount ' + (t.type === 'withdrawal' ? 'out' : 'in')}>
+                    {t.type === 'withdrawal' ? '−' : '+'}
                     {fmt(t.amount)}
                     <span className="u">FCFA</span>
                   </div>

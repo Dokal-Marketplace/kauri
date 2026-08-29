@@ -1,6 +1,20 @@
-import { mutation, query } from './_generated/server'
+import { mutation, query, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
 import { authz } from './authz'
+import { batchGetMap } from './helpers'
+import type { Doc } from './_generated/dataModel'
+
+// Resolve customer display names for a set of disbursement rows
+async function withCustomerNames(ctx: QueryCtx, rows: Doc<'disbursements'>[]) {
+  const customers = await batchGetMap(
+    ctx,
+    rows.map((r) => r.customerId)
+  )
+  return rows.map((r) => ({
+    ...r,
+    customerName: customers.get(r.customerId)?.fullName ?? '—',
+  }))
+}
 
 export const requestDisbursement = mutation({
   args: {
@@ -42,10 +56,11 @@ export const listPending = query({
     if (!user || user.branchId !== args.branchId) {
       throw new Error('Unauthorized: Cannot view disbursements for this branch')
     }
-    return ctx.db
+    const rows = await ctx.db
       .query('disbursements')
       .withIndex('by_branch_status', (q) => q.eq('branchId', args.branchId).eq('status', 'pending'))
       .collect()
+    return withCustomerNames(ctx, rows)
   },
 })
 
@@ -83,7 +98,8 @@ export const listHistory = query({
         )
         .collect(),
     ])
-    return [...approved, ...rejected, ...executed].sort((a, b) => b.timestamp - a.timestamp)
+    const rows = [...approved, ...rejected, ...executed].sort((a, b) => b.timestamp - a.timestamp)
+    return withCustomerNames(ctx, rows)
   },
 })
 
