@@ -98,6 +98,7 @@ a {
   display: grid;
   grid-template-columns: 248px 1fr;
   min-height: 100vh;
+  min-height: 100dvh;
   max-width: 1480px;
   margin: 0 auto;
 }
@@ -110,7 +111,10 @@ a {
   flex-direction: column;
   position: sticky;
   top: 0;
+  /* dvh tracks the visible viewport on mobile (URL bar); vh is the fallback */
   height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
 }
 
 .brand {
@@ -2700,6 +2704,7 @@ textarea.input {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
   background: var(--bg);
 }
@@ -2998,7 +3003,8 @@ textarea.input {
   right: 0;
   bottom: 0;
   z-index: 201;
-  width: min(520px, 100vw);
+  /* 100% of the viewport (fixed positioning) excludes the scrollbar; 100vw does not */
+  width: min(520px, 100%);
   background: var(--surface);
   box-shadow: -4px 0 32px oklch(0.2 0.01 70 / 0.18);
   display: flex;
@@ -3682,7 +3688,7 @@ textarea.input {
   background: var(--surface);
   border-radius: var(--r-md);
   padding: 28px;
-  min-width: 380px;
+  min-width: min(380px, 92vw);
   max-width: 480px;
   width: 92vw;
   box-shadow: var(--shadow-md);
