@@ -1,4 +1,4 @@
-//src/components.jsx
+// src/components.jsx
 import { useState, useMemo, useId } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useQuery } from 'convex/react'
@@ -6,6 +6,7 @@ import { api } from '../convex/_generated/api'
 import { useCurrentUser } from './hooks/useCurrentUser'
 import { I } from './icons'
 import { AddDeviceModal } from './components/AddDeviceModal'
+import { NewAgentModal } from './components/NewAgentModal'
 import { fmt } from './utils/fmt'
 
 export function SearchInput({ placeholder, value, onChange, width = 240 }) {
@@ -25,7 +26,7 @@ export function PageHeader({ crumbs = [], title, children, onSearch }) {
       <div className="crumbs">
         <strong>Kauri</strong>
         {allCrumbs.map((c, i) => (
-          <span key={c}>
+          <span key={`${c}-${i}`}>
             <span className="crumb-sep">/</span>
             {i === allCrumbs.length - 1 ? <span className="crumb-current">{c}</span> : c}
           </span>
@@ -108,28 +109,40 @@ export function Sidebar() {
     {
       group: 'Principal',
       entries: [
-        { path: '/', end: true, label: 'Tableau de bord', icon: <I.Grid /> },
-        { path: '/clients', label: 'Clients', icon: <I.Users />, badge: '142' },
-        { path: '/tx', label: 'Transactions', icon: <I.Receipt />, badge: '12' },
-        { path: '/objectifs', label: 'Objectifs', icon: <I.Pin /> },
-        { path: '/produits', label: 'Produits', icon: <I.Wallet /> },
-        { path: '/decaissements', label: 'Décaissements', icon: <I.Coin />, badge: pendingCount },
-        { path: '/reconciliation', label: 'Réconciliation', icon: <I.Coin />, badge: '1' },
+        { key: 'dashboard', path: '/', end: true, label: 'Tableau de bord', icon: <I.Grid /> },
+        { key: 'clients', path: '/clients', label: 'Clients', icon: <I.Users />, badge: '142' },
+        { key: 'tx', path: '/tx', label: 'Transactions', icon: <I.Receipt />, badge: '12' },
+        { key: 'objectifs', path: '/objectifs', label: 'Objectifs', icon: <I.Pin /> },
+        { key: 'produits', path: '/produits', label: 'Produits', icon: <I.Wallet /> },
+        {
+          key: 'decaissements',
+          path: '/decaissements',
+          label: 'Décaissements',
+          icon: <I.Coin />,
+          badge: pendingCount,
+        },
+        {
+          key: 'reconciliation',
+          path: '/reconciliation',
+          label: 'Réconciliation',
+          icon: <I.Receipt />,
+        },
       ],
     },
     {
       group: 'Rapports',
       entries: [
-        { label: 'Analyses', icon: <I.Chart /> },
-        { label: 'Export CSV', icon: <I.Export /> },
+        { key: 'analyses', label: 'Analyses', icon: <I.Chart /> },
+        { key: 'export', label: 'Export CSV', icon: <I.Export /> },
       ],
     },
     {
       group: 'Admin',
       entries: [
-        { path: '/agents', label: 'Agents', icon: <I.Users /> },
-        { label: 'Permissions', icon: <I.Shield /> },
-        { path: '/settings', label: 'Paramètres', icon: <I.Settings /> },
+        { key: 'agents', path: '/agents', label: 'Agents', icon: <I.Users /> },
+        { key: 'fleet', path: '/fleet', label: 'Flotte TPE', icon: <I.Terminal /> },
+        { key: 'permissions', label: 'Permissions', icon: <I.Shield /> },
+        { key: 'settings', path: '/settings', label: 'Paramètres', icon: <I.Settings /> },
       ],
     },
   ]
@@ -151,7 +164,7 @@ export function Sidebar() {
           {group.entries.map((it) =>
             it.path ? (
               <NavLink
-                key={it.path ?? it.label}
+                key={it.key}
                 to={it.path}
                 end={it.end}
                 className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')}
@@ -161,7 +174,7 @@ export function Sidebar() {
                 {it.badge && <span className="nav-badge">{it.badge}</span>}
               </NavLink>
             ) : (
-              <div key={it.path ?? it.label} className="nav-item disabled">
+              <div key={it.key} className="nav-item disabled">
                 {it.icon}
                 <span>{it.label}</span>
               </div>
@@ -524,6 +537,7 @@ export function ActivityCard({ feed }) {
 
 export function QuickActionsCard() {
   const [showAddDevice, setShowAddDevice] = useState(false)
+  const [showAddAgent, setShowAddAgent] = useState(false)
 
   const actions = [
     { ic: <I.Plus />, label: 'Dépôt rapide', sub: "Carnet d'épargne" },
@@ -534,6 +548,12 @@ export function QuickActionsCard() {
       label: 'Ajouter un TPE',
       sub: 'Nouveau terminal',
       onClick: () => setShowAddDevice(true),
+    },
+    {
+      ic: <I.Users />,
+      label: 'Ajouter un agent',
+      sub: 'Inviter un collaborateur',
+      onClick: () => setShowAddAgent(true),
     },
     { ic: <I.Cloud />, label: 'Synchroniser', sub: '4 en file' },
   ]
@@ -585,6 +605,7 @@ export function QuickActionsCard() {
                 {a.label === 'Retrait' && <I.ArrowUp size={14} />}
                 {a.label === 'Inscrire client' && <I.Users size={14} />}
                 {a.label === 'Ajouter un TPE' && <I.Terminal size={14} />}
+                {a.label === 'Ajouter un agent' && <I.Users size={14} />}
                 {a.label === 'Synchroniser' && <I.Cloud size={14} />}
               </span>
               <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -598,6 +619,11 @@ export function QuickActionsCard() {
         </div>
       </div>
       <AddDeviceModal isOpen={showAddDevice} onClose={() => setShowAddDevice(false)} />
+      <NewAgentModal
+        isOpen={showAddAgent}
+        onClose={() => setShowAddAgent(false)}
+        onSuccess={() => setShowAddAgent(false)}
+      />
     </>
   )
 }

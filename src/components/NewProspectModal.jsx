@@ -5,7 +5,6 @@ import { api } from '../../convex/_generated/api'
 
 // Phone validation: optional leading +, then digits/spaces/dashes, 8–15 chars total
 const PHONE_REGEX = /^\+?[0-9\s-]{8,15}$/
-
 /**
  * Modal for creating a new prospect customer.
  * Owns the createProspect mutation internally — no onSubmit prop required.

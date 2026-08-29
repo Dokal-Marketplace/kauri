@@ -1,8 +1,6 @@
 // convex/convex.config.ts
-import { defineApp } from 'convex/server'
-import authz from '@djpanda/convex-authz/convex.config'
+import { defineApp } from "convex/server";
 
-const app = defineApp()
-app.use(authz)
+const app = defineApp();
 
-export default app
+export default app;

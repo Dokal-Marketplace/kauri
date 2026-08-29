@@ -9,6 +9,7 @@
  */
 
 import type * as agents from "../agents.js";
+import type * as auth from "../auth.js";
 import type * as authz from "../authz.js";
 import type * as crons from "../crons.js";
 import type * as customers from "../customers.js";
@@ -18,7 +19,11 @@ import type * as disbursements from "../disbursements.js";
 import type * as emails from "../emails.js";
 import type * as goals from "../goals.js";
 import type * as helpers from "../helpers.js";
+import type * as http from "../http.js";
 import type * as invitations from "../invitations.js";
+import type * as notifications from "../notifications.js";
+import type * as otp from "../otp.js";
+import type * as phone from "../phone.js";
 import type * as products from "../products.js";
 import type * as reconciliation from "../reconciliation.js";
 import type * as seed from "../seed.js";
@@ -34,6 +39,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   agents: typeof agents;
+  auth: typeof auth;
   authz: typeof authz;
   crons: typeof crons;
   customers: typeof customers;
@@ -43,7 +49,11 @@ declare const fullApi: ApiFromModules<{
   emails: typeof emails;
   goals: typeof goals;
   helpers: typeof helpers;
+  http: typeof http;
   invitations: typeof invitations;
+  notifications: typeof notifications;
+  otp: typeof otp;
+  phone: typeof phone;
   products: typeof products;
   reconciliation: typeof reconciliation;
   seed: typeof seed;
@@ -78,6 +88,4 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {
-  authz: import("@djpanda/convex-authz/_generated/component.js").ComponentApi<"authz">;
-};
+export declare const components: {};

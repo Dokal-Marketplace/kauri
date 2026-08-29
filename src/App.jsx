@@ -23,8 +23,7 @@ const ProductsPage = lazyWithReload(() => import('./pages/ProductsPage'))
 const ReconciliationPage = lazyWithReload(() => import('./pages/ReconciliationPage'))
 const SettingsPage = lazyWithReload(() => import('./pages/SettingsPage'))
 const DisbursementsPage = lazyWithReload(() => import('./pages/DisbursementsPage'))
-
-// ─── Convex client (singleton module-level, pas de re-création) ───────────────
+const FleetPage = lazyWithReload(() => import('./pages/FleetPage'))
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
 
 // ─── Error fallbacks ───────────────────────────────────────────────────────────
@@ -86,10 +85,25 @@ function AppShell() {
     now !== null &&
     now - convexUser.passwordSetAt > THREE_DAYS
 
+  const isLocked =
+    isLoaded && Boolean(convexUser?.lockedUntil) && now !== null && now < convexUser.lockedUntil
+
   if (isLoaded && !convexUser) return <OnboardingWizard />
 
   if (isLoaded && convexUser?.mustChangePassword) {
     return <ChangePasswordPage reason="required" />
+  }
+
+  if (isLocked) {
+    const remaining = Math.ceil((convexUser.lockedUntil - now) / 60_000)
+    return (
+      <div style={{ padding: '4rem', textAlign: 'center' }}>
+        <p>Votre compte est temporairement verrouillé suite à plusieurs tentatives échouées.</p>
+        <p style={{ fontSize: '0.875rem', color: '#888' }}>
+          Réessayez dans {remaining} minute{remaining > 1 ? 's' : ''}.
+        </p>
+      </div>
+    )
   }
 
   if (isLoaded && isPasswordExpired) {
@@ -136,8 +150,6 @@ function AppShell() {
 }
 
 // ─── Layout — ConvexProviderWithClerk ICI, au-dessus de AppShell ──────────────
-// C'est le seul endroit garanti d'être dans le React tree au moment du rendu.
-// RouterProvider ne propage pas les contexts React standards vers ses elements.
 function Layout() {
   return (
     <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
@@ -165,6 +177,7 @@ const router = createSentryRouter([
       { path: 'clients', element: <ClientsPage /> },
       { path: 'tx', element: <TransactionsPage /> },
       { path: 'agents', element: <AgentsPage /> },
+      { path: 'fleet', element: <FleetPage /> },
       { path: 'objectifs', element: <ObjectifsPage /> },
       { path: 'produits', element: <ProductsPage /> },
       { path: 'reconciliation', element: <ReconciliationPage /> },
