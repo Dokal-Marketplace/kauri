@@ -7,6 +7,7 @@ import { ConvexReactClient } from 'convex/react'
 import { ConvexProviderWithClerk } from 'convex/react-clerk'
 import * as Sentry from '@sentry/react'
 import { Sidebar } from './components'
+import { I } from './icons'
 import { lazyWithReload } from './utils/lazyWithReload'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { useCurrentUser } from './hooks/useCurrentUser'
@@ -135,17 +136,45 @@ function AppShell() {
         }
       }}
     >
-      <div className="app">
-        <Sidebar />
-        <main className="main">
-          <Sentry.ErrorBoundary fallback={PageErrorFallback} showDialog>
-            <Suspense fallback={null}>
-              <Outlet />
-            </Suspense>
-          </Sentry.ErrorBoundary>
-        </main>
-      </div>
+      <ShellLayout />
     </TenantsProvider>
+  )
+}
+
+// Shell with off-canvas sidebar below 1024px
+function ShellLayout() {
+  const [navOpen, setNavOpen] = useState(false)
+
+  useEffect(() => {
+    if (!navOpen) return
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setNavOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [navOpen])
+
+  return (
+    <div className="app">
+      <div className="mobile-topbar">
+        <button className="nav-toggle" aria-label="Ouvrir le menu" onClick={() => setNavOpen(true)}>
+          <I.Menu size={18} />
+        </button>
+        <div className="brand-mark sm">
+          <I.KauriDrop stroke="white" size={14} />
+        </div>
+        <span className="mobile-topbar-title">Kauri</span>
+      </div>
+      {navOpen && <div className="sidebar-backdrop" onClick={() => setNavOpen(false)} />}
+      <Sidebar open={navOpen} onNavigate={() => setNavOpen(false)} />
+      <main className="main">
+        <Sentry.ErrorBoundary fallback={PageErrorFallback} showDialog>
+          <Suspense fallback={null}>
+            <Outlet />
+          </Suspense>
+        </Sentry.ErrorBoundary>
+      </main>
+    </div>
   )
 }
 

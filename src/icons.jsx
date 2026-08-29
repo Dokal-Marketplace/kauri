@@ -193,6 +193,11 @@ export const I = {
       <path d="M12 3.5c-3 4-5.5 7.2-5.5 10a5.5 5.5 0 0 0 11 0c0-2.8-2.5-6-5.5-10z" />
     </Icon>
   ),
+  Menu: (p) => (
+    <Icon {...p}>
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </Icon>
+  ),
   Close: (p) => (
     <Icon {...p}>
       <path d="M6 6l12 12M6 18L18 6" />
