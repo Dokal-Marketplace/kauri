@@ -115,18 +115,20 @@ export const listByBranch = query({
           .order("desc")
           .take(90);
 
-    // Enrich with agent and verifier names
-    return Promise.all(
-      records.map(async (r) => {
-        const agent = await ctx.db.get(r.agentId);
-        const verifier = await ctx.db.get(r.verifiedBy);
-        return {
-          ...r,
-          agentName: agent?.fullName ?? agent?.email ?? null,
-          verifierName: verifier?.fullName ?? verifier?.email ?? null,
-        };
-      }),
+    // Enrich with agent and verifier names (batch-fetch unique users once)
+    const userIds = [...new Set(records.flatMap((r) => [r.agentId, r.verifiedBy]))];
+    const users = await Promise.all(userIds.map((id) => ctx.db.get(id)));
+    const nameById = new Map(
+      users
+        .filter((u) => u !== null)
+        .map((u) => [u!._id, u!.fullName ?? u!.email ?? null]),
     );
+
+    return records.map((r) => ({
+      ...r,
+      agentName: nameById.get(r.agentId) ?? null,
+      verifierName: nameById.get(r.verifiedBy) ?? null,
+    }));
   },
 });
 

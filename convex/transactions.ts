@@ -39,12 +39,12 @@ export const list = query({
       .order("desc")
       .take(100);
 
-    // Enrich with customer names (this agent's own customers only)
-    const customers = await ctx.db
-      .query("customers")
-      .withIndex("by_branch", (q) => q.eq("branchId", agent.branchId))
-      .collect();
-    const customerMap = new Map(customers.map((c) => [c._id, c.fullName]));
+    // Enrich with customer names (batch-fetch only the customers referenced)
+    const customerIds = [...new Set(transactions.map((t) => t.customerId))];
+    const customers = await Promise.all(customerIds.map((id) => ctx.db.get(id)));
+    const customerMap = new Map(
+      customers.filter((c) => c !== null).map((c) => [c!._id, c!.fullName]),
+    );
 
     return transactions.map((t) => ({
       ...t,
@@ -109,18 +109,19 @@ export const listByBranch = query({
       });
     }
 
-    // Enrich with customer names and agent names
-    const customers = await ctx.db
-      .query("customers")
-      .withIndex("by_branch", (q) => q.eq("branchId", targetBranchId))
-      .collect();
-    const customerMap = new Map(customers.map((c) => [c._id, c.fullName]));
-
-    const agents = await ctx.db
-      .query("users")
-      .withIndex("by_branch", (q) => q.eq("branchId", targetBranchId))
-      .collect();
-    const agentMap = new Map(agents.map((u) => [u._id, u.fullName]));
+    // Enrich with customer and agent names (batch-fetch only the ids referenced)
+    const customerIds = [...new Set(transactions.map((t) => t.customerId))];
+    const agentIds = [...new Set(transactions.map((t) => t.agentId))];
+    const [customers, agentDocs] = await Promise.all([
+      Promise.all(customerIds.map((id) => ctx.db.get(id))),
+      Promise.all(agentIds.map((id) => ctx.db.get(id))),
+    ]);
+    const customerMap = new Map(
+      customers.filter((c) => c !== null).map((c) => [c!._id, c!.fullName]),
+    );
+    const agentMap = new Map(
+      agentDocs.filter((u) => u !== null).map((u) => [u!._id, u!.fullName]),
+    );
 
     return transactions.map((t) => ({
       ...t,
